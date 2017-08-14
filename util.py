@@ -3,6 +3,7 @@ from numpy import pi, sqrt
 from scipy.io.matlab.mio5_params import mat_struct
 from scipy.io import loadmat
 import scipy.special
+from noise.coatingthermal import getCoatDopt
 
 def SpotSizes(g1, g2, L, lambda_):
     """calculates spot sizes using FP cavity parameters
@@ -50,8 +51,14 @@ def precompIFO(ifo, PRfixed):
 
     # coating layer optical thicknesses - mevans 2 May 2008
     if 'CoatLayerOpticalThickness' not in ifo.Optics.ITM.__dict__:
-        ifo.Optics.ITM.CoatLayerOpticalThickness = getCoatDopt(ifo, 'ITM')
-        ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, 'ETM')
+        T = ifo.Optics.ITM.Transmittance
+        dL = ifo.Optics.ITM.CoatingThicknessLown
+        dCap = ifo.Optics.ITM.CoatingThicknessCap
+        ifo.Optics.ITM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
+        T = ifo.Optics.ETM.Transmittance
+        dL = ifo.Optics.ETM.CoatingThicknessLown
+        dCap = ifo.Optics.ETM.CoatingThicknessCap
+        ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
   
     # compute power on BS
     pbs, parm, finesse, prfactor, Tpr = precompPower(ifo, PRfixed)

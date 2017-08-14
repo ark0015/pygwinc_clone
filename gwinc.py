@@ -82,10 +82,10 @@ def gwinc(flo, fhi, ifoin, source=None, fig=False):
   
     # quad cases, for backward compatability
     if ifo.Suspension.Type in (0, 1):
-        hForce, vForce, hTable, vTable = suspQuad(f, ifo)
+        hForce, vForce, hTable, vTable = noise.suspensionthermal.suspQuad(f, ifo)
     elif ifo.Suspension.Type == 'Quad':
         ifo.Suspension.Type = 0
-        hForce, vForce, hTable, vTable = suspQuad(f, ifo)
+        hForce, vForce, hTable, vTable = noise.suspensionthermal.suspQuad(f, ifo)
     else:
         fname = noise.suspensionthermal.__dict__['susp' + ifo.Suspension.Type]
         hForce, vForce, hTable, vTable = fname(f, ifo)

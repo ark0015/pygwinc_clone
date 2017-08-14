@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import scipy.constants
 import scipy.special
 import numpy as np
-from numpy import pi, sum, zeros, exp, imag, sqrt, sin, cos, sinh, cosh
+from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, max, min, ceil, log
 
 
 def coatbrownian(f, ifo):
@@ -599,3 +599,173 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
     # eq 92
     Cfsm = sqrt((r0**2 * P) / (2 * R**2 * (1 + sigS)**2 * LAMBDA**2))
     return Cfsm
+
+
+def getCoatDopt(ifo, T, dL, dCap=0.5):
+    """get coating layer optical thicknesses to match desired transmission
+    
+    ifo = gwinc IFO model, or vector of 3 refractive indexes [nS, nL, nH]
+      nS, nL, nH = refractive index of substrate, low and high-n materials
+        nL is used for the even layers, nH for odd layers
+        this algorithm may fail if nS > nL
+    opticName = name of the Optic struct to use for T, dL and dCap
+    T = power transmission of coating
+    dL = optical thickness of low-n layers
+      high-n layers have dH = 0.5 - dL
+    dCap = first layer (low-n) thickness (default 0.5)
+    
+    dOpt = optical thickness vector Nlayer x 1
+    
+    Examples:
+    dOpt = getCoatDopt(ifo, 'ITM');
+    dOpt = getCoatDopt(ifo, 0.014, 0.3);
+    dOpt = getCoatDopt(ifo, 0.014, 0.3, 0.5);
+    dOpt = getCoatDopt([1.45, 1.45, 2.06], 0.014, 0.3, 0.5);"""
+
+    # helper functions
+
+    ##############################################
+    def getTrans(ifo, Ndblt, dL, dH, dCap, dTweak):
+
+        # the optical thickness vector
+        dOpt = zeros(2 * Ndblt)
+        dOpt[0] = dCap
+        dOpt[1::2] = dH
+        dOpt[2::2] = dL
+
+        N = dTweak.size
+        T = zeros(N)
+        for n in range(N):
+            dOpt[-1] = dTweak[n]
+            r = getCoatRefl(ifo, dOpt)
+            T[n] = 1 - abs(r**2)
+
+        return T
+
+    ##############################################
+    def getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, Nfit):
+
+        # tweak bottom layer
+        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, dScan)
+        pf = polyfit(dScan, Tn - T, Nfit)
+        rts = roots(pf)
+        if not any(imag(rts) == 0 & (rts > 0)):
+            dTweak = None
+            Td = 0
+            return dTweak, Td
+        dTweak = real(min(rts[(imag(rts) == 0) & (rts > 0)]))
+
+        # compute T for this dTweak
+        Td = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dTweak]))
+
+        return dTweak, Td
+
+        # plot for debugging
+        #   plot(dScan, [Tn - T, polyval(pf, dScan)], dTweak, Td - T, 'ro')
+        #   grid on
+        #   legend('T exact', 'T fit', 'T at dTweak')
+        #   title(sprintf('%d doublets', Ndblt))
+        #   pause(1)
+
+    # get IFO model stuff (or create it for other functions)
+    pS = ifo.Materials.Substrate
+    pC = ifo.Materials.Coating
+
+    nS = pS.RefractiveIndex
+    nL = pC.Indexlown
+    nH = pC.Indexhighn
+  
+    ########################
+    # find number of quarter-wave layers required, as first guess
+    nR = nH / nL
+    a1 = (2 - T + 2 * sqrt(1 - T)) / (nR * nH * T)
+    Ndblt = int(ceil(log(a1) / (2 * log(nR))))
+
+    # search through number of doublets to find Ndblt
+    # which gives T lower than required
+    dH = 0.5 - dL
+    Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+    while Tn < T and Ndblt > 1:
+        # strange, but T is too low... remove doublets
+        Ndblt = Ndblt - 1
+        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+    while Tn > T and Ndblt < 1e3:
+        # add doublets until T > tN
+        Ndblt = Ndblt + 1
+        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+
+    ########################
+    # tweak bottom layer
+    delta = 0.01
+    dScan = np.arange(0, 0.25+delta, delta)
+    dTweak = getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, 5)[0]
+
+    if not dTweak:
+        if nS > nL:
+            raise Exception('Coating tweak layer not sufficient since nS > nL.')
+        else:
+            raise Exception('Coating tweak layer not found... very strange.')
+  
+    # now that we are close, get a better result with a linear fit
+    delta = 0.001
+    dScan = np.linspace(dTweak - 3*delta, dTweak + 3*delta, 7)
+    dTweak, Td = getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, 3)
+
+    # negative values are bad
+    if dTweak < 0.01:
+        dTweak = 0.01
+  
+    # check the result
+    if abs(log(Td / T)) > 1e-3:
+        print('Exact coating tweak layer not found... %g%% error.' % abs(log(Td / T)))
+
+    ########################
+    # return dOpt vector
+    dOpt = zeros((2 * Ndblt, 1))
+    dOpt[0] = dCap
+    dOpt[1::2] = dH
+    dOpt[2::2] = dL
+    dOpt[-1] = dTweak
+
+    return dOpt
+
+
+def getCoatRefl(ifo, dOpt):
+    """returns amplitude reflectivity, with phase, of a coating
+    
+    ifo = parameter struct from IFOmodel.m
+    dOpt   = optical thickness / lambda of each layer
+           = geometrical thickness * refractive index / lambda
+    
+    This code is taken from ewa/multidiel1.m"""
+
+    pS = ifo.Materials.Substrate
+    pC = ifo.Materials.Coating
+
+    nS = pS.RefractiveIndex
+    nL = pC.Indexlown
+    nH = pC.Indexhighn
+
+    Nlayer = dOpt.size
+
+    # refractive index of input, coating, and output materials
+    nAll = zeros(Nlayer + 2)
+    nAll[0] = 1  # vacuum input
+    nAll[1::2] = nL
+    nAll[2::2] = nH
+    nAll[-1] = nS # substrate output
+
+    # reflectivity of each interface
+    rInterface = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
+
+    # combine layers as small FP cavities, starting with last reflectivity
+    rCoat = rInterface[-1]
+    for n in reversed(range(dOpt.size)):
+        # one-way phase in this layer
+        phi = 2 * pi * dOpt[n]
+
+        # accumulate reflectivity
+        rCoat = rCoat * exp(-2j * phi)
+        rCoat = (rInterface[n] + rCoat) / (1 + rInterface[n] * rCoat)
+
+    return rCoat
