@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 from numpy import pi, NaN
-from util import SpotSizes
+from ..util import SpotSizes
 import scipy.constants
 import scipy.special
 from scipy.io import loadmat
@@ -8,7 +8,7 @@ from scipy.io.matlab.mio5_params import mat_struct
 import os
 
 
-def IFOModel_123_2000():
+def IFOModel():
     """IFOMODEL returns a structure describing an IFO for use in
     benchmark programs and noise simulator. Part of the gwinc
     package, which provides science-grounded figures of merit for
@@ -227,7 +227,7 @@ def IFOModel_123_2000():
     ifo.Materials.Coating.CVhighn    = 345.6*2250       # volume-specific heat capacity (J/K/m^3); http://journals.aps.org/prl/pdf/10.1103/PhysRevLett.96.055902
     ifo.Materials.Coating.Alphahighn = 1e-9             # zero crossing at 123 K
     ifo.Materials.Coating.Betahighn  = 1.4e-4           # dn/dT
-    ifo.Materials.Coating.ThermalDiffusivityhighn = 1   # W/m/K
+    ifo.Materials.Coating.ThermalDiffusivityhighn = 1   # W/m/K (this is a misnomer, meant to be thermal conductivity not diffusivity)
     ifo.Materials.Coating.Phihighn   = 3e-5             # just a guess (depends on prep)
     ifo.Materials.Coating.Indexhighn = 3.5
 
@@ -238,7 +238,7 @@ def IFOModel_123_2000():
     ifo.Materials.Coating.CVlown     = 1.6412e6          # volume-specific heat capacity (J/K/m^3); Crooks et al, Fejer et al
     ifo.Materials.Coating.Alphalown  = 5.1e-7            # Fejer et al
     ifo.Materials.Coating.Betalown   = 8e-6              # dn/dT,  (ref. 14)
-    ifo.Materials.Coating.ThermalDiffusivitylown = 1.38  # Fejer et al
+    ifo.Materials.Coating.ThermalDiffusivitylown = 1.38  # Fejer et al (this is a misnomer, meant to be thermal conductivity not diffusivity)
     ifo.Materials.Coating.Philown    = 1e-4              # ?
 
     # calculated for 123 K and 2000 nm following 
@@ -251,12 +251,12 @@ def IFOModel_123_2000():
     # Silicon @ 120K (http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html)
 
     ifo.Materials.Substrate = mat_struct()
-                                                        #  phi_sub = c2 * f^(MechLossExp)
-    ifo.Materials.Substrate.c2                = 3e-13   # Coeff of freq dep. term for bulk loss (Lam & Douglass, 1981)
-    ifo.Materials.Substrate.MechanicalLossExponent = 1   # Exponent for freq dependence of silicon loss
+                                                          #  phi_sub = c2 * f^(MechLossExp)
+    ifo.Materials.Substrate.c2                = 3e-13     # Coeff of freq dep. term for bulk loss (Lam & Douglass, 1981)
+    ifo.Materials.Substrate.MechanicalLossExponent = 1    # Exponent for freq dependence of silicon loss
     ifo.Materials.Substrate.Alphas            = 5.2e-12   # Surface loss limit ???
-    ifo.Materials.Substrate.MirrorY           = 155.8e9   # N/m^2; Youngs modulus (ioffe)
-    ifo.Materials.Substrate.MirrorSigma       = 0.27      # kg/m^3; Poisson ratio (ioffe)
+    ifo.Materials.Substrate.MirrorY           = 155.8e9   # N/m^2; Youngs modulus (ioffe) -- what about anisotropy??
+    ifo.Materials.Substrate.MirrorSigma       = 0.27      # kg/m^3; Poisson ratio (ioffe) -- what about anisotropy??
     ifo.Materials.Substrate.MassDensity       = 2329      # kg/m^3; (ioffe)
     ifo.Materials.Substrate.MassAlpha         = 1e-9      # 1/K; CTE = 0 @ 120 K
     ifo.Materials.Substrate.MassCM            = 0.3*1000  # J/kg/K; specific heat (ioffe @ 120K)
