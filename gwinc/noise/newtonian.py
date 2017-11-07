@@ -31,9 +31,9 @@ def gravg(f, ifo):
     beta  = ifo.Seismic.Beta        # factor to account for correlation between masses
                                     # and the height of the mirror above the ground
 
-    try:
+    if 'Spectrum' in ifo.Seismic:
         seismic = ifo.Seismic.Spectrum
-    except:
+    else:
         seismic = ground(ifo.Seismic, f)
 
     # effective GG spring frequency, with G gravitational

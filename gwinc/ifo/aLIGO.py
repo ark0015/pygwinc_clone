@@ -115,7 +115,8 @@ def IFOModel():
     ## Seismic and Gravity Gradient Parameters---------------------------------
     ifo.Seismic = mat_struct()
     ifo.Seismic.Site = 'LHO'                      # LHO or LLO (only used for Newtonian noise)
-    ifo.Seismic.darmSeiSusFile = 'seismic.mat'    # .mat file containing predictions for darm displacement
+    # ifo.Seismic.darmSeiSusFile = 'seismic.mat'    # .mat file containing predictions for darm displacement
+    # ifo.Seismic.darmSeiSusFile = 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
     ifo.Seismic.KneeFrequency = 10                # Hz; freq where 'flat' noise rolls off
     ifo.Seismic.LowFrequencyLevel = 1e-9          # m/rtHz; seismic noise level below f_knee
     ifo.Seismic.Gamma = .8                        # abruptness of change at f_knee
@@ -123,8 +124,6 @@ def IFOModel():
     ifo.Seismic.Beta = 0.5                        # quiet times beta = 0.35-0.60
     # noisy times beta = 0.15-1.4
     ifo.Seismic.Omicron = 1                       # Feedforward cancellation factor
-
-    ifo.Seismic.darmSeiSusFile = 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
     ## Suspension: SI Units----------------------------------------------------
     ifo.Suspension = mat_struct()
