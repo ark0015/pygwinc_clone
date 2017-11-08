@@ -18,7 +18,9 @@ def suspR(f, ifo):
     theta = ifo.Suspension.VHCoupling.theta
 
     noise = zeros((1, f.size))
-    if np.isscalar(Temp) or len(Temp) == 1: # if the temperature is uniform along the suspension    
+
+    # if the temperature is uniform along the suspension
+    if np.isscalar(Temp) or len(Temp) == 1:
         ##########################################################
         # Suspension TFs
         ##########################################################
@@ -38,7 +40,8 @@ def suspR(f, ifo):
         w = 2*pi*f
         noise = 4 * kB * Temp * abs(imag(dxdF)) / w
 
-    else: # if the temperature is set for each suspension stage
+    # if the temperature is set for each suspension stage
+    else:
         ##########################################################
         # Suspension TFs
         ##########################################################
@@ -61,7 +64,7 @@ def suspR(f, ifo):
             # thermal noise (m^2/Hz) for one suspension
             w = 2*pi*f
             noise = noise + 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
-  
+
     if ifo.Suspension.Type == 'Quad_MB':
         raise Exception('not dealing with Quad_MB suspensions currently')
         #mbquadlite2lateral_20090819TM_TN;
@@ -298,7 +301,7 @@ def suspBQuad(f, ifo):
     delta_h3 = delta_h3*Temp[2]/(rho_st*C_st)
 
     # solutions to equations of motion
-    B       = np.array([     0,       0,       0,       1]).T
+    B = np.array([     0,       0,       0,       1]).T
     w = 2*pi * f
 
     # thermoelastic correction factor, silica
@@ -356,9 +359,9 @@ def suspBQuad(f, ifo):
     # Equations of motion for the system
     ###############################################################
 
-    m_list=np.hstack((m1, m2, m3, m4))       # array of the mass
-    kh_list=np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants 
-    kv_list=np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants 
+    m_list = np.hstack((m1, m2, m3, m4))       # array of the mass
+    kh_list = np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants
+    kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
     hForce = mat_struct()
@@ -385,14 +388,14 @@ def suspBQuad(f, ifo):
         vForce.singlylossy[ii,:], vTable = calc_transfer_functions(Av, B, k_list, f)
 
     # horizontal
-    k_list=kh_list # all of the losses are on
+    k_list = kh_list # all of the losses are on
     # construct Eq of motion matrix
     Ah = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
     hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, k_list, f)
 
     # vertical
-    k_list=kv_list # all of the losses are on
+    k_list = kv_list # all of the losses are on
     # construct Eq of motion matrix
     Av = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
@@ -474,7 +477,6 @@ def suspQuad(f, ifo):
     g         = scipy.constants.g
     kB        = scipy.constants.k
 
-    Temp      = ifo.Suspension.Temp
     Temp      = ifo.Suspension.Temp
     if np.isscalar(Temp) or len(Temp) == 1:
         Temp = [Temp, Temp, Temp, Temp]
@@ -673,9 +675,9 @@ def suspQuad(f, ifo):
     # Equations of motion for the system
     ###############################################################
 
-    m_list=np.hstack((m1, m2, m3, m4))       # array of the mass
-    kh_list=np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants 
-    kv_list=np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants 
+    m_list = np.hstack((m1, m2, m3, m4))       # array of the mass
+    kh_list = np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants
+    kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
     hForce = mat_struct()
@@ -702,14 +704,14 @@ def suspQuad(f, ifo):
         vForce.singlylossy[ii,:], vTable = calc_transfer_functions(Av, B, k_list, f)
 
     # horizontal
-    k_list=kh_list # all of the losses are on
+    k_list = kh_list # all of the losses are on
     # construct Eq of motion matrix
     Ah = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
     hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, k_list, f)
 
     # vertical
-    k_list=kv_list # all of the losses are on
+    k_list = kv_list # all of the losses are on
     # construct Eq of motion matrix
     Av = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
