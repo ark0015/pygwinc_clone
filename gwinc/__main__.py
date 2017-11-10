@@ -27,6 +27,8 @@ parser.add_argument('--flo', '-fl', default=FLO,
                     help="lower frequency bound in Hz [{}]".format(FLO))
 parser.add_argument('--fhi', '--fh', default=FHI,
                     help="upper frequency bound in Hz [{}]".format(FHI))
+parser.add_argument('--npoints', '-n', default=NPOINTS,
+                    help="number of frequency points [{}]".format(NPOINTS))
 parser.add_argument('--title', '-t',
                     help="plot title")
 parser.add_argument('--matlab', '-m', action='store_true',
@@ -52,10 +54,11 @@ def main():
             print('{:50} {}'.format(k,v))
         return
 
+    freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
+
     if args.matlab:
         from .gwinc_matlab import gwinc_matlab
-        def gwinc(flo, fhi, ifo, **kwargs):
-            freq = np.logspace(np.log10(flo), np.log10(fhi), NPOINTS)
+        def gwinc(freq, ifo, **kwargs):
             score, noises, ifo = gwinc_matlab(freq, ifo, **kwargs)
             plot_noise(noises)
     # FIXME: weird import issue requires doing this here instead of
@@ -66,8 +69,7 @@ def main():
     if args.interactive:
         ipshell = InteractiveShellEmbed(
             user_ns={'gwinc': gwinc,
-                     'flo': args.flo,
-                     'fhi': args.fhi,
+                     'freq': freq,
                      'ifo': ifo,
             },
             banner1='''
@@ -79,12 +81,12 @@ You may interact with plot using "plt." methods, e.g.:
 >>> plt.savefig("foo.pdf")
 ''')
         ipshell.enable_pylab()
-        ipshell.run_code("output = gwinc(flo, fhi, ifo, fig=True)")
+        ipshell.run_code("output = gwinc(freq, ifo, fig=True)")
         if args.title:
             ipshell.run_code("plt.title('{}')".format(args.title))
         ipshell()
     else:
-        gwinc(args.flo, args.fhi, ifo, fig=True)
+        gwinc(freq, ifo, fig=True)
         if args.title:
             plt.title(args.title)
         if args.save:

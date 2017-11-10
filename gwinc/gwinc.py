@@ -96,17 +96,15 @@ def noise_calc(ifo, f):
     return noises
 
 
-
-def gwinc(flo, fhi, ifoin, source=None, fig=False):
+def gwinc(f, ifoin, source=None, fig=False):
     """Calculates strain noise due to various noise sources, for a
     specified set of interferometer parameters. Also evaluates the
     sensitivity of the interferometer to the detection of several potential 
     gravitational wave sources. Usage:
     
-         VARARGOUT = GWINC(FLO,FHI,IFO,SOURCE,VARARGIN)
+         VARARGOUT = GWINC(F,IFO,SOURCE,VARARGIN)
     
-         FLO, FHI = minimum and maximum frequencies between which
-                     calculations are made
+         F         = frequency array
          IFO       = structure containing interferometer parameters
          SOURCE    = structure containing source parameters
     
@@ -153,12 +151,6 @@ def gwinc(flo, fhi, ifoin, source=None, fig=False):
     if ifo.Laser.Power * prfactor != pbs:
         pass
         #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
-
-    # Frequency grid on which everything is calculated
-    if 'freq' in ifo.__dict__:
-        f = ifo.freq
-    else:
-        f = np.logspace(log10(flo), log10(fhi), 250)
 
     noises = noise_calc(ifo, f)
 
