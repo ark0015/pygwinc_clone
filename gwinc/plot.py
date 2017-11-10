@@ -1,6 +1,7 @@
 from numpy import sqrt
 import matplotlib.pyplot as plt
 
+import logging
 
 COLOR_MAP = {
     'Quantum Vacuum': (0.41568627450980394, 0.23921568627450981, 0.60392156862745094),
@@ -20,12 +21,21 @@ COLOR_MAP = {
 def plot_noise(noises):
     f = noises['Freq']
 
-    for name in noises:
-        if name in ['Freq', 'Total']:
-            continue
-        noise = noises[name]
-        color = COLOR_MAP[name]
-        plt.loglog(f, sqrt(noise), color=color, label=name, lw=3)
+    def plot_dict(noises):
+        for name, noise in noises.iteritems():
+            if name in ['Freq', 'Total']:
+                continue
+            if isinstance(noise, dict):
+                plot_dict(noise)
+            else:
+                logging.info("plotting '{}'...".format(name))
+                noise = noises[name]
+                try:
+                    color = COLOR_MAP[name]
+                except KeyError:
+                    color = (0, 0, 0)
+                plt.loglog(f, sqrt(noise), color=color, label=name, lw=3)
+    plot_dict(noises)
 
     plt.loglog(f, sqrt(noises['Total']), color='black', label='Total', lw=4)
 
@@ -33,6 +43,5 @@ def plot_noise(noises):
     plt.legend(ncol=2)
     plt.xlabel('Frequency [Hz]')
     plt.ylabel(u"Strain [1/\u221AHz]")
-    plt.tight_layout()
     plt.xlim([min(f), max(f)])
     plt.ylim([3e-25, 1e-21])
