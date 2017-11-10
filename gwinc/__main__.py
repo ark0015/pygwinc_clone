@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from . import load_ifo
-from . import gwinc
+from . import plot_noise
 
 ##################################################
 
@@ -29,6 +29,8 @@ parser.add_argument('--fhi', '--fh', default=FHI,
                     help="upper frequency bound in Hz [{}]".format(FHI))
 parser.add_argument('--title', '-t',
                     help="plot title")
+parser.add_argument('--matlab', '-m', action='store_true',
+                    help="use MATLAB gwinc engine to calculate noises")
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--dump', '-d', dest='dump', action='store_true',
                    help="print IFO parameters to stdout and exit")
@@ -49,6 +51,17 @@ def main():
         for k,v in sorted(ifo.walk()):
             print('{:50} {}'.format(k,v))
         return
+
+    if args.matlab:
+        from .gwinc_matlab import gwinc_matlab
+        def gwinc(flo, fhi, ifo, **kwargs):
+            freq = np.logspace(np.log10(flo), np.log10(fhi), NPOINTS)
+            score, noises, ifo = gwinc_matlab(freq, ifo, **kwargs)
+            plot_noise(noises)
+    # FIXME: weird import issue requires doing this here instead of
+    # above?
+    else:
+        from . import gwinc
 
     if args.interactive:
         ipshell = InteractiveShellEmbed(
