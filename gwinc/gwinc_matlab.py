@@ -130,13 +130,6 @@ def gwinc_matlab(f, ifo, fig=False, title=None, gwincpath=None, eng=None, **kwar
     # add Constants attribute to ifo structure
     ifo_add_constants(ifo)
 
-    # FIXME: manually fix Stage struct
-    ifo.Suspension.Stage = dictlist2recarray([ifo.Suspension.Stage1.to_dict(),
-                                              ifo.Suspension.Stage2.to_dict(),
-                                              ifo.Suspension.Stage3.to_dict(),
-                                              ifo.Suspension.Stage4.to_dict(),
-                                              ])
-
     # this stupidity because you can't just give the engine a np.ndarray
     eng.workspace['f'] = f.tolist()
     eng.eval('f = cell2mat(f);', nargout=0)

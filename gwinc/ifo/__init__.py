@@ -155,14 +155,6 @@ class Struct(object):
         """
         c = cls()
         for k,v in d.iteritems():
-            # FIXME: manaually converting Stage list to individual
-            # named elements.  what's the right thing to do here?
-            if k == 'Stage':
-                for i,stage in enumerate(v):
-                    name = 'Stage{}'.format(i+1)
-                    struct = Struct.from_dict(stage)
-                    c.__dict__[name] = struct
-
             if type(v) == dict:
                 c.__dict__[k] = Struct.from_dict(v)
             else:
@@ -183,14 +175,6 @@ class Struct(object):
         except:
             pass
         for k,v in s.__dict__.iteritems():
-            # FIXME: manaually converting Stage list to individual
-            # named elements.  what's the right thing to do here?
-            if k == 'Stage':
-                for i,stage in enumerate(v):
-                    name = 'Stage{}'.format(i+1)
-                    struct = Struct.from_matstruct(stage)
-                    c.__dict__[name] = struct
-
             if k in ['_fieldnames']:
                 # skip these fields
                 pass

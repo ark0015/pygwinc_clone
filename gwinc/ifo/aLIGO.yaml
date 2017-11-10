@@ -125,41 +125,42 @@ Suspension:
   # last stage length adjusted for d: 10mm and and d_bend = 4mm
   # (since 602mm is the CoM separation, and d_bend is accounted for
   # in suspQuad, so including it here would double count)
-  Stage1:
-    Mass: 39.6                    # kg; current numbers May 2006 NAR
-    Length: 0.59                  # m
-    Dilution: .nan                #
-    K: .nan                       # N/m; vertical spring constant
-    WireRadius: .nan              # m
-    Blade: .nan                   # blade thickness
-    NWires: 4
+  Stage:
+    # Stage1
+    - Mass: 39.6                    # kg; current numbers May 2006 NAR
+      Length: 0.59                  # m
+      Dilution: .nan                #
+      K: .nan                       # N/m; vertical spring constant
+      WireRadius: .nan              # m
+      Blade: .nan                   # blade thickness
+      NWires: 4
 
-  Stage2:
-    Mass: 39.6
-    Length: 0.341
-    Dilution: 106
-    K: 5200              
-    WireRadius: 310e-6
-    Blade: 4200e-6
-    NWires: 4
+    # Stage2
+    - Mass: 39.6
+      Length: 0.341
+      Dilution: 106
+      K: 5200
+      WireRadius: 310e-6
+      Blade: 4200e-6
+      NWires: 4
 
-  Stage3:
-    Mass: 21.8
-    Length: 0.277
-    Dilution: 80
-    K: 3900
-    WireRadius: 350e-6
-    Blade: 4600e-6
-    NWires: 4
+    # Stage3
+    - Mass: 21.8
+      Length: 0.277
+      Dilution: 80
+      K: 3900
+      WireRadius: 350e-6
+      Blade: 4600e-6
+      NWires: 4
 
-  Stage4:
-    Mass: 22.1
-    Length: 0.416
-    Dilution: 87
-    K: 3400
-    WireRadius: 520e-6
-    Blade: 4300e-6
-    NWires: 2
+    # Stage4
+    - Mass: 22.1
+      Length: 0.416
+      Dilution: 87
+      K: 3400
+      WireRadius: 520e-6
+      Blade: 4300e-6
+      NWires: 2
 
   Ribbon:
     Thickness: 115e-6             # m

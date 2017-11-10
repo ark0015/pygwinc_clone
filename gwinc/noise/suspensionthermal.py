@@ -207,27 +207,27 @@ def suspBQuad(f, ifo):
 
     theta   = ifo.Suspension.VHCoupling.theta
 
-    m1      = ifo.Suspension.Stage4.Mass
-    m2      = ifo.Suspension.Stage3.Mass
-    m3      = ifo.Suspension.Stage2.Mass
-    m4      = ifo.Suspension.Stage1.Mass
+    m1      = ifo.Suspension.Stage[3].Mass
+    m2      = ifo.Suspension.Stage[2].Mass
+    m3      = ifo.Suspension.Stage[1].Mass
+    m4      = ifo.Suspension.Stage[0].Mass
 
     M1      = m1 + m2 + m3 + m4          # mass supported by stage n
     M2      = m2 + m3 + m4             # mass supported by stage ...
     M3      = m3 + m4                # mass supported by stage ...
 
-    L1      = ifo.Suspension.Stage4.Length
-    L2      = ifo.Suspension.Stage3.Length
-    L3      = ifo.Suspension.Stage2.Length
-    L4      = ifo.Suspension.Stage1.Length
+    L1      = ifo.Suspension.Stage[3].Length
+    L2      = ifo.Suspension.Stage[2].Length
+    L3      = ifo.Suspension.Stage[1].Length
+    L4      = ifo.Suspension.Stage[0].Length
 
-    dil1    = ifo.Suspension.Stage4.Dilution
-    dil2    = ifo.Suspension.Stage3.Dilution
-    dil3    = ifo.Suspension.Stage2.Dilution
+    dil1    = ifo.Suspension.Stage[3].Dilution
+    dil2    = ifo.Suspension.Stage[2].Dilution
+    dil3    = ifo.Suspension.Stage[1].Dilution
 
-    kv10    = ifo.Suspension.Stage4.K # N/m, vert. spring constant,
-    kv20    = ifo.Suspension.Stage3.K
-    kv30    = ifo.Suspension.Stage2.K
+    kv10    = ifo.Suspension.Stage[3].K # N/m, vert. spring constant,
+    kv20    = ifo.Suspension.Stage[2].K
+    kv30    = ifo.Suspension.Stage[1].K
 
     # Correction for the pendulum restoring force 
     # replaced m1->M1, m2->M2, m3->M3 
@@ -237,18 +237,18 @@ def suspBQuad(f, ifo):
     kh30    = M3*g/L3              # N/m, horiz. spring constant, stage 2
     kh40    = m4*g/L4              # N/m, horiz. spring constant, last stage
 
-    r_st1   = ifo.Suspension.Stage4.WireRadius
-    r_st2   = ifo.Suspension.Stage3.WireRadius
-    r_st3   = ifo.Suspension.Stage2.WireRadius
+    r_st1   = ifo.Suspension.Stage[3].WireRadius
+    r_st2   = ifo.Suspension.Stage[2].WireRadius
+    r_st3   = ifo.Suspension.Stage[1].WireRadius
 
-    t_m1    = ifo.Suspension.Stage4.Blade
-    t_m2    = ifo.Suspension.Stage3.Blade
-    t_m3    = ifo.Suspension.Stage2.Blade
+    t_m1    = ifo.Suspension.Stage[3].Blade
+    t_m2    = ifo.Suspension.Stage[2].Blade
+    t_m3    = ifo.Suspension.Stage[1].Blade
 
-    N1      = ifo.Suspension.Stage4.NWires  # number of wires in stage n
-    N2      = ifo.Suspension.Stage3.NWires  # Number of wires in stage 1
-    N3      = ifo.Suspension.Stage2.NWires  # Number of wires in stage 1
-    N4      = ifo.Suspension.Stage1.NWires  # Number of wires in stage 1
+    N1      = ifo.Suspension.Stage[3].NWires  # number of wires in stage n
+    N2      = ifo.Suspension.Stage[2].NWires  # Number of wires in stage 1
+    N3      = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
+    N4      = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
     Y_si = ifo.Suspension.Silicon.Y  # Young's modulus of Si
   
@@ -524,27 +524,27 @@ def suspQuad(f, ifo):
 
     theta   = ifo.Suspension.VHCoupling.theta
 
-    m1      = ifo.Suspension.Stage4.Mass
-    m2      = ifo.Suspension.Stage3.Mass
-    m3      = ifo.Suspension.Stage2.Mass
-    m4      = ifo.Suspension.Stage1.Mass
+    m1      = ifo.Suspension.Stage[3].Mass
+    m2      = ifo.Suspension.Stage[2].Mass
+    m3      = ifo.Suspension.Stage[1].Mass
+    m4      = ifo.Suspension.Stage[0].Mass
 
     M1      = m1 + m2 + m3 + m4          # mass supported by stage n
     M2      =      m2 + m3 + m4          # mass supported by stage ...
     M3      =           m3 + m4          # mass supported by stage ...
 
-    L1      = ifo.Suspension.Stage4.Length
-    L2      = ifo.Suspension.Stage3.Length
-    L3      = ifo.Suspension.Stage2.Length
-    L4      = ifo.Suspension.Stage1.Length
+    L1      = ifo.Suspension.Stage[3].Length
+    L2      = ifo.Suspension.Stage[2].Length
+    L3      = ifo.Suspension.Stage[1].Length
+    L4      = ifo.Suspension.Stage[0].Length
 
-    dil1    = ifo.Suspension.Stage4.Dilution
-    dil2    = ifo.Suspension.Stage3.Dilution
-    dil3    = ifo.Suspension.Stage2.Dilution
+    dil1    = ifo.Suspension.Stage[3].Dilution
+    dil2    = ifo.Suspension.Stage[2].Dilution
+    dil3    = ifo.Suspension.Stage[1].Dilution
 
-    kv10    = ifo.Suspension.Stage4.K # N/m, vert. spring constant,
-    kv20    = ifo.Suspension.Stage3.K
-    kv30    = ifo.Suspension.Stage2.K
+    kv10    = ifo.Suspension.Stage[3].K # N/m, vert. spring constant,
+    kv20    = ifo.Suspension.Stage[2].K
+    kv30    = ifo.Suspension.Stage[1].K
 
 
     # Correction for the pendulum restoring force 
@@ -555,18 +555,18 @@ def suspQuad(f, ifo):
     kh30    = M3*g/L3              # N/m, horiz. spring constant, stage 2
     kh40    = m4*g/L4              # N/m, horiz. spring constant, last stage
 
-    r_st1   = ifo.Suspension.Stage4.WireRadius
-    r_st2   = ifo.Suspension.Stage3.WireRadius
-    r_st3   = ifo.Suspension.Stage2.WireRadius
+    r_st1   = ifo.Suspension.Stage[3].WireRadius
+    r_st2   = ifo.Suspension.Stage[2].WireRadius
+    r_st3   = ifo.Suspension.Stage[1].WireRadius
 
-    t_m1    = ifo.Suspension.Stage4.Blade
-    t_m2    = ifo.Suspension.Stage3.Blade
-    t_m3    = ifo.Suspension.Stage2.Blade
+    t_m1    = ifo.Suspension.Stage[3].Blade
+    t_m2    = ifo.Suspension.Stage[2].Blade
+    t_m3    = ifo.Suspension.Stage[1].Blade
 
-    N1 = ifo.Suspension.Stage4.NWires  # number of wires in stage n
-    N2 = ifo.Suspension.Stage3.NWires  # Number of wires in stage 1
-    N3 = ifo.Suspension.Stage2.NWires  # Number of wires in stage 1
-    N4 = ifo.Suspension.Stage1.NWires  # Number of wires in stage 1
+    N1 = ifo.Suspension.Stage[3].NWires  # number of wires in stage n
+    N2 = ifo.Suspension.Stage[2].NWires  # Number of wires in stage 1
+    N3 = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
+    N4 = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
     Y_si = ifo.Suspension.Silica.Y
 

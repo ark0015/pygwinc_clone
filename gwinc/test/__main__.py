@@ -107,10 +107,10 @@ def main():
     # things.  Should make sure it's fully backwards compatible.
     ifo.Seismic.Omicron = 1
     ifo.Suspension.FiberType = 0
-    ifo.Suspension.Stage1.Dilution = np.NaN
-    ifo.Suspension.Stage2.Dilution = 106
-    ifo.Suspension.Stage3.Dilution = 80
-    ifo.Suspension.Stage4.Dilution = 87
+    ifo.Suspension.Stage[0].Dilution = np.NaN
+    ifo.Suspension.Stage[1].Dilution = 106
+    ifo.Suspension.Stage[2].Dilution = 80
+    ifo.Suspension.Stage[3].Dilution = 87
 
     logging.info("calculating noise...")
     noises = noise_calc(ifo, f)
