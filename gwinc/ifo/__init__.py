@@ -28,6 +28,19 @@ loader.add_implicit_resolver(
     list(u'-+0123456789.'))
 
 
+def dictlist2recarray(l):
+    def dtype(v):
+        if isinstance(v, int):
+            return float
+        else:
+            return type(v)
+    # get dtypes from first element dict
+    dtypes = [(k, dtype(v)) for k,v in l[0].iteritems()]
+    values = [tuple(el.values()) for el in l]
+    out = np.array(values, dtype=dtypes)
+    return out.view(np.recarray)
+
+
 class Struct(object):
     """Matlab struct-like object
 
@@ -66,20 +79,34 @@ class Struct(object):
     def __contains__(self, item):
         return item in self.__dict__
 
-    def to_dict(self):
+    def to_dict(self, array=False):
         """Return nested dictionary representation of Struct.
+
+        If `array` is True any lists encountered will be turned into
+        numpy arrays, and lists of Structs will be turned into record
+        arrays.  This is need to convert to structure arrays in
+        matlab.
 
         """
         d = {}
         for k,v in self.__dict__.iteritems():
             if isinstance(v, Struct):
-                d[k] = v.to_dict()
+                d[k] = v.to_dict(array=array)
             else:
-                # handle lists of Structs
-                try:
-                    d[k] = [i.to_dict() for i in v]
-                except (AttributeError, TypeError):
-                    d[k] = v
+                if isinstance(v, list):
+                    try:
+                        # this should fail if the elements of v are
+                        # not Struct
+                        # FIXME: need cleaner way to do this
+                        v = [i.to_dict(array=array) for i in v]
+                        if array:
+                            v = dictlist2recarray(v)
+                    except AttributeError:
+                        if array:
+                            v = np.array(v)
+                elif isinstance(v, int):
+                    v = float(v)
+                d[k] = v
         return d
 
     def to_yaml(self, path=None):
@@ -96,8 +123,8 @@ class Struct(object):
         else:
             return y
 
-    def __repr__(self):
-        return self.to_yaml().strip('\n')
+    # def __repr__(self):
+    #     return self.to_yaml().strip('\n')
 
     def __str__(self):
         return '<GWINC Struct: {}>'.format(self.__dict__.keys())
@@ -128,6 +155,14 @@ class Struct(object):
         """
         c = cls()
         for k,v in d.iteritems():
+            # FIXME: manaually converting Stage list to individual
+            # named elements.  what's the right thing to do here?
+            if k == 'Stage':
+                for i,stage in enumerate(v):
+                    name = 'Stage{}'.format(i+1)
+                    struct = Struct.from_dict(stage)
+                    c.__dict__[name] = struct
+
             if type(v) == dict:
                 c.__dict__[k] = Struct.from_dict(v)
             else:
@@ -143,23 +178,22 @@ class Struct(object):
 
         """
         c = cls()
-        # FIXME: handle 'ifo' attribute at top level.  should we
-        # ignore this?
         try:
             s = s['ifo']
         except:
             pass
         for k,v in s.__dict__.iteritems():
-            if k in ['_fieldnames']:
-                # skip these fields
-                pass
             # FIXME: manaually converting Stage list to individual
             # named elements.  what's the right thing to do here?
-            elif k == 'Stage':
+            if k == 'Stage':
                 for i,stage in enumerate(v):
                     name = 'Stage{}'.format(i+1)
                     struct = Struct.from_matstruct(stage)
                     c.__dict__[name] = struct
+
+            if k in ['_fieldnames']:
+                # skip these fields
+                pass
             elif type(v) is mat_struct:
                 c.__dict__[k] = Struct.from_matstruct(v)
             else:
