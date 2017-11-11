@@ -96,52 +96,31 @@ def noise_calc(ifo, f):
     return noises
 
 
-def gwinc(f, ifoin, source=None, fig=False):
-    """Calculates strain noise due to various noise sources, for a
-    specified set of interferometer parameters. Also evaluates the
-    sensitivity of the interferometer to the detection of several potential 
-    gravitational wave sources. Usage:
-    
-         VARARGOUT = GWINC(F,IFO,SOURCE,VARARGIN)
-    
-         F         = frequency array
-         IFO       = structure containing interferometer parameters
-         SOURCE    = structure containing source parameters
-    
-    Optional input arguments (the last 4 override IFO parameters):
-         VARARGIN{1}: PLOT_FLAG set to 4 for score, only calculating shotrad
-                                       3 for score and plots
-                                       2 for score only
-                                       1 to make plots but no score
-                                       else 0 (DEF)
-         VARARGIN{2}: LASER POWER -> ifo.Laser.Power
-         VARARGIN{3}: SRC PHASE   -> ifo.Optics.SRM.Tunephase
-         VARARGIN{4}: SRM TRANS   -> ifo.Optics.SRM.Transmittance
-         VARARGIN{5}: ITM TRANS   -> ifo.Optics.ITM.Transmittance
-         VARARGIN{6}: PRM TRANS   -> ifo.Optics.PRM.Transmittance
-    
-    Optional output arguments
-         VARARGOUT{1}: SCORE  structure containing source sensitivities
-         VARARGOUT{2}: NOISE  structure containing noise terms
-    
-    Ex.1    [score,noise] = gwinc(5,5000,IFOModel,SourceModel,1)"""
+def gwinc(freq, ifoin, source=None, fig=False):
+    """Calculate strain noise budget for a specified interferometer model.
+
+    Argument `freq` is the frequency array for which the noises will
+    be calculated, and `ifoin` is the IFO model (see the `load_ifo()`
+    function).
+
+    If `source` structure provided, so evaluates the sensitivity of
+    the detector to several potential gravitational wave
+    sources.
+
+    If `fig` is specified a plot of the budget will be created.
+
+    Returns tuple of (score, noises, ifo)
+
+    """
 
     ifo = copy.deepcopy(ifoin)
-    # -------------------------------------------------------
-    # parse arguments
 
-    #makescore = 0;
     modeSR = 0
     PRfixed = 0
 
-    # Parse varargin to decide to make plots or scores or both or neither
-
-    # Stick it into the IFO so that it gets passed around
+    # stick it into the IFO so that it gets passed around
     ifo.modeSR = modeSR
 
-    # Adjust these parameters as command line arguments
-
-    # --------------------------------------------------------
     # add some precomputed info to the ifo struct
     ifo = precompIFO(ifo, PRfixed)
 
@@ -152,18 +131,13 @@ def gwinc(f, ifoin, source=None, fig=False):
         pass
         #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
 
-    noises = noise_calc(ifo, f)
+    noises = noise_calc(ifo, freq)
 
-    n = noises['Total']
-
-    ifo.nse = noises
-    retval = (n, noises)
-
-    # Report astrophysical scores if so desired
+    # report astrophysical scores if so desired
+    score = None
     if source:
-        sss = int73(f, n, ifo, source)
-        sss.Omega = intStoch(f, n, 0, ifo, source)
-        retval = (n, noises, sss)
+        score = int73(freq, noises['Total'], ifo, source)
+        score.Omega = intStoch(freq, noises['Total'], 0, ifo, source)
 
     # --------------------------------------------------------
     # output graphics
@@ -223,10 +197,10 @@ def gwinc(f, ifoin, source=None, fig=False):
             print('Lensing limited input power: %7.2f W' % (pbs/prfactor))
 
         if source:
-            print('BNS Inspiral Range:     ' + str(sss.effr0ns) + ' Mpc/ z = ' + str(sss.zHorizonNS))
-            print('BBH Inspiral Range:     ' + str(sss.effr0bh) + ' Mpc/ z = ' + str(sss.zHorizonBH))
-            print('Stochastic Omega: %4.1g Universes' % sss.Omega)
+            print('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
+            print('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
+            print('Stochastic Omega: %4.1g Universes' % score.Omega)
 
         plot.plot_noise(noises)
 
-    return retval
+    return score, noises, ifo

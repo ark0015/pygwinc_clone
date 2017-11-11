@@ -57,20 +57,22 @@ def main():
     freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
 
     if args.matlab:
-        from .gwinc_matlab import gwinc_matlab
-        def gwinc(freq, ifo, **kwargs):
-            score, noises, ifo = gwinc_matlab(freq, ifo, **kwargs)
-            plot_noise(noises)
-    # FIXME: weird import issue requires doing this here instead of
-    # above?
+        from .gwinc_matlab import gwinc_matlab as gwinc
+    # FIXME: why weird import issue requires doing this here instead
+    # of above?
     else:
         from . import gwinc
 
+
+    score, noises, ifo = gwinc(freq, ifo)
+
+
     if args.interactive:
         ipshell = InteractiveShellEmbed(
-            user_ns={'gwinc': gwinc,
-                     'freq': freq,
+            user_ns={'freq': freq,
+                     'noises': noises,
                      'ifo': ifo,
+                     'plot_noise': plot_noise,
             },
             banner1='''
 PYGWINC interactive plotter
@@ -81,12 +83,12 @@ You may interact with plot using "plt." methods, e.g.:
 >>> plt.savefig("foo.pdf")
 ''')
         ipshell.enable_pylab()
-        ipshell.run_code("output = gwinc(freq, ifo, fig=True)")
+        ipshell.run_code("plot_noise(noises)")
         if args.title:
             ipshell.run_code("plt.title('{}')".format(args.title))
         ipshell()
     else:
-        gwinc(freq, ifo, fig=True)
+        plot_noise(noises)
         if args.title:
             plt.title(args.title)
         if args.save:
