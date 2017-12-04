@@ -266,20 +266,6 @@ Optics:
       - 0.13570767
       - 0.3867382
       - 0.08814237
-    dOpt: # need to duplicate this until the matlab gets fixed
-      - 0.01054715
-      - 0.28787195
-      - 0.10285996
-      - 0.40016914
-      - 0.09876197
-      - 0.39463506
-      - 0.1054613
-      - 0.37612136
-      - 0.12181482
-      - 0.35883931
-      - 0.13570767
-      - 0.3867382
-      - 0.08814237
   ETM:
     BeamRadius: 0.0835                 # m; 1/e^2 power radius w2
     Transmittance: 5e-6                # Transmittance of ETM
@@ -287,24 +273,6 @@ Optics:
     #CoatingThicknessCap: 0.5
     #etm = loadmat('CryogenicLIGO/Sensitivity/coating/aSi/Data/ETM_layers_151221_2150.mat')
     CoatLayerOpticalThickness: #etm['TNout']['L'][0][0].T
-      - 0.01000241
-      - 0.27121433
-      - 0.16417485
-      - 0.33598991
-      - 0.16123195
-      - 0.33587683
-      - 0.16150012
-      - 0.33620725
-      - 0.16381275
-      - 0.33382231
-      - 0.16041712
-      - 0.33544017
-      - 0.1664314
-      - 0.33324722
-      - 0.16319734
-      - 0.33497111
-      - 0.15838689
-    dOpt: # need to duplicate this until the matlab gets fixed
       - 0.01000241
       - 0.27121433
       - 0.16417485
