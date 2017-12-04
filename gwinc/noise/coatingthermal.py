@@ -351,25 +351,25 @@ def getCoatLayers(ifo, dOpt):
              * ( ((1 + sigC) / (1 + sigS)) + (1 - 2 * sigS) * Y_C / Y_S )
         return ce
 
-    aLayer = zeros((Nlayer, 1))
+    aLayer = zeros(Nlayer)
     aLayer[::2] = alphaL * getExpansionRatio(Y_L, sigL, Y_S, sigS)
     aLayer[1::2] = alphaH * getExpansionRatio(Y_H, sigH, Y_S, sigS)
   
     # and beta
-    bLayer = zeros((Nlayer, 1))
+    bLayer = zeros(Nlayer)
     bLayer[::2] = betaL
     bLayer[1::2] = betaH
 
     # and refractive index
-    nLayer = zeros((Nlayer, 1))
+    nLayer = zeros(Nlayer)
     nLayer[::2] = nL
     nLayer[1::2] = nH
   
     # and geometrical thickness
-    dLayer = lambda_ * dOpt / nLayer
+    dLayer = lambda_ * np.array(dOpt) / nLayer
 
     # and sigma correction
-    sLayer = zeros((Nlayer, 1))
+    sLayer = zeros(Nlayer)
     sLayer[::2] = alphaL * (1 + sigL) / (1 - sigL)
     sLayer[1::2] = alphaH * (1 + sigH) / (1 - sigH)
 
@@ -451,8 +451,8 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     see getCoatTOPos for more information
     (see also T080101)"""
 
-    # vector of all refractive indexs
-    nAll = np.vstack((nIn, nLayer, nOut))
+    # vector of all refractive indexes
+    nAll = np.concatenate(([nIn], nLayer, [nOut]))
   
     # reflectivity of each interface
     r = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
@@ -474,7 +474,7 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
         rbar[n-1] = ephi[n-1] * (r[n-1] + rbar[n]) / (1 + r[n-1] * rbar[n])
   
     # reflectivity derivatives
-    dr_dphi = zeros(dOpt.shape, dtype=complex)
+    dr_dphi = zeros(len(dOpt), dtype=complex)
     for n in range(len(dOpt), 0, -1):
         dr_dphi[n-1] = -1j * rbar[n]
         for m in range(n, 0, -1):
@@ -721,7 +721,7 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
 
     ########################
     # return dOpt vector
-    dOpt = zeros((2 * Ndblt, 1))
+    dOpt = zeros(2 * Ndblt)
     dOpt[0] = dCap
     dOpt[1::2] = dH
     dOpt[2::2] = dL
