@@ -31,9 +31,9 @@ def gravg(f, ifo):
     beta  = ifo.Seismic.Beta        # factor to account for correlation between masses
                                     # and the height of the mirror above the ground
 
-    try:
+    if 'Spectrum' in ifo.Seismic:
         seismic = ifo.Seismic.Spectrum
-    except:
+    else:
         seismic = ground(ifo.Seismic, f)
 
     # effective GG spring frequency, with G gravitational
@@ -87,7 +87,6 @@ def ground(Seismic, f):
     if 'Site' not in Seismic.__dict__:
         print('defaulting to Livingston site')
         Seismic.Site = 'LLO'
-        end
 
     if Seismic.Site == 'LHO':
         n = (2*pi*f)**(4/3)*(a1*coeff + a1*(1-coeff)*(fk/f)**(9/3))

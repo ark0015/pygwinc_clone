@@ -166,38 +166,35 @@ def IFOModel():
 
     # Note stage numbering: mirror is at beginning of stack, not end
     # these mass numbers are from v8 of the Voyager design doc
-    ifo.Suspension.Stage1 = mat_struct()
-    ifo.Suspension.Stage2 = mat_struct()
-    ifo.Suspension.Stage3 = mat_struct()
-    ifo.Suspension.Stage4 = mat_struct()
+    ifo.Suspension.Stage = [mat_struct() for i in range(4)]
 
     ###addpath('../../QuadModel/')        # add path of saved file with optimized masses
     ###load(quad_optimized_masses_for_PUM_with_springs) # Load saved file with otpimized mass. Masses are optimized for longitudinal isolation assuming the PUM has springs
     susmat = loadmat('CryogenicLIGO/QuadModel/quad_optimized_masses_for_PUM_with_springs.mat')
-    ifo.Suspension.Stage1.Mass = susmat['testmass_mass'][0,0]   # kg; this is redefined below for some reason
-    ifo.Suspension.Stage2.Mass = susmat['PUMmass'][0,0]
-    ifo.Suspension.Stage3.Mass = susmat['UIMmass'][0,0]
-    ifo.Suspension.Stage4.Mass = susmat['topmass_mass'][0,0]
+    ifo.Suspension.Stage[0].Mass = susmat['testmass_mass'][0,0]   # kg; this is redefined below for some reason
+    ifo.Suspension.Stage[1].Mass = susmat['PUMmass'][0,0]
+    ifo.Suspension.Stage[2].Mass = susmat['UIMmass'][0,0]
+    ifo.Suspension.Stage[3].Mass = susmat['topmass_mass'][0,0]
 
-    ifo.Suspension.Stage1.Length = 0.4105        # m
-    ifo.Suspension.Stage2.Length = 0.4105        # m
-    ifo.Suspension.Stage3.Length = 0.4105        # m
-    ifo.Suspension.Stage4.Length = 0.4105        # m
+    ifo.Suspension.Stage[0].Length = 0.4105        # m
+    ifo.Suspension.Stage[1].Length = 0.4105        # m
+    ifo.Suspension.Stage[2].Length = 0.4105        # m
+    ifo.Suspension.Stage[3].Length = 0.4105        # m
 
-    ifo.Suspension.Stage1.Dilution = NaN
-    ifo.Suspension.Stage2.Dilution = 106
-    ifo.Suspension.Stage3.Dilution = 80
-    ifo.Suspension.Stage4.Dilution = 87
+    ifo.Suspension.Stage[0].Dilution = NaN
+    ifo.Suspension.Stage[1].Dilution = 106
+    ifo.Suspension.Stage[2].Dilution = 80
+    ifo.Suspension.Stage[3].Dilution = 87
 
-    ifo.Suspension.Stage1.K = NaN
-    ifo.Suspension.Stage2.K = 5200              # N/m; vertical spring constant
-    ifo.Suspension.Stage3.K = 3900              # N/m; vertical spring constant
-    ifo.Suspension.Stage4.K = 3400              # N/m; vertical spring constant
+    ifo.Suspension.Stage[0].K = NaN
+    ifo.Suspension.Stage[1].K = 5200              # N/m; vertical spring constant
+    ifo.Suspension.Stage[2].K = 3900              # N/m; vertical spring constant
+    ifo.Suspension.Stage[3].K = 3400              # N/m; vertical spring constant
 
-    ifo.Suspension.Stage1.WireRadius = NaN
-    ifo.Suspension.Stage2.WireRadius = 310e-6
-    ifo.Suspension.Stage3.WireRadius = 350e-6
-    ifo.Suspension.Stage4.WireRadius = 520e-6
+    ifo.Suspension.Stage[0].WireRadius = NaN
+    ifo.Suspension.Stage[1].WireRadius = 310e-6
+    ifo.Suspension.Stage[2].WireRadius = 350e-6
+    ifo.Suspension.Stage[3].WireRadius = 520e-6
 
     # For Ribbon suspension
     ifo.Suspension.Ribbon = mat_struct()
@@ -206,15 +203,15 @@ def IFOModel():
     ifo.Suspension.Ribbon.Width     = 1150e-6     # m
     ifo.Suspension.Fiber.Radius     = 205e-6      # m
 
-    ifo.Suspension.Stage1.Blade = NaN            # blade thickness
-    ifo.Suspension.Stage2.Blade = 4200e-6
-    ifo.Suspension.Stage3.Blade = 4600e-6
-    ifo.Suspension.Stage4.Blade = 4300e-6
+    ifo.Suspension.Stage[0].Blade = NaN            # blade thickness
+    ifo.Suspension.Stage[1].Blade = 4200e-6
+    ifo.Suspension.Stage[2].Blade = 4600e-6
+    ifo.Suspension.Stage[3].Blade = 4300e-6
 
-    ifo.Suspension.Stage1.NWires = 4
-    ifo.Suspension.Stage2.NWires = 4
-    ifo.Suspension.Stage3.NWires = 4
-    ifo.Suspension.Stage4.NWires = 2
+    ifo.Suspension.Stage[0].NWires = 4
+    ifo.Suspension.Stage[1].NWires = 4
+    ifo.Suspension.Stage[2].NWires = 4
+    ifo.Suspension.Stage[3].NWires = 2
 
 
     ## Amorphous Silicon / Silica coating ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

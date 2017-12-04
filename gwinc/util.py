@@ -3,43 +3,30 @@ from numpy import pi, sqrt
 from scipy.io.matlab.mio5_params import mat_struct
 from scipy.io import loadmat
 import scipy.special
-from noise.coatingthermal import getCoatDopt
 
-def SpotSizes(g1, g2, L, lambda_):
-    """calculates spot sizes using FP cavity parameters
-    all parameters are in SI units
-    
-    
-    ex.  [w1, w2] = SpotSizes(0.9, 0.81, 3995, 1550e-9);"""
-
-    w1 = (L*lambda_/pi) * sqrt(g2/g1/(1-g1*g2))
-    w1 = sqrt(w1)
-
-    w2 = (L*lambda_/pi) * sqrt(g1/g2/(1-g1*g2))
-    w2 = sqrt(w2)
-
-    w0 = g1*g2*(1-g1*g2) / (g1 + g2 - 2*g1*g2)**2
-    w0 = (L*lambda_/pi) * sqrt(w0)
-    w0 = sqrt(w0)
-
-    return w1, w2, w0
+from .noise.coatingthermal import getCoatDopt
 
 
-def precompIFO(ifo, PRfixed):
-    """add precomputed data to the IFO model
+def precompIFO(ifo, PRfixed=0):
+    """Add precomputed data to the IFO model.
     
     To prevent recomputation of these precomputed data, if the
     ifo argument contains ifo.gwinc.PRfixed, and this matches
     the argument PRfixed, no changes are made.
 
-    (mevans June 2008)"""
-  
+    """
+
     # check PRfixed
     #if 'gwinc' in ifo.__dict__:
         # && isfield(ifo.gwinc, 'PRfixed') && ifo.gwinc.PRfixed == PRfixed
         #return
     ifo.gwinc = mat_struct()
     ifo.gwinc.PRfixed = PRfixed
+
+    ################################# DERIVED TEMP
+
+    if 'Temp' not in ifo.Materials.Substrate.__dict__:
+        ifo.Materials.Substrate.Temp = ifo.Constants.Temp
 
     ################################# DERIVED OPTICS VALES
     # Calculate optics' parameters
@@ -86,19 +73,18 @@ def precompIFO(ifo, PRfixed):
 
     # Seismic noise term is saved in a .mat file defined in your respective IFOModel.m
     # It is loaded here and put into the ifo structure.
-    darmsei = loadmat(ifo.Seismic.darmSeiSusFile)
-
-    ifo.Seismic.darmseis_f = darmsei['darmseis_f'][0]
-    ifo.Seismic.darmseis_x = darmsei['darmseis_x'][0]
+    if 'darmSeiSusFile' in ifo.Seismic.__dict__:
+        darmsei = loadmat(ifo.Seismic.darmSeiSusFile)
+        ifo.Seismic.darmseis_f = darmsei['darmseis_f'][0]
+        ifo.Seismic.darmseis_x = darmsei['darmseis_x'][0]
 
     return ifo
 
 
 def precompPower(ifo, PRfixed):
-    """Find and return power on ifo beamsplitter limited by 
-    thermal lensing effects, finesse and power recycling factor of ifo"""
+    """Compute power on beamsplitter and finesse and power recycling factor.
 
-    # Modified to use a fixed PR factor   Rana, Feb 07
+    """
 
     # constants
     c       = scipy.constants.c
@@ -150,10 +136,9 @@ def precompPower(ifo, PRfixed):
 
 
 def precompQuantum(ifo):
+    """Compute quantum noise parameters.
 
-    ##########################################
-    # input numbers
-    ##########################################
+    """
 
     # physical constants
     hbar = scipy.constants.hbar # J s
@@ -177,10 +162,6 @@ def precompQuantum(ifo):
     fGammaArm = gammaArm / (2*pi)
     rSR = sqrt(1 - Tsrm)
 
-    ##########################################
-    # IFO equations
-    ##########################################
-
     # fSQL as defined in D&D paper (eq 33 in P1400018 and/or PRD paper)
     tSR = sqrt(Tsrm)
     fSQL = (1/(2*pi))*(8/c)*sqrt((Parm*w0)/(m*Titm))*(tSR/(1+rSR))
@@ -189,3 +170,25 @@ def precompQuantum(ifo):
     fGammaIFO = fGammaArm * ((1 + rSR) / (1 - rSR))
 
     return fSQL, fGammaIFO, fGammaArm
+
+
+def SpotSizes(g1, g2, L, lambda_):
+    """Calculate spot sizes using FP cavity parameters.
+
+    All parameters are in SI units.
+
+    ex.  w1, w2 = SpotSizes(0.9, 0.81, 3995, 1550e-9)
+
+    """
+
+    w1 = (L*lambda_/pi) * sqrt(g2/g1/(1-g1*g2))
+    w1 = sqrt(w1)
+
+    w2 = (L*lambda_/pi) * sqrt(g1/g2/(1-g1*g2))
+    w2 = sqrt(w2)
+
+    w0 = g1*g2*(1-g1*g2) / (g1 + g2 - 2*g1*g2)**2
+    w0 = (L*lambda_/pi) * sqrt(w0)
+    w0 = sqrt(w0)
+
+    return w1, w2, w0

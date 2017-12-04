@@ -18,7 +18,9 @@ def suspR(f, ifo):
     theta = ifo.Suspension.VHCoupling.theta
 
     noise = zeros((1, f.size))
-    if np.isscalar(Temp) or len(Temp) == 1: # if the temperature is uniform along the suspension    
+
+    # if the temperature is uniform along the suspension
+    if np.isscalar(Temp) or len(Temp) == 1:
         ##########################################################
         # Suspension TFs
         ##########################################################
@@ -38,7 +40,8 @@ def suspR(f, ifo):
         w = 2*pi*f
         noise = 4 * kB * Temp * abs(imag(dxdF)) / w
 
-    else: # if the temperature is set for each suspension stage
+    # if the temperature is set for each suspension stage
+    else:
         ##########################################################
         # Suspension TFs
         ##########################################################
@@ -61,7 +64,7 @@ def suspR(f, ifo):
             # thermal noise (m^2/Hz) for one suspension
             w = 2*pi*f
             noise = noise + 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
-  
+
     if ifo.Suspension.Type == 'Quad_MB':
         raise Exception('not dealing with Quad_MB suspensions currently')
         #mbquadlite2lateral_20090819TM_TN;
@@ -204,27 +207,27 @@ def suspBQuad(f, ifo):
 
     theta   = ifo.Suspension.VHCoupling.theta
 
-    m1      = ifo.Suspension.Stage4.Mass
-    m2      = ifo.Suspension.Stage3.Mass
-    m3      = ifo.Suspension.Stage2.Mass
-    m4      = ifo.Suspension.Stage1.Mass
+    m1      = ifo.Suspension.Stage[3].Mass
+    m2      = ifo.Suspension.Stage[2].Mass
+    m3      = ifo.Suspension.Stage[1].Mass
+    m4      = ifo.Suspension.Stage[0].Mass
 
     M1      = m1 + m2 + m3 + m4          # mass supported by stage n
     M2      = m2 + m3 + m4             # mass supported by stage ...
     M3      = m3 + m4                # mass supported by stage ...
 
-    L1      = ifo.Suspension.Stage4.Length
-    L2      = ifo.Suspension.Stage3.Length
-    L3      = ifo.Suspension.Stage2.Length
-    L4      = ifo.Suspension.Stage1.Length
+    L1      = ifo.Suspension.Stage[3].Length
+    L2      = ifo.Suspension.Stage[2].Length
+    L3      = ifo.Suspension.Stage[1].Length
+    L4      = ifo.Suspension.Stage[0].Length
 
-    dil1    = ifo.Suspension.Stage4.Dilution
-    dil2    = ifo.Suspension.Stage3.Dilution
-    dil3    = ifo.Suspension.Stage2.Dilution
+    dil1    = ifo.Suspension.Stage[3].Dilution
+    dil2    = ifo.Suspension.Stage[2].Dilution
+    dil3    = ifo.Suspension.Stage[1].Dilution
 
-    kv10    = ifo.Suspension.Stage4.K # N/m, vert. spring constant,
-    kv20    = ifo.Suspension.Stage3.K
-    kv30    = ifo.Suspension.Stage2.K
+    kv10    = ifo.Suspension.Stage[3].K # N/m, vert. spring constant,
+    kv20    = ifo.Suspension.Stage[2].K
+    kv30    = ifo.Suspension.Stage[1].K
 
     # Correction for the pendulum restoring force 
     # replaced m1->M1, m2->M2, m3->M3 
@@ -234,18 +237,18 @@ def suspBQuad(f, ifo):
     kh30    = M3*g/L3              # N/m, horiz. spring constant, stage 2
     kh40    = m4*g/L4              # N/m, horiz. spring constant, last stage
 
-    r_st1   = ifo.Suspension.Stage4.WireRadius
-    r_st2   = ifo.Suspension.Stage3.WireRadius
-    r_st3   = ifo.Suspension.Stage2.WireRadius
+    r_st1   = ifo.Suspension.Stage[3].WireRadius
+    r_st2   = ifo.Suspension.Stage[2].WireRadius
+    r_st3   = ifo.Suspension.Stage[1].WireRadius
 
-    t_m1    = ifo.Suspension.Stage4.Blade
-    t_m2    = ifo.Suspension.Stage3.Blade
-    t_m3    = ifo.Suspension.Stage2.Blade
+    t_m1    = ifo.Suspension.Stage[3].Blade
+    t_m2    = ifo.Suspension.Stage[2].Blade
+    t_m3    = ifo.Suspension.Stage[1].Blade
 
-    N1      = ifo.Suspension.Stage4.NWires  # number of wires in stage n
-    N2      = ifo.Suspension.Stage3.NWires  # Number of wires in stage 1
-    N3      = ifo.Suspension.Stage2.NWires  # Number of wires in stage 1
-    N4      = ifo.Suspension.Stage1.NWires  # Number of wires in stage 1
+    N1      = ifo.Suspension.Stage[3].NWires  # number of wires in stage n
+    N2      = ifo.Suspension.Stage[2].NWires  # Number of wires in stage 1
+    N3      = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
+    N4      = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
     Y_si = ifo.Suspension.Silicon.Y  # Young's modulus of Si
   
@@ -298,7 +301,7 @@ def suspBQuad(f, ifo):
     delta_h3 = delta_h3*Temp[2]/(rho_st*C_st)
 
     # solutions to equations of motion
-    B       = np.array([     0,       0,       0,       1]).T
+    B = np.array([     0,       0,       0,       1]).T
     w = 2*pi * f
 
     # thermoelastic correction factor, silica
@@ -356,9 +359,9 @@ def suspBQuad(f, ifo):
     # Equations of motion for the system
     ###############################################################
 
-    m_list=np.hstack((m1, m2, m3, m4))       # array of the mass
-    kh_list=np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants 
-    kv_list=np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants 
+    m_list = np.hstack((m1, m2, m3, m4))       # array of the mass
+    kh_list = np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants
+    kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
     hForce = mat_struct()
@@ -385,14 +388,14 @@ def suspBQuad(f, ifo):
         vForce.singlylossy[ii,:], vTable = calc_transfer_functions(Av, B, k_list, f)
 
     # horizontal
-    k_list=kh_list # all of the losses are on
+    k_list = kh_list # all of the losses are on
     # construct Eq of motion matrix
     Ah = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
     hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, k_list, f)
 
     # vertical
-    k_list=kv_list # all of the losses are on
+    k_list = kv_list # all of the losses are on
     # construct Eq of motion matrix
     Av = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
@@ -475,7 +478,6 @@ def suspQuad(f, ifo):
     kB        = scipy.constants.k
 
     Temp      = ifo.Suspension.Temp
-    Temp      = ifo.Suspension.Temp
     if np.isscalar(Temp) or len(Temp) == 1:
         Temp = [Temp, Temp, Temp, Temp]
         # if only one temp is given, use it for all stages
@@ -522,27 +524,27 @@ def suspQuad(f, ifo):
 
     theta   = ifo.Suspension.VHCoupling.theta
 
-    m1      = ifo.Suspension.Stage4.Mass
-    m2      = ifo.Suspension.Stage3.Mass
-    m3      = ifo.Suspension.Stage2.Mass
-    m4      = ifo.Suspension.Stage1.Mass
+    m1      = ifo.Suspension.Stage[3].Mass
+    m2      = ifo.Suspension.Stage[2].Mass
+    m3      = ifo.Suspension.Stage[1].Mass
+    m4      = ifo.Suspension.Stage[0].Mass
 
     M1      = m1 + m2 + m3 + m4          # mass supported by stage n
     M2      =      m2 + m3 + m4          # mass supported by stage ...
     M3      =           m3 + m4          # mass supported by stage ...
 
-    L1      = ifo.Suspension.Stage4.Length
-    L2      = ifo.Suspension.Stage3.Length
-    L3      = ifo.Suspension.Stage2.Length
-    L4      = ifo.Suspension.Stage1.Length
+    L1      = ifo.Suspension.Stage[3].Length
+    L2      = ifo.Suspension.Stage[2].Length
+    L3      = ifo.Suspension.Stage[1].Length
+    L4      = ifo.Suspension.Stage[0].Length
 
-    dil1    = ifo.Suspension.Stage4.Dilution
-    dil2    = ifo.Suspension.Stage3.Dilution
-    dil3    = ifo.Suspension.Stage2.Dilution
+    dil1    = ifo.Suspension.Stage[3].Dilution
+    dil2    = ifo.Suspension.Stage[2].Dilution
+    dil3    = ifo.Suspension.Stage[1].Dilution
 
-    kv10    = ifo.Suspension.Stage4.K # N/m, vert. spring constant,
-    kv20    = ifo.Suspension.Stage3.K
-    kv30    = ifo.Suspension.Stage2.K
+    kv10    = ifo.Suspension.Stage[3].K # N/m, vert. spring constant,
+    kv20    = ifo.Suspension.Stage[2].K
+    kv30    = ifo.Suspension.Stage[1].K
 
 
     # Correction for the pendulum restoring force 
@@ -553,18 +555,18 @@ def suspQuad(f, ifo):
     kh30    = M3*g/L3              # N/m, horiz. spring constant, stage 2
     kh40    = m4*g/L4              # N/m, horiz. spring constant, last stage
 
-    r_st1   = ifo.Suspension.Stage4.WireRadius
-    r_st2   = ifo.Suspension.Stage3.WireRadius
-    r_st3   = ifo.Suspension.Stage2.WireRadius
+    r_st1   = ifo.Suspension.Stage[3].WireRadius
+    r_st2   = ifo.Suspension.Stage[2].WireRadius
+    r_st3   = ifo.Suspension.Stage[1].WireRadius
 
-    t_m1    = ifo.Suspension.Stage4.Blade
-    t_m2    = ifo.Suspension.Stage3.Blade
-    t_m3    = ifo.Suspension.Stage2.Blade
+    t_m1    = ifo.Suspension.Stage[3].Blade
+    t_m2    = ifo.Suspension.Stage[2].Blade
+    t_m3    = ifo.Suspension.Stage[1].Blade
 
-    N1 = ifo.Suspension.Stage4.NWires  # number of wires in stage n
-    N2 = ifo.Suspension.Stage3.NWires  # Number of wires in stage 1
-    N3 = ifo.Suspension.Stage2.NWires  # Number of wires in stage 1
-    N4 = ifo.Suspension.Stage1.NWires  # Number of wires in stage 1
+    N1 = ifo.Suspension.Stage[3].NWires  # number of wires in stage n
+    N2 = ifo.Suspension.Stage[2].NWires  # Number of wires in stage 1
+    N3 = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
+    N4 = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
     Y_si = ifo.Suspension.Silica.Y
 
@@ -673,9 +675,9 @@ def suspQuad(f, ifo):
     # Equations of motion for the system
     ###############################################################
 
-    m_list=np.hstack((m1, m2, m3, m4))       # array of the mass
-    kh_list=np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants 
-    kv_list=np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants 
+    m_list = np.hstack((m1, m2, m3, m4))       # array of the mass
+    kh_list = np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants
+    kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
     hForce = mat_struct()
@@ -702,14 +704,14 @@ def suspQuad(f, ifo):
         vForce.singlylossy[ii,:], vTable = calc_transfer_functions(Av, B, k_list, f)
 
     # horizontal
-    k_list=kh_list # all of the losses are on
+    k_list = kh_list # all of the losses are on
     # construct Eq of motion matrix
     Ah = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs
     hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, k_list, f)
 
     # vertical
-    k_list=kv_list # all of the losses are on
+    k_list = kv_list # all of the losses are on
     # construct Eq of motion matrix
     Av = construct_eom_matrix(k_list, m_list, f)
     # calculate TFs

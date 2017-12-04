@@ -146,7 +146,7 @@ def shotrad(f, ifo, verbose=False):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Inject squeezed field into the IFO via some filter cavities
-    if 'FilterCavity' in ifo.Squeezer.__dict__ and sqzType == 'Freq Dependent':
+    if sqzType == 'Freq Dependent' and 'FilterCavity' in ifo.Squeezer.__dict__:
         if verbose:
             print('  Applying %d input filter cavities' % np.atleast_1d(ifo.Squeezer.FilterCavity).size)
         Mr, Msqz = sqzFilterCavityChain(f, np.atleast_1d(ifo.Squeezer.FilterCavity), Msqz)

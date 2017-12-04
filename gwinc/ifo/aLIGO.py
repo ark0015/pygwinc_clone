@@ -115,7 +115,8 @@ def IFOModel():
     ## Seismic and Gravity Gradient Parameters---------------------------------
     ifo.Seismic = mat_struct()
     ifo.Seismic.Site = 'LHO'                      # LHO or LLO (only used for Newtonian noise)
-    ifo.Seismic.darmSeiSusFile = 'seismic.mat'    # .mat file containing predictions for darm displacement
+    # ifo.Seismic.darmSeiSusFile = 'seismic.mat'    # .mat file containing predictions for darm displacement
+    # ifo.Seismic.darmSeiSusFile = 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
     ifo.Seismic.KneeFrequency = 10                # Hz; freq where 'flat' noise rolls off
     ifo.Seismic.LowFrequencyLevel = 1e-9          # m/rtHz; seismic noise level below f_knee
     ifo.Seismic.Gamma = .8                        # abruptness of change at f_knee
@@ -123,8 +124,6 @@ def IFOModel():
     ifo.Seismic.Beta = 0.5                        # quiet times beta = 0.35-0.60
     # noisy times beta = 0.15-1.4
     ifo.Seismic.Omicron = 1                       # Feedforward cancellation factor
-
-    ifo.Seismic.darmSeiSusFile = 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
     ## Suspension: SI Units----------------------------------------------------
     ifo.Suspension = mat_struct()
@@ -184,35 +183,32 @@ def IFOModel():
     ifo.Suspension.Type         = 'Quad'               # 0 for cylindrical suspension
 
     # Note stage numbering: mirror is at beginning of stack, not end
-    ifo.Suspension.Stage1 = mat_struct()
-    ifo.Suspension.Stage2 = mat_struct()
-    ifo.Suspension.Stage3 = mat_struct()
-    ifo.Suspension.Stage4 = mat_struct()
+    ifo.Suspension.Stage = [mat_struct() for i in range(4)]
 
-    ifo.Suspension.Stage1.Mass = 39.6           # kg; current numbers May 2006 NAR
-    ifo.Suspension.Stage2.Mass = 39.6
-    ifo.Suspension.Stage3.Mass = 21.8
-    ifo.Suspension.Stage4.Mass = 22.1
+    ifo.Suspension.Stage[0].Mass = 39.6           # kg; current numbers May 2006 NAR
+    ifo.Suspension.Stage[1].Mass = 39.6
+    ifo.Suspension.Stage[2].Mass = 21.8
+    ifo.Suspension.Stage[3].Mass = 22.1
 
-    ifo.Suspension.Stage1.Length = 0.602        # m; current numbers May 2006 NAR
-    ifo.Suspension.Stage2.Length = 0.341        # m;
-    ifo.Suspension.Stage3.Length = 0.277        # m;
-    ifo.Suspension.Stage4.Length = 0.416        # m;
+    ifo.Suspension.Stage[0].Length = 0.602        # m; current numbers May 2006 NAR
+    ifo.Suspension.Stage[1].Length = 0.341        # m;
+    ifo.Suspension.Stage[2].Length = 0.277        # m;
+    ifo.Suspension.Stage[3].Length = 0.416        # m;
 
-    ifo.Suspension.Stage1.Dilution = NaN
-    ifo.Suspension.Stage2.Dilution = 106        # updated May06 NAR
-    ifo.Suspension.Stage3.Dilution = 80
-    ifo.Suspension.Stage4.Dilution = 87
+    ifo.Suspension.Stage[0].Dilution = NaN
+    ifo.Suspension.Stage[1].Dilution = 106        # updated May06 NAR
+    ifo.Suspension.Stage[2].Dilution = 80
+    ifo.Suspension.Stage[3].Dilution = 87
 
-    ifo.Suspension.Stage1.K = NaN               #
-    ifo.Suspension.Stage2.K = 5200              # N/m; vertical spring constant
-    ifo.Suspension.Stage3.K = 3900              # N/m; vertical spring constant
-    ifo.Suspension.Stage4.K = 3400              # N/m; vertical spring constant
+    ifo.Suspension.Stage[0].K = NaN               #
+    ifo.Suspension.Stage[1].K = 5200              # N/m; vertical spring constant
+    ifo.Suspension.Stage[2].K = 3900              # N/m; vertical spring constant
+    ifo.Suspension.Stage[3].K = 3400              # N/m; vertical spring constant
 
-    ifo.Suspension.Stage1.WireRadius = NaN
-    ifo.Suspension.Stage2.WireRadius = 310e-6   # current numbers May 2006 NAR
-    ifo.Suspension.Stage3.WireRadius = 350e-6
-    ifo.Suspension.Stage4.WireRadius = 520e-6
+    ifo.Suspension.Stage[0].WireRadius = NaN
+    ifo.Suspension.Stage[1].WireRadius = 310e-6   # current numbers May 2006 NAR
+    ifo.Suspension.Stage[2].WireRadius = 350e-6
+    ifo.Suspension.Stage[3].WireRadius = 520e-6
 
     # For Ribbon suspension
     ifo.Suspension.Ribbon = mat_struct()
@@ -221,15 +217,15 @@ def IFOModel():
     ifo.Suspension.Ribbon.Width     = 1150e-6     # m;
     ifo.Suspension.Fiber.Radius     = 205e-6      # m;
 
-    ifo.Suspension.Stage1.Blade = NaN            # blade thickness
-    ifo.Suspension.Stage2.Blade = 4200e-6        # current numbers May 2006 NAR
-    ifo.Suspension.Stage3.Blade = 4600e-6
-    ifo.Suspension.Stage4.Blade = 4300e-6
+    ifo.Suspension.Stage[0].Blade = NaN            # blade thickness
+    ifo.Suspension.Stage[1].Blade = 4200e-6        # current numbers May 2006 NAR
+    ifo.Suspension.Stage[2].Blade = 4600e-6
+    ifo.Suspension.Stage[3].Blade = 4300e-6
 
-    ifo.Suspension.Stage1.NWires = 4
-    ifo.Suspension.Stage2.NWires = 4
-    ifo.Suspension.Stage3.NWires = 4
-    ifo.Suspension.Stage4.NWires = 2
+    ifo.Suspension.Stage[0].NWires = 4
+    ifo.Suspension.Stage[1].NWires = 4
+    ifo.Suspension.Stage[2].NWires = 4
+    ifo.Suspension.Stage[3].NWires = 2
 
     ## Dielectric coating material parameters----------------------------------
 
