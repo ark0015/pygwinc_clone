@@ -1,0 +1,37 @@
+image: ligo/software:stretch
+
+stages:
+- test
+- deploy
+
+test:
+  stage: test
+  before_script:
+  - echo $CI_COMMIT_SHA | cut -b1-8 > gitID.txt
+  script:
+  - apt-get update -qq
+  - apt-get install -y -qq python-yaml python-scipy python-matplotlib python-ipython
+  - export MPLBACKEND=agg
+  - python -m gwinc gwinc/ifo/aLIGO.yaml -s aLIGO.png
+  - cd ..
+  after_script:
+  - rm gitID.txt
+  cache:
+    key: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/$CI_JOB_NAME"
+    untracked: true
+  artifacts:
+    expire_in: 4w
+    paths:
+    - aLIGO.yaml
+
+pages:
+  stage: deploy
+  dependencies:
+  - test
+  script:
+  - mkdir public
+  - mv aLIGO.yaml public/
+  artifacts:
+    paths:
+    - public
+    expire_in: 4w
