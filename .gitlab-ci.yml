@@ -22,7 +22,7 @@ test:
   artifacts:
     expire_in: 4w
     paths:
-    - aLIGO.yaml
+    - aLIGO.png
 
 pages:
   stage: deploy
