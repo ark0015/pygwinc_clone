@@ -30,7 +30,7 @@ pages:
   - test
   script:
   - mkdir public
-  - mv aLIGO.yaml public/
+  - mv aLIGO.png public/
   artifacts:
     paths:
     - public
