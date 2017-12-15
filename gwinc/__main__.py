@@ -13,6 +13,15 @@ from . import plot_noise
 ##################################################
 
 description = """Plot GWINC noise budget for specified IFO
+
+If the inspiral_range package is installed, various figures of merit
+can be calculated for the resultant spectrum with the --fom argument,
+e.g.:
+
+  gwinc --fom range:m1=20,m2=20 ...
+
+See documentation for inspiral_range package for details.
+
 """
 
 IFO = 'aLIGO'
@@ -33,6 +42,8 @@ parser.add_argument('--title', '-t',
                     help="plot title")
 parser.add_argument('--matlab', '-m', action='store_true',
                     help="use MATLAB gwinc engine to calculate noises")
+parser.add_argument('--fom',
+                    help="calculate inspiral range for resultant spectrum ('func:param=val,param=val')")
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--dump', '-d', dest='dump', action='store_true',
                    help="print IFO parameters to stdout and exit")
@@ -63,9 +74,42 @@ def main():
     else:
         from . import gwinc
 
+    if args.fom:
+        import inspiral_range
+        logging.info("calculating inspiral range...")
+        try:
+            ffunc, fargs = args.fom.split(':')
+        except ValueError:
+            ffunc = args.fom
+            fargs = ''
+        range_params = {}
+        for param in fargs.split(','):
+            if not param:
+                continue
+            p,v = param.split('=')
+            if not v:
+                raise ValueError('missing parameter value "{}"'.format(p))
+            if p != 'approximant':
+                v = float(v)
+            range_params[p] = v
+        range_params = inspiral_range.waveform._get_waveform_params(**range_params)
+        range_func = eval('inspiral_range.{}'.format(ffunc))
 
     score, noises, ifo = gwinc(freq, ifo)
 
+    if args.fom:
+        psd = (freq, noises['Total'])
+        fom = range_func(psd, **range_params)
+        fom_title = '{func} {m1}/{m2}: {fom:.3f} Mpc'.format(
+            func=range_func.__name__,
+            m1=range_params['m1'],
+            m2=range_params['m2'],
+            fom=fom,
+            )
+        if args.title:
+            args.title += '\n{}'.format(fom_title)
+        else:
+            args.title = fom_title
 
     if args.interactive:
         ipshell = InteractiveShellEmbed(
