@@ -148,6 +148,13 @@ def gwinc_matlab(f, ifo, fig=False, title=None, gwincpath=None, eng=None, **kwar
 
     score = data['score']
     mnoises = Struct.from_matstruct(data['noises']).to_dict()
+    ##### blow out 'MirrorThermal' sub-dict
+    for n,d in mnoises['MirrorThermal'].iteritems():
+        if n == 'Total':
+            continue
+        mnoises[n] = d
+    del mnoises['MirrorThermal']
+    #####
     noises = _rename_noises(mnoises)
 
     return score, noises, ifo
