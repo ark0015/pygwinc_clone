@@ -93,7 +93,7 @@ NOISE_NAME_MAP = {
 }
 def _rename_noises(d):
     nd = {}
-    for k,v in d.iteritems():
+    for k,v in d.items():
         try:
             nk = NOISE_NAME_MAP[k]
         except KeyError:
@@ -149,7 +149,7 @@ def gwinc_matlab(f, ifo, fig=False, title=None, gwincpath=None, eng=None, **kwar
     score = data['score']
     mnoises = Struct.from_matstruct(data['noises']).to_dict()
     ##### blow out 'MirrorThermal' sub-dict
-    for n,d in mnoises['MirrorThermal'].iteritems():
+    for n,d in mnoises['MirrorThermal'].items():
         if n == 'Total':
             continue
         mnoises[n] = d

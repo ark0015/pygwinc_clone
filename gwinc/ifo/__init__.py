@@ -17,15 +17,15 @@ from scipy.io.matlab.mio5_params import mat_struct
 #
 loader = yaml.SafeLoader
 loader.add_implicit_resolver(
-    u'tag:yaml.org,2002:float',
-    re.compile(u'''^(?:
+    'tag:yaml.org,2002:float',
+    re.compile('''^(?:
      [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
     |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
     |\\.[0-9_]+(?:[eE][-+][0-9]+)?
     |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
     |[-+]?\\.(?:inf|Inf|INF)
     |\\.(?:nan|NaN|NAN))$''', re.X),
-    list(u'-+0123456789.'))
+    list('-+0123456789.'))
 
 
 def dictlist2recarray(l):
@@ -35,7 +35,7 @@ def dictlist2recarray(l):
         else:
             return type(v)
     # get dtypes from first element dict
-    dtypes = [(k, dtype(v)) for k,v in l[0].iteritems()]
+    dtypes = [(k, dtype(v)) for k,v in l[0].items()]
     values = [tuple(el.values()) for el in l]
     out = np.array(values, dtype=dtypes)
     return out.view(np.recarray)
@@ -89,7 +89,7 @@ class Struct(object):
 
         """
         d = {}
-        for k,v in self.__dict__.iteritems():
+        for k,v in self.__dict__.items():
             if isinstance(v, Struct):
                 d[k] = v.to_dict(array=array)
             else:
@@ -127,7 +127,7 @@ class Struct(object):
     #     return self.to_yaml().strip('\n')
 
     def __str__(self):
-        return '<GWINC Struct: {}>'.format(self.__dict__.keys())
+        return '<GWINC Struct: {}>'.format(list(self.__dict__.keys()))
 
     def __iter__(self):
         return iter(self.__dict__)
@@ -136,7 +136,7 @@ class Struct(object):
         """Iterate over all leaves in the struct tree.
 
         """
-        for k,v in self.__dict__.iteritems():
+        for k,v in self.__dict__.items():
             if type(v) is Struct:
                 for sk,sv in v.walk():
                     yield k+'.'+sk, sv
@@ -154,12 +154,12 @@ class Struct(object):
 
         """
         c = cls()
-        for k,v in d.iteritems():
+        for k,v in d.items():
             if type(v) == dict:
                 c.__dict__[k] = Struct.from_dict(v)
             else:
                 try:
-                    c.__dict__[k] = map(Struct.from_dict, v)
+                    c.__dict__[k] = list(map(Struct.from_dict, v))
                 except (AttributeError, TypeError):
                     c.__dict__[k] = v
         return c
@@ -174,7 +174,7 @@ class Struct(object):
             s = s['ifo']
         except:
             pass
-        for k,v in s.__dict__.iteritems():
+        for k,v in s.__dict__.items():
             if k in ['_fieldnames']:
                 # skip these fields
                 pass
@@ -183,7 +183,7 @@ class Struct(object):
             else:
                 # handle lists of Structs
                 try:
-                    c.__dict__[k] = map(Struct.from_matstruct, v)
+                    c.__dict__[k] = list(map(Struct.from_matstruct, v))
                 except:
                     c.__dict__[k] = v
         return c

@@ -22,7 +22,7 @@ def plot_noise(noises):
     f = noises['Freq']
 
     def plot_dict(noises):
-        for name, noise in noises.iteritems():
+        for name, noise in noises.items():
             if name in ['Freq', 'Total']:
                 continue
             if isinstance(noise, dict):

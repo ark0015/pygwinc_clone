@@ -33,15 +33,18 @@ def main():
     matdata = os.path.join(os.path.dirname(__file__), 'matlab.pkl')
     if os.path.exists(matdata):
         logging.info("using existing {}...".format(matdata))
-        with open(matdata, 'r') as f:
-            mdata = pickle.load(f)
+        with open(matdata, 'rb') as f:
+            if sys.version_info.major > 2:
+                mdata = pickle.load(f, encoding='latin1')
+            else:
+                mdata = pickle.load(f)
     else:
         logging.info("calculating matlab noise...")
         gwincpath = os.path.join(os.path.dirname(__file__), 'gwinc')
         from ..gwinc_matlab import gwinc_matlab
         score, noises, ifo = gwinc_matlab(freq, ifo, gwincpath=gwincpath)
         mdata = dict(score=score, noises=noises, ifo=ifo)
-        with open(matdata, 'w') as f:
+        with open(matdata, 'wb') as f:
             pickle.dump(mdata, f)
 
 
@@ -50,7 +53,7 @@ def main():
     mnoises = mdata['noises']
 
     diffs = {}
-    for name, noise in noises.iteritems():
+    for name, noise in noises.items():
         if name == 'Freq':
             continue
         try:
