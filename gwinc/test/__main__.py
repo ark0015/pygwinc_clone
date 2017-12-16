@@ -19,6 +19,13 @@ IFO = 'aLIGO'
 FLO = 5
 FHI = 6000
 NPOINTS = 3000
+# comparisons to skip
+SKIP = [
+    'Seismic',
+    'Suspension Thermal',
+    'Newtonian Gravity',
+    'Total',
+    ]
 
 
 def main():
@@ -56,6 +63,10 @@ def main():
     for name, noise in noises.items():
         if name == 'Freq':
             continue
+        if name in SKIP:
+            logging.warning("SKIPPING TEST: '{}'".format(name))
+            continue
+
         try:
             mnoise = mnoises[name]
         except KeyError:
