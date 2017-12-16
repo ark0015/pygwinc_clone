@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import argparse
 
 import logging
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(format='%(message)s',
+                    level=logging.WARNING)
 
 from .. import load_ifo, gwinc
 
@@ -79,7 +80,7 @@ def main():
         if max(frac) < 0.01:
             continue
 
-        logging.warning("Excessive difference: {}".format(name))
+        logging.warning("EXCESSIVE DIFFERENCE: '{}'".format(name))
         logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
 
         diffs[name] = frac
