@@ -28,8 +28,9 @@ def gravg(f, ifo):
     L     = ifo.Infrastructure.Length
     G     = scipy.constants.G
     rho   = ifo.Seismic.Rho
-    beta  = ifo.Seismic.Beta        # factor to account for correlation between masses
-                                    # and the height of the mirror above the ground
+    # factor to account for correlation between masses
+    # and the height of the mirror above the ground
+    beta  = ifo.Seismic.Beta
 
     if 'Spectrum' in ifo.Seismic:
         seismic = ifo.Seismic.Spectrum
@@ -43,7 +44,8 @@ def gravg(f, ifo):
     n = (beta*4*pi/L*(fgg**2/f**2)*seismic)**2
 
     # Feedforward cancellation
-    n = n / (ifo.Seismic.Omicron)**2
+    n /= (ifo.Seismic.Omicron)**2
+
     return n
 
 
@@ -96,5 +98,6 @@ def ground(Seismic, f):
         raise 'Unknown seismic.site'
 
     # convert into displacement
-    n = n/(2*pi*f)
+    n /= 2*pi*f
+
     return n

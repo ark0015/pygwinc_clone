@@ -63,7 +63,7 @@ def suspR(f, ifo):
 
             # thermal noise (m^2/Hz) for one suspension
             w = 2*pi*f
-            noise = noise + 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
+            noise += 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
 
     if ifo.Suspension.Type == 'Quad_MB':
         raise Exception('not dealing with Quad_MB suspensions currently')
@@ -75,7 +75,7 @@ def suspR(f, ifo):
         #noise = noise.^2; %square to make strain^2
     else:
         # turn into gravitational wave strain; 4 masses
-        noise = 4 * noise / ifo.Infrastructure.Length**2
+        noise *= 4 / ifo.Infrastructure.Length**2
         return np.squeeze(noise)
 
 

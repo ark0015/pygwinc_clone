@@ -40,9 +40,9 @@ def seismic(f, ifo):
     n = nv + nh
 
     # Convert into Strain PSD (4 TMs)
-    nh = 4 * nh / ifo.Infrastructure.Length**2
-    nv = 4 * nv / ifo.Infrastructure.Length**2
-    n  = 4 * n  / ifo.Infrastructure.Length**2
+    nh *= 4 / ifo.Infrastructure.Length**2
+    nv *= 4 / ifo.Infrastructure.Length**2
+    n  *= 4 / ifo.Infrastructure.Length**2
 
     return n
 
