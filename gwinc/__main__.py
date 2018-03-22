@@ -110,7 +110,9 @@ def main():
 
     if args.fom:
         logging.info("calculating inspiral range...")
+        logging.debug("params: {}".format(range_params))
         fom = range_func(freq, noises['Total'], **range_params)
+        logging.info("{}({}) = {} Mpc".format(ffunc, fargs, fom))
         fom_title = '{func} {m1}/{m2}: {fom:.3f} Mpc'.format(
             func=range_func.__name__,
             m1=range_params['m1'],
