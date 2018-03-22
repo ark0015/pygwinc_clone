@@ -1,5 +1,6 @@
 import os
 import re
+import fnmatch
 import yaml
 import scipy
 import scipy.io
@@ -207,6 +208,14 @@ class Struct(object):
             else:
                 raise IOError("Unknown file type: {}".format(ext))
 
+
+def available_ifos():
+    """List available included IFO files"""
+    ifos = []
+    for f in os.listdir(os.path.dirname(__file__)):
+        if fnmatch.fnmatch(f, '*.yaml'):
+            ifos.append(f.split('.')[0])
+    return ifos
 
 
 def load_ifo(name_or_path):

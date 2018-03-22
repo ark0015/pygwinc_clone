@@ -7,13 +7,19 @@ from IPython.terminal.embed import InteractiveShellEmbed
 import logging
 logging.basicConfig(level=logging.INFO)
 
-from . import load_ifo
+from .ifo import available_ifos, load_ifo
 from . import plot_noise
 
 ##################################################
 
-description = """Plot GWINC noise budget for specified IFO
+description = """Plot GWINC noise budget for specified IFO.
 
+Available included IFOs: {}
+
+""".format(', '.join(["'{}'".format(ifo) for ifo in available_ifos()]))
+# for ifo in available_ifos():
+#     description += "  '{}'\n".format(ifo)
+description += """
 If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom argument,
 e.g.:
