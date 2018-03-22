@@ -97,6 +97,11 @@ def main():
 
     score, noises, ifo = gwinc(freq, ifo)
 
+    if args.title:
+        title = args.title
+    else:
+        title = '{} GWINC Noise Budget'.format(args.IFO)
+
     if args.fom:
         psd = (freq, noises['Total'])
         fom = range_func(psd, **range_params)
@@ -106,10 +111,7 @@ def main():
             m2=range_params['m2'],
             fom=fom,
             )
-        if args.title:
-            args.title += '\n{}'.format(fom_title)
-        else:
-            args.title = fom_title
+        title += '\n{}'.format(fom_title)
 
     if args.interactive:
         ipshell = InteractiveShellEmbed(
@@ -128,13 +130,11 @@ You may interact with plot using "plt." methods, e.g.:
 ''')
         ipshell.enable_pylab()
         ipshell.run_code("plot_noise(noises)")
-        if args.title:
-            ipshell.run_code("plt.title('{}')".format(args.title))
+        ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
     else:
         plot_noise(noises)
-        if args.title:
-            plt.title(args.title)
+        plt.title(title)
         if args.save:
             plt.savefig(args.save)
         else:
