@@ -103,8 +103,7 @@ def main():
         title = '{} GWINC Noise Budget'.format(args.IFO)
 
     if args.fom:
-        psd = (freq, noises['Total'])
-        fom = range_func(psd, **range_params)
+        fom = range_func(freq, noises['Total'], **range_params)
         fom_title = '{func} {m1}/{m2}: {fom:.3f} Mpc'.format(
             func=range_func.__name__,
             m1=range_params['m1'],
