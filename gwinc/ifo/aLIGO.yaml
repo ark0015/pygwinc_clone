@@ -26,24 +26,22 @@
 # 12. Gretarsson & Harry, Gretarsson thesis
 # 13. Fejer
 # 14. Braginsky
-#
-#
 
 Constants:
   # Temperature of the Vacuum
-  Temp: 290 # K
+  Temp: 290                       # K
 
 Infrastructure:
-  Length: 3995 # m
+  Length: 3995                    # m
   ResidualGas:
-    pressure: 4.0e-7 # Pa
-    mass: 3.35e-27 # kg; Mass of H_2 (ref. 10)
-    polarizability: 7.8e-31 # m^3
+    pressure: 4.0e-7              # Pa
+    mass: 3.35e-27                # kg; Mass of H_2 (ref. 10)
+    polarizability: 7.8e-31       # m^3
 
 TCS:
-  s_cc: 7.024 # Watt^-2
-  s_cs: 7.321 # Watt^-2
-  s_ss: 7.631 # Watt^-2
+  s_cc: 7.024                     # Watt^-2
+  s_cs: 7.321                     # Watt^-2
+  s_ss: 7.631                     # Watt^-2
   # The hardest part to model is how efficient the TCS system is in
   # compensating this loss. Thus as a simple Ansatz we define the
   # TCS efficiency TCSeff as the reduction in effective power that produces
@@ -58,14 +56,14 @@ TCS:
   SRCloss: 0.00
 
 Seismic:
-  Site: 'LHO'                      # LHO or LLO (only used for Newtonian noise)
-  KneeFrequency: 10                # Hz; freq where 'flat' noise rolls off
-  LowFrequencyLevel: 1e-9          # m/rtHz; seismic noise level below f_knee
-  Gamma: .8                        # abruptness of change at f_knee
-  Rho: 1.8e3                       # kg/m^3; density of the ground nearby
-  Beta: 0.5                        # quiet times beta: 0.35-0.60
+  Site: 'LHO'                     # LHO or LLO (only used for Newtonian noise)
+  KneeFrequency: 10               # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevel: 1e-9         # m/rtHz; seismic noise level below f_knee
+  Gamma: .8                       # abruptness of change at f_knee
+  Rho: 1.8e3                      # kg/m^3; density of the ground nearby
+  Beta: 0.5                       # quiet times beta: 0.35-0.60
   # noisy times beta: 0.15-1.4
-  Omicron: 1                       # Feedforward cancellation factor
+  Omicron: 1                      # Feedforward cancellation factor
 
 Suspension:
   # 0 for cylindrical suspension
@@ -73,20 +71,20 @@ Suspension:
   Type: 2
   # 0: round, 1: ribbons
   FiberType: 0
-  BreakStress: 750e6            # Pa; ref. K. Strain
+  BreakStress: 750e6              # Pa; ref. K. Strain
   Temp: 290
   VHCoupling:
-    theta: 1e-3        # vertical-horizontal x-coupling
+    theta: 1e-3                   # vertical-horizontal x-coupling
 
   Silica:
-    Rho   : 2200           # Kg/m^3;
-    C     : 772            # J/Kg/K;
-    K     : 1.38           # W/m/kg;
-    Alpha : 3.9e-7         # 1/K;
-    dlnEdT: 1.52e-4        # (1/K), dlnE/dT
-    Phi   : 4.1e-10        # from G Harry e-mail to NAR 27April06 dimensionless units
-    Y     : 72e9           # Pa; Youngs Modulus
-    Dissdepth: 1.5e-2      # from G Harry e-mail to NAR 27April06
+    Rho   : 2200                  # Kg/m^3;
+    C     : 772                   # J/Kg/K;
+    K     : 1.38                  # W/m/kg;
+    Alpha : 3.9e-7                # 1/K;
+    dlnEdT: 1.52e-4               # (1/K), dlnE/dT
+    Phi   : 4.1e-10               # from G Harry e-mail to NAR 27April06 dimensionless units
+    Y     : 72e9                  # Pa; Youngs Modulus
+    Dissdepth: 1.5e-2             # from G Harry e-mail to NAR 27April06
 
   C70Steel:
     Rho: 7800
@@ -95,7 +93,7 @@ Suspension:
     Alpha: 12e-6
     dlnEdT: -2.5e-4
     Phi: 2e-4
-    Y: 212e9        # measured by MB for one set of wires
+    Y: 212e9                      # measured by MB for one set of wires
 
   MaragingSteel:
     Rho: 7800
@@ -127,12 +125,12 @@ Suspension:
   # in suspQuad, so including it here would double count)
   Stage:
     # Stage1
-    - Mass: 39.6                    # kg; current numbers May 2006 NAR
-      Length: 0.59                  # m
-      Dilution: .nan                #
-      K: .nan                       # N/m; vertical spring constant
-      WireRadius: .nan              # m
-      Blade: .nan                   # blade thickness
+    - Mass: 39.6                  # kg; current numbers May 2006 NAR
+      Length: 0.59                # m
+      Dilution: .nan              #
+      K: .nan                     # N/m; vertical spring constant
+      WireRadius: .nan            # m
+      Blade: .nan                 # blade thickness
       NWires: 4
 
     # Stage2
@@ -199,45 +197,45 @@ Materials:
 
   ## Substrate Material parameters--------------------------------------------
   Substrate:
-    c2 : 7.6e-12                 # Coeff of freq depend. term for bulk mechanical loss, 7.15e-12 for Sup2
-    MechanicalLossExponent: 0.77   # Exponent for freq dependence of silica loss, 0.822 for Sup2
-    Alphas: 5.2e-12              # Surface loss limit (ref. 12)
-    MirrorY: 7.27e10             # N/m^2; Youngs modulus (ref. 4)
-    MirrorSigma: 0.167           # Kg/m^3; Poisson ratio (ref. 4)
-    MassDensity: 2.2e3           # Kg/m^3; (ref. 4)
-    MassAlpha: 3.9e-7            # 1/K; thermal expansion coeff. (ref. 4)
-    MassCM: 739                  # J/Kg/K; specific heat (ref. 4)
-    MassKappa: 1.38              # J/m/s/K; thermal conductivity (ref. 4)
-    RefractiveIndex: 1.45        # mevans 25 Apr 2008
+    c2 : 7.6e-12                  # Coeff of freq depend. term for bulk mechanical loss, 7.15e-12 for Sup2
+    MechanicalLossExponent: 0.77  # Exponent for freq dependence of silica loss, 0.822 for Sup2
+    Alphas: 5.2e-12               # Surface loss limit (ref. 12)
+    MirrorY: 7.27e10              # N/m^2; Youngs modulus (ref. 4)
+    MirrorSigma: 0.167            # Kg/m^3; Poisson ratio (ref. 4)
+    MassDensity: 2.2e3            # Kg/m^3; (ref. 4)
+    MassAlpha: 3.9e-7             # 1/K; thermal expansion coeff. (ref. 4)
+    MassCM: 739                   # J/Kg/K; specific heat (ref. 4)
+    MassKappa: 1.38               # J/m/s/K; thermal conductivity (ref. 4)
+    RefractiveIndex: 1.45         # mevans 25 Apr 2008
 
 ## Laser-------------------------------------------------------------------
 Laser:
-  Wavelength: 1.064e-6 # m
-  Power: 125 # W
+  Wavelength: 1.064e-6            # m
+  Power: 125                      # W
 
 ## Optics------------------------------------------------------------------
 Optics:
   Type: 'SignalRecycled'
-  PhotoDetectorEfficiency: 0.95    # photo-detector quantum efficiency
-  Loss: 37.5e-6 # average per mirror power loss
-  BSLoss: 0.5e-3                   # power loss near beamsplitter
-  coupling: 1.0                     # mismatch btwn arms & SRC modes; used to
+  PhotoDetectorEfficiency: 0.95   # photo-detector quantum efficiency
+  Loss: 37.5e-6                   # average per mirror power loss
+  BSLoss: 0.5e-3                  # power loss near beamsplitter
+  coupling: 1.0                   # mismatch btwn arms & SRC modes; used to
 
-  #SubstrateAbsorption: 0.5e-4       # 1/m; bulk absorption coef (ref. 2)
-  SubstrateAbsorption: 0.3e-4       # 1/m; 0.3 ppm/cm for Hereaus
-  pcrit: 10                         # W; tolerable heating power (factor 1 ATC)
+  #SubstrateAbsorption: 0.5e-4    # 1/m; bulk absorption coef (ref. 2)
+  SubstrateAbsorption: 0.3e-4     # 1/m; 0.3 ppm/cm for Hereaus
+  pcrit: 10                       # W; tolerable heating power (factor 1 ATC)
   Quadrature:
-    dc: 1.5707963 # pi/2 # demod/detection/homodyne phase
+    dc: 1.5707963                 # pi/2 # demod/detection/homodyne phase
 
   ITM:
-    BeamRadius: 0.055 # m, 1/e^2 power radius
+    BeamRadius: 0.055             # m, 1/e^2 power radius
     Transmittance: 0.014
     CoatingThicknessLown: 0.308
     CoatingThicknessCap: 0.5
     CoatingAbsorption: 0.5e-6
-    SubstrateAbsorption: 0.3e-4 # 1/m, 0.3 ppm/cm for Hereaus
+    SubstrateAbsorption: 0.3e-4   # 1/m, 0.3 ppm/cm for Hereaus
   ETM:
-    BeamRadius: 0.062 # m, 1/e^2 power radius
+    BeamRadius: 0.062             # m, 1/e^2 power radius
     Transmittance: 5e-6
     CoatingThicknessLown: 0.27
     CoatingThicknessCap: 0.5
@@ -245,10 +243,10 @@ Optics:
     Transmittance: 0.03
   SRM:
     Transmittance: 0.20
-    CavityLength: 55 # m, ITM to SRM distance
-    Tunephase: 0.0 # SEC tuning
+    CavityLength: 55              # m, ITM to SRM distance
+    Tunephase: 0.0                # SEC tuning
 
-  Curvature: # ROC
+  Curvature:                      # ROC
     ITM: 1970
     ETM: 2192
 
@@ -261,18 +259,18 @@ Optics:
 #   OptimalOptimal = optimal squeeze angle, assuming optimal readout phase
 Squeezer:
   Type: 'None'
-  AmplitudedB: 10         # SQZ amplitude [dB]
-  InjectionLoss: 0.05     # power loss to sqz
-  SQZAngle: 0             # SQZ phase [radians]
+  AmplitudedB: 10                 # SQZ amplitude [dB]
+  InjectionLoss: 0.05             # power loss to sqz
+  SQZAngle: 0                     # SQZ phase [radians]
 
   # Parameters for frequency dependent squeezing
   FilterCavity:
-    fdetune: -14.5  # detuning [Hz]
-    L: 100          # cavity length
-    Ti: 0.12e-3     # input mirror trasmission [Power]
-    Te: 0           # end mirror trasmission
-    Lrt: 100e-6     # round-trip loss in the cavity
-    Rot: 0          # phase rotation after cavity
+    fdetune: -14.5                # detuning [Hz]
+    L: 100                        # cavity length
+    Ti: 0.12e-3                   # input mirror trasmission [Power]
+    Te: 0                         # end mirror trasmission
+    Lrt: 100e-6                   # round-trip loss in the cavity
+    Rot: 0                        # phase rotation after cavity
 
 ## Variational Output Parameters--------------------------------------------
 # Define the output filter cavity chain
@@ -282,9 +280,9 @@ Squeezer:
 OutputFilter:
   Type: 'None'
   FilterCavity:
-    fdetune: -30 # detuning [Hz]
-    L: 4000      # cavity length
-    Ti: 10e-3    # input mirror trasmission [Power]
-    Te: 0        # end mirror trasmission
-    Lrt: 100e-6  # round-trip loss in the cavity
-    Rot: 0       # phase rotation after cavity
+    fdetune: -30                  # detuning [Hz]
+    L: 4000                       # cavity length
+    Ti: 10e-3                     # input mirror trasmission [Power]
+    Te: 0                         # end mirror trasmission
+    Lrt: 100e-6                   # round-trip loss in the cavity
+    Rot: 0                        # phase rotation after cavity
