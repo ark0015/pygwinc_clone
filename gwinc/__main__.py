@@ -57,6 +57,8 @@ group.add_argument('--save', '-s',
                    help="save figure to file")
 group.add_argument('--interactive', '-i', action='store_true',
                    help="open interactive shell when plotting")
+group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
+                   help="supress plotting")
 parser.add_argument('IFO', nargs='?', default=IFO,
                     help="IFO name or description file path (.yaml or .mat)")
 
@@ -140,7 +142,7 @@ You may interact with plot using "plt." methods, e.g.:
         ipshell.run_code("plot_noise(noises)")
         ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
-    else:
+    elif args.plot:
         plot_noise(noises)
         plt.title(title)
         if args.save:
