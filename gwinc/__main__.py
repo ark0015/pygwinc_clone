@@ -82,7 +82,6 @@ def main():
 
     if args.fom:
         import inspiral_range
-        logging.info("calculating inspiral range...")
         try:
             ffunc, fargs = args.fom.split(':')
         except ValueError:
@@ -101,6 +100,7 @@ def main():
         range_params = inspiral_range.waveform._get_waveform_params(**range_params)
         range_func = eval('inspiral_range.{}'.format(ffunc))
 
+    logging.info("calculating noises...")
     score, noises, ifo = gwinc(freq, ifo)
 
     if args.title:
@@ -109,6 +109,7 @@ def main():
         title = '{} GWINC Noise Budget'.format(args.IFO)
 
     if args.fom:
+        logging.info("calculating inspiral range...")
         fom = range_func(freq, noises['Total'], **range_params)
         fom_title = '{func} {m1}/{m2}: {fom:.3f} Mpc'.format(
             func=range_func.__name__,
