@@ -26,6 +26,8 @@
 # 12. Gretarsson & Harry, Gretarsson thesis
 # 13. Fejer
 # 14. Braginsky
+#
+# Updated numbers March 2018: LIGO-T1800044
 
 Constants:
   # Temperature of the Vacuum
@@ -182,7 +184,7 @@ Materials:
     Alphahighn: 3.6e-6            # 3.6e-6 Fejer et al, 5e-6 from Braginsky
     Betahighn: 1.4e-5             # dn/dT, value Gretarrson (G070161)
     ThermalDiffusivityhighn: 33   # Fejer et al
-    Phihighn: 2.3e-4
+    Phihighn: 3.6e-4              # tantala mechanical loss
     Indexhighn: 2.06539
 
     ## low index material: silica
@@ -192,7 +194,7 @@ Materials:
     Alphalown: 5.1e-7             # Fejer et al
     Betalown: 8e-6                # dn/dT,  (ref. 14)
     ThermalDiffusivitylown: 1.38  # Fejer et al
-    Philown: 4.0e-5
+    Philown: 5.0e-5               # silica mechanical loss
     Indexlown: 1.45
 
   ## Substrate Material parameters--------------------------------------------
@@ -216,7 +218,7 @@ Laser:
 ## Optics------------------------------------------------------------------
 Optics:
   Type: 'SignalRecycled'
-  PhotoDetectorEfficiency: 0.95   # photo-detector quantum efficiency
+  PhotoDetectorEfficiency: 0.9    # photo-detector quantum efficiency
   Loss: 37.5e-6                   # average per mirror power loss
   BSLoss: 0.5e-3                  # power loss near beamsplitter
   coupling: 1.0                   # mismatch btwn arms & SRC modes; used to
@@ -242,7 +244,7 @@ Optics:
   PRM:
     Transmittance: 0.03
   SRM:
-    Transmittance: 0.20
+    Transmittance: 0.325
     CavityLength: 55              # m, ITM to SRM distance
     Tunephase: 0.0                # SEC tuning
 
