@@ -6,7 +6,7 @@ import numpy as np
 
 import logging
 
-from .ifo import Struct, dictlist2recarray
+from .struct import Struct
 from .plot import plot_noise
 
 # NOTE: gwinc needs to be imported before matlab for some very strange

@@ -4,6 +4,7 @@ from scipy.io.matlab.mio5_params import mat_struct
 from scipy.io import loadmat
 import scipy.special
 
+from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
 
 
