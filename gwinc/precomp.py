@@ -1,27 +1,24 @@
-from __future__ import division, print_function
+from __future__ import division
 from numpy import pi, sqrt
-from scipy.io.matlab.mio5_params import mat_struct
 from scipy.io import loadmat
 import scipy.special
+import logging
 
 from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
 
 
-def precompIFO(ifo, PRfixed=0):
+def precompIFO(ifo, PRfixed=True):
     """Add precomputed data to the IFO model.
-    
+
     To prevent recomputation of these precomputed data, if the
     ifo argument contains ifo.gwinc.PRfixed, and this matches
     the argument PRfixed, no changes are made.
 
     """
 
-    # check PRfixed
-    #if 'gwinc' in ifo.__dict__:
-        # && isfield(ifo.gwinc, 'PRfixed') && ifo.gwinc.PRfixed == PRfixed
-        #return
-    ifo.gwinc = mat_struct()
+    if 'gwinc' not in ifo:
+        ifo.gwinc = Struct()
     ifo.gwinc.PRfixed = PRfixed
 
     ################################# DERIVED TEMP
@@ -47,7 +44,7 @@ def precompIFO(ifo, PRfixed=0):
         dL = ifo.Optics.ETM.CoatingThicknessLown
         dCap = ifo.Optics.ETM.CoatingThicknessCap
         ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
-  
+
     # compute power on BS
     pbs, parm, finesse, prfactor, Tpr = precompPower(ifo, PRfixed)
     ifo.gwinc.pbs = pbs
@@ -82,7 +79,7 @@ def precompIFO(ifo, PRfixed=0):
     return ifo
 
 
-def precompPower(ifo, PRfixed):
+def precompPower(ifo, PRfixed=True):
     """Compute power on beamsplitter and finesse and power recycling factor.
 
     """
@@ -114,7 +111,7 @@ def precompPower(ifo, PRfixed):
     garm = t1 / (1 - r1*r2*sqrt(1-2*loss))  # amplitude gain wrt input field
     rarm = r1 - t1 * r2 * sqrt(1-2*loss) * garm
 
-    if (PRfixed == 1):
+    if PRfixed:
         Tpr = ifo.Optics.PRM.Transmittance  # use given value
     else:
         #prfactor = 1/(2*loss * neff + bsloss);         % power recycling factor

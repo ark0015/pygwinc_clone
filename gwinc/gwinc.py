@@ -3,7 +3,7 @@ import numpy as np
 from numpy import log10, pi, sqrt
 import copy
 
-from .util import precompIFO
+from .precomp import precompIFO
 from . import noise
 from . import plot
 
@@ -115,8 +115,8 @@ def gwinc(freq, ifoin, source=None, fig=False):
 
     ifo = copy.deepcopy(ifoin)
 
-    modeSR = 0
-    PRfixed = 0
+    modeSR = False
+    PRfixed = True
 
     # stick it into the IFO so that it gets passed around
     ifo.modeSR = modeSR

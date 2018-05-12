@@ -8,6 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from .ifo import available_ifos, load_ifo
+from .precomp import precompIFO
 from . import plot_noise
 
 ##################################################
