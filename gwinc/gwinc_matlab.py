@@ -102,38 +102,59 @@ def ifo_add_constants(ifo):
     This is required by MATLAB gwinc.
 
     """
-    #ifo.Constants.E0      = 8.8541878176e-12                 # F / m; Permittivity of Free Space
+    # permittivity of free space [F / m]
+    #ifo.Constants.E0      = 8.8541878176e-12
     ifo.Constants.E0      = scipy.constants.epsilon_0
-    #ifo.Constants.hbar    = 1.054572e-34                     # J - s; (Plancks constant) / (2 * pi)
+    # Plancks constant [J s]
+    #ifo.Constants.hbar    = 1.054572e-34
     ifo.Constants.hbar    = scipy.constants.hbar
-    #ifo.Constants.kB      = 1.380658e-23                     # J / K; Boltzman Constant
+    # Planks constant [J s]
+    #ifo.Constants.h       = ifo.Constants.hbar * 2 * pi
+    # Boltzman constant [J / K]
+    #ifo.Constants.kB      = 1.380658e-23
     ifo.Constants.kB      = scipy.constants.k
-    #ifo.Constants.h       = ifo.Constants.hbar * 2 * pi      # J - s; Planks constant
-    #ifo.Constants.R       = 8.31447215                       # J / (K * mol); Gas Constant
-    #ifo.Constants.m_e     = 9.10938291e-31                   # kg; electron mass
-    #ifo.Constants.c       = 2.99792458e8                     # m / s; speed of light in vacuum
+    # gas constant [J / (K * mol)]
+    #ifo.Constants.R       = 8.31447215
+    # electron mass [kg]
+    #ifo.Constants.m_e     = 9.10938291e-31
+    # speed of light in vacuum [m / s]
+    #ifo.Constants.c       = 2.99792458e8
     ifo.Constants.c       = scipy.constants.c
-    ifo.Constants.yr      = 365.2422 * 86400                 # sec; Seconds in a year
-    #ifo.Constants.M_earth = 5.972e24                         # mass of Earth [kg]
-    ifo.Constants.R_earth = 6.3781e6                         # radius of Earth [m]
-    #ifo.Constants.fs      = 16384                            # Sampling frequency (Hz)
-    ifo.Constants.AU      = 149597870700                     # m; Astronomical unit, IAU 2012 Resolution B2
-    ifo.Constants.parsec  = ifo.Constants.AU * (648000 / np.pi) # m, IAU 2015 Resolution B2
-    ifo.Constants.Mpc     = ifo.Constants.parsec * 1e6       # m, IAU 2015 Resolution B2
-    ifo.Constants.SolarMassParameter = 1.3271244e20          # m^3 / s^2; G * MSol, IAU 2015 Resolution B3
-    #ifo.Constants.G       = 6.67408e-11                      # m^3 / (kg  s^2); Grav. const
+    # seconds in a year [s]
+    ifo.Constants.yr      = 365.2422 * 86400
+    # mass of Earth [kg]
+    #ifo.Constants.M_earth = 5.972e24
+    # radius of Earth [m]
+    ifo.Constants.R_earth = 6.3781e6
+    # sampling frequency [Hz]
+    #ifo.Constants.fs      = 16384
+    # Astronomical unit, IAU 2012 Resolution B2 [m]
+    ifo.Constants.AU      = 149597870700
+    # IAU 2015 Resolution B2 [m]
+    ifo.Constants.parsec  = ifo.Constants.AU * (648000 / np.pi)
+    # IAU 2015 Resolution B2 [m]
+    ifo.Constants.Mpc     = ifo.Constants.parsec * 1e6
+    # IAU 2015 Resolution B3 [m^3 / s^2; G * MSol]
+    ifo.Constants.SolarMassParameter = 1.3271244e20
+    # gravitational const [m^3 / (kg  s^2)]
+    #ifo.Constants.G       = 6.67408e-11
     ifo.Constants.G       = scipy.constants.G
-    #                                                          # http://arxiv.org/abs/1507.07956
-    ifo.Constants.MSol    = ifo.Constants.SolarMassParameter / ifo.Constants.G # kg; Solar mass
-    #ifo.Constants.g       = 9.806                            # m / s^2; grav. acceleration
+    # solar mass [kg]
+    # http://arxiv.org/abs/1507.07956
+    ifo.Constants.MSol    = ifo.Constants.SolarMassParameter / ifo.Constants.G
+    # gravitational acceleration [m / s^2]
+    #ifo.Constants.g       = 9.806
     ifo.Constants.g       = scipy.constants.g
-    #                                                          # http://physics.nist.gov/cuu/Constants/ 
-    #ifo.Constants.H0      = 67110;                            # ms^( - 1); Hubble const.
-    #                                                          # http://arxiv.org/pdf/1303.5076v3.pdf
-    #ifo.Constants.omegaM  = 0.3175;                           # Mass density parameter 
-    #                                                          # http://arxiv.org/pdf/1303.5076v3.pdf
-    #ifo.Constants.omegaLambda = 1 - ifo.Constants.omegaM;     # Cosmological constant density parameter
-    #                                                          # omegaK = 0 (flat universe) is assumed
+    # Hubble constant [ms^( - 1)]
+    # http://physics.nist.gov/cuu/Constants/
+    ifo.Constants.H0      = 67110
+    # http://arxiv.org/pdf/1303.5076v3.pdf
+    # Mass density parameter
+    ifo.Constants.omegaM  = 0.3175
+    # http://arxiv.org/pdf/1303.5076v3.pdf
+    # Cosmological constant density parameter
+    # omegaK = 0 (flat universe) is assumed
+    ifo.Constants.omegaLambda = 1 - ifo.Constants.omegaM
     return ifo
 
 
