@@ -9,6 +9,8 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 from .ifo import available_ifos, load_ifo
 from .precomp import precompIFO
+from .gwinc import gwinc as pygwinc
+from . import gwinc_matlab
 from . import plot_noise
 
 ##################################################
@@ -77,11 +79,9 @@ def main():
     freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
 
     if args.matlab:
-        from .gwinc_matlab import gwinc_matlab as gwinc
-    # FIXME: why weird import issue requires doing this here instead
-    # of above?
+        gwinc = gwinc_matlab.gwinc_matlab
     else:
-        from . import gwinc
+        gwinc = pygwinc
 
     if args.fom:
         import inspiral_range

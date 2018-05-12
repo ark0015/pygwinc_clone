@@ -3,42 +3,98 @@ import tempfile
 import scipy.io
 import scipy.constants
 import numpy as np
-
 import logging
 
 from .struct import Struct
-from .plot import plot_noise
 
-# NOTE: gwinc needs to be imported before matlab for some very strange
-# reason:
-#
-# Traceback (most recent call last):
-#   File "./ifo2txt.py", line 9, in <module>
-#     import gwinc
-#   File "/home/jrollins/ligo/src/pygwinc/gwinc/__init__.py", line 9, in <module>
-#     from . import plot
-#   File "/home/jrollins/ligo/src/pygwinc/gwinc/plot.py", line 2, in <module>
-#     import matplotlib.pyplot as plt
-#   File "/usr/lib/python2.7/dist-packages/matplotlib/pyplot.py", line 29, in <module>
-#     import matplotlib.colorbar
-#   File "/usr/lib/python2.7/dist-packages/matplotlib/colorbar.py", line 32, in <module>
-#     import matplotlib.artist as martist
-#   File "/usr/lib/python2.7/dist-packages/matplotlib/artist.py", line 15, in <module>
-#     from .transforms import (Bbox, IdentityTransform, TransformedBbox,
-#   File "/usr/lib/python2.7/dist-packages/matplotlib/transforms.py", line 39, in <module>
-#     from matplotlib._path import (affine_transform, count_bboxes_overlapping_bbox,
-# ImportError: /opt/matlab/R2016b/extern/engines/python/dist/matlab/engine/glnxa64/../../../../../../../sys/os/glnxa64/libstdc++.so.6: version `CXXABI_1.3.9' not found (required by /usr/lib/python2.7/dist-packages/matplotlib/_path.x86_64-linux-gnu.so)
-#
-# no idea what that's about
-import matlab.engine
+##################################################
+
+MATLAB_ENGINE = None
+
+class Matlab:
+    def __init__(self, gwincpath=None):
+        """Start a MATLAB engine for GWINC processing
+
+         engine is provided, the GWINC path is added
+        to it's path.
+
+        """
+        global MATLAB_ENGINE
+
+        if MATLAB_ENGINE:
+            return
+
+        import matlab.engine
+
+        if not gwincpath:
+            gwincpath = os.path.expanduser(os.getenv('GWINCPATH', 'gwinc'))
+        if not os.path.exists(os.path.join(gwincpath, 'gwinc.m')):
+            raise IOError("Invalid MATLAB GWINC path: '{}'".format(gwincpath))
+
+        logging.info("starting MATLAB engine...")
+        MATLAB_ENGINE = matlab.engine.start_matlab()
+
+        logging.info("gwinc path: {}".format(gwincpath))
+        MATLAB_ENGINE.addpath(gwincpath)
 
 
-def start_matlab():
-    """Start a MATLAB engine"""
-    logging.info("starting matlab engine...")
-    eng = matlab.engine.start_matlab()
-    return eng
+    @property
+    def eng(self):
+        return MATLAB_ENGINE
 
+    @property
+    def workspace(self):
+        return MATLAB_ENGINE.workspace
+
+    def addpath(self, *args):
+        return MATLAB_ENGINE.addpath(*args)
+
+    def eval(self, *args, **kwargs):
+        return MATLAB_ENGINE.eval(*args, **kwargs)
+
+
+    def load_array(self, var, array):
+        """Load numpy array into workspace as vector.
+
+        `var` is name of workspace variable, and `array` is numpy
+        ndarray.
+
+        """
+        # this stupidity because you can't just give the engine a np.ndarray
+        MATLAB_ENGINE.workspace[var] = array.tolist()
+        MATLAB_ENGINE.eval('{0} = cell2mat({0});'.format(var), nargout=0)
+
+
+    def load_struct(self, var, struct):
+        """Load pygwinc.Struct array into workspace as vector.
+
+        `var` is name of workspace variable, and `struct` is
+        pygwinc.Struct.
+
+        """
+        # similar stupidity prevents this (this time recarrays in the dict):
+        #matlab.workspace['ifo'] = ifo.to_dict(array=True)
+        with tempfile.NamedTemporaryFile(suffix='.mat') as f:
+            scipy.io.savemat(f, struct.to_dict(array=True))
+            MATLAB_ENGINE.eval("{} = load('{}');".format(var, f.name), nargout=0)
+
+
+    def extract(self, *wvars):
+        """Extract workspace variables from engine.
+
+        Returns dict with wvars as keys.
+
+        """
+        assert len(wvars) > 0
+        with tempfile.NamedTemporaryFile(suffix='.mat') as f:
+            MATLAB_ENGINE.save(f.name, *wvars, nargout=0)
+            data = scipy.io.loadmat(f, squeeze_me=True, struct_as_record=False)
+        if len(wvars) == 1:
+            return data[wvars[0]]
+        else:
+            return data
+
+##################################################
 
 def ifo_add_constants(ifo):
     """Add "constants" sub-Struct to ifo Struct
@@ -105,46 +161,37 @@ def _rename_noises(d):
     return nd
 
 
-def gwinc_matlab(f, ifo, fig=False, title=None, gwincpath=None, eng=None, **kwargs):
+def gwinc_matlab(f, ifo, plot=False):
     """Execute gwinc in MATLAB with the specified ifo model.
 
-    This uses the python matlab.engine (see start_matlab()) to
-    calculate noises with MATLAB gwinc at the specified path
-    `gwincpath` (defaults to 'gwinc' in the current directory if not
-    specified, or uses the GWINCPATH environment variable).
+    This uses the python matlab.engine (see Matlab class) to calculate
+    noises with MATLAB gwinc (gwinc directory specified by GWINCPATH
+    environment variable).
 
-    returns [source, noises, ifo] as returned from matlab.
+    Returns `score` (dict), `noises` (dict), and `ifo` (Struct) as
+    returned from MATLAB.
+
+    If `plot` is True will cause MATLAB to produce it's own plot for
+    the noise budget.
 
     """
-    if not gwincpath:
-        gwincpath = os.getenv('GWINCPATH', 'gwinc')
-    if not os.path.exists(os.path.join(gwincpath, 'gwinc.m')):
-        raise IOError("Invalid matlab gwinc path: '{}'".format(gwincpath))
-
-    if not eng:
-        eng = start_matlab()
-
-    logging.info("adding gwinc path: {}".format(gwincpath))
-    eng.addpath(gwincpath)
+    matlab = Matlab()
 
     # add Constants attribute to ifo structure
     ifo_add_constants(ifo)
 
-    # this stupidity because you can't just give the engine a np.ndarray
-    eng.workspace['f'] = f.tolist()
-    eng.eval('f = cell2mat(f);', nargout=0)
+    matlab.load_array('f', f)
+    matlab.load_struct('ifo', ifo)
 
-    # similar stupidity prevents this (this time recarrays in the dict):
-    #eng.workspace['ifo'] = ifo.to_dict(array=True)
-    with tempfile.NamedTemporaryFile(suffix='.mat') as f:
-        scipy.io.savemat(f, ifo.to_dict(array=True))
-        eng.eval("ifo = load('{}');".format(f.name), nargout=0)
+    if plot:
+        plot_flag = '3'
+    else:
+        plot_flag = '0'
 
-    eng.eval('[score, noises, ifo] = gwinc(f, [], ifo, [], 0);', nargout=0)
+    cmd = "[score, noises, ifo] = gwinc(f, [], ifo, SourceModel, {});".format(plot_flag)
+    matlab.eval(cmd, nargout=0)
 
-    with tempfile.NamedTemporaryFile(suffix='.mat') as f:
-        eng.save(f.name, 'score', 'noises', 'ifo', nargout=0)
-        data = scipy.io.loadmat(f, squeeze_me=True, struct_as_record=False)
+    data = matlab.extract('score', 'noises', 'ifo')
 
     score = data['score']
     mnoises = Struct.from_matstruct(data['noises']).to_dict()
@@ -156,5 +203,6 @@ def gwinc_matlab(f, ifo, fig=False, title=None, gwincpath=None, eng=None, **kwar
     del mnoises['MirrorThermal']
     #####
     noises = _rename_noises(mnoises)
+    ifo = Struct.from_matstruct(data['ifo'])
 
     return score, noises, ifo
