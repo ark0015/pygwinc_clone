@@ -12,7 +12,7 @@ def shotrad(f, ifo, verbose=False):
 
     # deal with multiple bounces, required for resonant delay lines
     # Stefan Ballmer 2012
-    if 'NFolded' in ifo.Infrastructure.__dict__:
+    if 'NFolded' in ifo.Infrastructure:
         if ifo.Infrastructure.travellingWave:
             ifo.Materials.MirrorMass=ifo.Materials.MirrorMass/ifo.Infrastructure.NFolded**2
         else:
@@ -24,7 +24,7 @@ def shotrad(f, ifo, verbose=False):
     # Call IFO Quantum Model
     #####################################################
 
-    if 'Type' not in ifo.Optics.__dict__:
+    if 'Type' not in ifo.Optics:
         fname = shotradSignalRecycled
     else:
         namespace = globals()
@@ -66,10 +66,10 @@ def shotrad(f, ifo, verbose=False):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # determine squeezer type, if any
     # and extract common parameters
-    if 'Squeezer' not in ifo.__dict__:
+    if 'Squeezer' not in ifo:
         sqzType = 'None'
     else:
-        if 'Type' not in ifo.Squeezer.__dict__:
+        if 'Type' not in ifo.Squeezer:
             sqzType = 'Freq Independent'
         else:
             sqzType = ifo.Squeezer.Type
@@ -84,7 +84,7 @@ def shotrad(f, ifo, verbose=False):
         SQZ_DB = ifo.Squeezer.AmplitudedB        # Squeeing in dB
         lambda_in = ifo.Squeezer.InjectionLoss   # Loss to squeezing before injection [Power]
         alpha = ifo.Squeezer.SQZAngle            # Freq Indep Squeeze angle
-        if 'AntiAmplitudedB' in ifo.Squeezer.__dict__:
+        if 'AntiAmplitudedB' in ifo.Squeezer:
             ANTISQZ_DB = ifo.Squeezer.AntiAmplitudedB # Anti squeezing in db
         else:
             ANTISQZ_DB = SQZ_DB
@@ -146,7 +146,7 @@ def shotrad(f, ifo, verbose=False):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Inject squeezed field into the IFO via some filter cavities
-    if sqzType == 'Freq Dependent' and 'FilterCavity' in ifo.Squeezer.__dict__:
+    if sqzType == 'Freq Dependent' and 'FilterCavity' in ifo.Squeezer:
         if verbose:
             print('  Applying %d input filter cavities' % np.atleast_1d(ifo.Squeezer.FilterCavity).size)
         Mr, Msqz = sqzFilterCavityChain(f, np.atleast_1d(ifo.Squeezer.FilterCavity), Msqz)
@@ -164,7 +164,7 @@ def shotrad(f, ifo, verbose=False):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # pass IFO output through some filter cavities
-    if 'OutputFilter' in ifo.__dict__:
+    if 'OutputFilter' in ifo:
         if ifo.OutputFilter.Type == 'None':
             # do nothing, say nothing
             pass

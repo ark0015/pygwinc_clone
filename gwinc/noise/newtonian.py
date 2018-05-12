@@ -86,7 +86,7 @@ def ground(Seismic, f):
     coeff = 1/(1 + 3**(gamma*(f-fk)))
 
     # modelization of seismic noise (velocity)
-    if 'Site' not in Seismic.__dict__:
+    if 'Site' not in Seismic:
         print('defaulting to Livingston site')
         Seismic.Site = 'LLO'
 

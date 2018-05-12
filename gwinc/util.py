@@ -26,7 +26,7 @@ def precompIFO(ifo, PRfixed=0):
 
     ################################# DERIVED TEMP
 
-    if 'Temp' not in ifo.Materials.Substrate.__dict__:
+    if 'Temp' not in ifo.Materials.Substrate:
         ifo.Materials.Substrate.Temp = ifo.Constants.Temp
 
     ################################# DERIVED OPTICS VALES
@@ -38,7 +38,7 @@ def precompIFO(ifo, PRfixed=0):
     ifo.Optics.ITM.Thickness = ifo.Materials.MassThickness
 
     # coating layer optical thicknesses - mevans 2 May 2008
-    if 'CoatLayerOpticalThickness' not in ifo.Optics.ITM.__dict__:
+    if 'CoatLayerOpticalThickness' not in ifo.Optics.ITM:
         T = ifo.Optics.ITM.Transmittance
         dL = ifo.Optics.ITM.CoatingThicknessLown
         dCap = ifo.Optics.ITM.CoatingThicknessCap
@@ -74,7 +74,7 @@ def precompIFO(ifo, PRfixed=0):
 
     # Seismic noise term is saved in a .mat file defined in your respective IFOModel.m
     # It is loaded here and put into the ifo structure.
-    if 'darmSeiSusFile' in ifo.Seismic.__dict__:
+    if 'darmSeiSusFile' in ifo.Seismic and ifo.Seismic.darmSeiSusFile:
         darmsei = loadmat(ifo.Seismic.darmSeiSusFile)
         ifo.Seismic.darmseis_f = darmsei['darmseis_f'][0]
         ifo.Seismic.darmseis_x = darmsei['darmseis_x'][0]

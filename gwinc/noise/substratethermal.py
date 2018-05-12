@@ -146,7 +146,7 @@ def subbrownianFiniteCorr(ifo, opticName):
     # get some numbers
     a = ifo.Materials.MassRadius
     h = ifo.Materials.MassThickness
-    w = ifo.Optics.__dict__[opticName].BeamRadius
+    w = ifo.Optics[opticName].BeamRadius
     Y = ifo.Materials.Substrate.MirrorY
     sigma = ifo.Materials.Substrate.MirrorSigma
     zeta = ifo.Constants.BesselZeros
@@ -226,7 +226,7 @@ def subthermFiniteCorr(ifo, opticName):
     # extract some numbers
     a = ifo.Materials.MassRadius
     h = ifo.Materials.MassThickness
-    w = ifo.Optics.__dict__[opticName].BeamRadius
+    w = ifo.Optics[opticName].BeamRadius
     sigma = ifo.Materials.Substrate.MirrorSigma
     zeta = ifo.Constants.BesselZeros
 
