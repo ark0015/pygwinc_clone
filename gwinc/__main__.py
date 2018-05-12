@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from IPython.terminal.embed import InteractiveShellEmbed
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 from .ifo import available_ifos, load_ifo
 from .precomp import precompIFO

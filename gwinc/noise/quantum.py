@@ -1,9 +1,11 @@
-from __future__ import division, print_function
+from __future__ import division
 from numpy import pi, sqrt, arctan, sin, cos, exp, size, ones, zeros, log10, conj, sum
 import numpy as np
 import scipy.constants
+import logging
 
-def shotrad(f, ifo, verbose=False):
+
+def shotrad(f, ifo):
     """Quantum noise model
     
     corresponding author: mevans
@@ -36,10 +38,10 @@ def shotrad(f, ifo, verbose=False):
     Nfreq = len(f)
     if any(np.array([Mifo.shape[0], Mifo.shape[1], Mn.shape[0]]) != Nfield) or \
        any(np.array([Mifo.shape[2], Msig.shape[2], Mn.shape[2]]) != Nfreq):
-        print(Mifo.shape)
-        print(Msig.shape)
-        print(Mn.shape)
-        print(Nfield, Nfreq)
+        logging.info(Mifo.shape)
+        logging.info(Msig.shape)
+        logging.info(Mn.shape)
+        logging.info(Nfield, Nfreq)
         raise Exception('Inconsistent matrix sizes returned by %s' % str(fname))
   
     # deal with non-standard number of fields
@@ -91,20 +93,16 @@ def shotrad(f, ifo, verbose=False):
   
     # switch on squeezing type for other input squeezing modifications
     if sqzType == 'None':
-        if verbose:
-            #display('You are not injecting squeezing..loozer!')
-            pass
+        pass
 
     elif sqzType == 'Freq Independent':
-        if verbose:
-            print('You are injecting %g dB of frequency independent squeezing' % SQZ_DB)
+        logging.info('You are injecting %g dB of frequency independent squeezing' % SQZ_DB)
 
     elif sqzType == 'Optimal':
         # compute optimal squeezing angle
         alpha = sqzOptimalSqueezeAngle(Mifo, eta)
       
-        if verbose:
-            print('You are injecting %g dB of squeezing with optimal frequency dependent squeezing angle' % SQZ_DB)
+        logging.info('You are injecting %g dB of squeezing with optimal frequency dependent squeezing angle' % SQZ_DB)
       
     elif sqzType == 'OptimalOptimal':
         # compute optimal squeezing angle, assuming optimal readout phase
@@ -113,12 +111,10 @@ def shotrad(f, ifo, verbose=False):
         MsigPD = Msig * sqrt(1 - lambda_PD)
         alpha = sqzOptimalSqueezeAngle(Mifo, [], [R, lambda_in], MsigPD, MnPD)
      
-        if verbose:
-            print('You are injecting %g dB of squeezing with optimal FD squeezing angle, for optimal readout phase' % SQZ_DB)
+        logging.info('You are injecting %g dB of squeezing with optimal FD squeezing angle, for optimal readout phase' % SQZ_DB)
       
     elif sqzType == 'Freq Dependent':
-        if verbose:
-            print('You are injecting %g dB of squeezing with frequency dependent squeezing angle' % SQZ_DB)
+        logging.info('You are injecting %g dB of squeezing with frequency dependent squeezing angle' % SQZ_DB)
 
     else:
         raise Exception('ifo.Squeezer.Type must be None, Freq Independent, Optimal, or Frequency Dependent, not "%s"' % sqzType)
@@ -147,8 +143,7 @@ def shotrad(f, ifo, verbose=False):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Inject squeezed field into the IFO via some filter cavities
     if sqzType == 'Freq Dependent' and 'FilterCavity' in ifo.Squeezer:
-        if verbose:
-            print('  Applying %d input filter cavities' % np.atleast_1d(ifo.Squeezer.FilterCavity).size)
+        logging.info('  Applying %d input filter cavities' % np.atleast_1d(ifo.Squeezer.FilterCavity).size)
         Mr, Msqz = sqzFilterCavityChain(f, np.atleast_1d(ifo.Squeezer.FilterCavity), Msqz)
   
     #####################################################
@@ -170,14 +165,14 @@ def shotrad(f, ifo, verbose=False):
             pass
 
         elif ifo.OutputFilter.Type == 'Chain':
-            if verbose:
-                print('  Applying %d output filter cavities' % np.atleast_1d(ifo.OutputFilter.FilterCavity).size)
+            logging.info('  Applying %d output filter cavities' % np.atleast_1d(ifo.OutputFilter.FilterCavity).size)
+
             Mr, Mnoise = sqzFilterCavityChain(f, np.atleast_1d(ifo.OutputFilter.FilterCavity), Mnoise)
             Msig = getProdTF(Mr, Msig)
             #  Mnoise = getProdTF(Mn, Mnoise);
 
         elif ifo.OutputFilter.Type ==  'Optimal':
-            print('  Optimal output filtering!')
+            logging.info('  Optimal output filtering!')
 
             # compute optimal angle, including upcoming PD losses
             MnPD = sqzInjectionLoss(Mnoise, lambda_PD)

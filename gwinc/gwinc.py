@@ -1,7 +1,8 @@
-from __future__ import division, print_function
+from __future__ import division
+import copy
 import numpy as np
 from numpy import log10, pi, sqrt
-import copy
+import logging
 
 from .precomp import precompIFO
 from . import noise
@@ -62,7 +63,7 @@ def noise_calc(ifo, f):
     # Displacement noises scale as N^2
     # Thermo-optic noise scales as N (incoherent between spots)
     if 'NFolded' in ifo.Infrastructure.__dict__:
-        print('FOLDED')
+        logging.info('FOLDED')
         if ifo.Infrastructure.travellingWave:
             N = ifo.Infrastructure.NFolded
             sep_w = ifo.Infrastructure.DelayLineSpotSeparation
@@ -125,6 +126,7 @@ def gwinc(freq, ifoin, source=None, fig=False):
     ifo = precompIFO(ifo, PRfixed)
 
     pbs      = ifo.gwinc.pbs
+    parm     = ifo.gwinc.parm
     finesse  = ifo.gwinc.finesse
     prfactor = ifo.gwinc.prfactor
     if ifo.Laser.Power * prfactor != pbs:
@@ -149,34 +151,32 @@ def gwinc(freq, ifoin, source=None, fig=False):
             finesseB = 2*pi/ifo.Optics.ITM.TransmittanceD2 
             pbsA = ifo.Laser.PBSD1
             pbsB = ifo.Laser.PBSD2
-            print('Finesse for carrier A:  %7.2f' % finesseA)
-            print('Finesse for carrier B:  %7.2f' % finesseB)
-            print('Power Recycling Factor: %7.2f' % ifo.PRCgain)
-            print('Arm power for carrier A:%7.2f kW' % (finesseA*2/pi*pbsA/2/1000))
-            print('Arm power for carrier B:%7.2f kW' % (finesseB*2/pi*pbsB/2/1000))
-            print('Power on beam splitter for carrier A: %7.2f W' % pbsA)
-            print('Power on beam splitter for carrier B: %7.2f W' % pbsB)
-            print('Laser Power for Carrier A:     %7.2f Watt' % ifo.LP1)
-            print('Laser Power for Carrier B:     %7.2f Watt' % ifo.LP2)
-            print('SRM Detuning for Carrier A:    %7.2f degree' % (ifo.Optics.SRM.TunephaseD1*180/pi))
-            print('SRM Detuning for Carrier B:    %7.2f degree' % (ifo.Optics.SRM.TunephaseD2*180/pi))
-            print('SRM transmission for Carrier A:%9.4f' % ifo.Optics.SRM.TransmittanceD1)
-            print('SRM transmission for Carrier B:%9.4f' % ifo.Optics.SRM.TransmittanceD2)
-            print('ITM transmission for Carrier A:%9.4f' % ifo.Optics.ITM.TransmittanceD1)
-            print('ITM transmission for Carrier B:%9.4f' % ifo.Optics.ITM.TransmittanceD2)
-            print('PRM transmission for both:     %9.4f' % ifo.Optics.PRM.Transmittance)
+            logging.info('Finesse for carrier A:  %7.2f' % finesseA)
+            logging.info('Finesse for carrier B:  %7.2f' % finesseB)
+            logging.info('Power Recycling Factor: %7.2f' % ifo.PRCgain)
+            logging.info('Arm power for carrier A:%7.2f kW' % (finesseA*2/pi*pbsA/2/1000))
+            logging.info('Arm power for carrier B:%7.2f kW' % (finesseB*2/pi*pbsB/2/1000))
+            logging.info('Power on beam splitter for carrier A: %7.2f W' % pbsA)
+            logging.info('Power on beam splitter for carrier B: %7.2f W' % pbsB)
+            logging.info('Laser Power for Carrier A:     %7.2f Watt' % ifo.LP1)
+            logging.info('Laser Power for Carrier B:     %7.2f Watt' % ifo.LP2)
+            logging.info('SRM Detuning for Carrier A:    %7.2f degree' % (ifo.Optics.SRM.TunephaseD1*180/pi))
+            logging.info('SRM Detuning for Carrier B:    %7.2f degree' % (ifo.Optics.SRM.TunephaseD2*180/pi))
+            logging.info('SRM transmission for Carrier A:%9.4f' % ifo.Optics.SRM.TransmittanceD1)
+            logging.info('SRM transmission for Carrier B:%9.4f' % ifo.Optics.SRM.TransmittanceD2)
+            logging.info('ITM transmission for Carrier A:%9.4f' % ifo.Optics.ITM.TransmittanceD1)
+            logging.info('ITM transmission for Carrier B:%9.4f' % ifo.Optics.ITM.TransmittanceD2)
+            logging.info('PRM transmission for both:     %9.4f' % ifo.Optics.PRM.Transmittance)
         else:
-            pbs = ifo.Laser.Power * prfactor
-            ifo.Laser.ArmPower = finesse*2/pi * pbs/2
-            print('Laser Power:            %7.2f Watt' % ifo.Laser.Power)
-            print('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/pi))
-            print('SRM transmission:       %9.4f' % ifo.Optics.SRM.Transmittance)
-            print('ITM transmission:       %9.4f' % ifo.Optics.ITM.Transmittance)
-            print('PRM transmission:       %9.4f' % ifo.Optics.PRM.Transmittance)
-            print('Finesse:                %7.2f' % finesse)
-            print('Power Recycling Gain:   %7.2f' % prfactor)
-            print('Arm Power:              %7.2f kW' % (ifo.Laser.ArmPower/1000))
-            print('Power on BS:            %7.2f W' % pbs)
+            logging.info('Laser Power:            %7.2f Watt' % ifo.Laser.Power)
+            logging.info('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/pi))
+            logging.info('SRM transmission:       %9.4f' % ifo.Optics.SRM.Transmittance)
+            logging.info('ITM transmission:       %9.4f' % ifo.Optics.ITM.Transmittance)
+            logging.info('PRM transmission:       %9.4f' % ifo.Optics.PRM.Transmittance)
+            logging.info('Finesse:                %7.2f' % finesse)
+            logging.info('Power Recycling Gain:   %7.2f' % prfactor)
+            logging.info('Arm Power:              %7.2f kW' % (parm/1000))
+            logging.info('Power on BS:            %7.2f W' % pbs)
 
         # coating and substrate thermal load on the ITM
         PowAbsITM = (pbs/2) * \
@@ -188,18 +188,16 @@ def gwinc(freq, ifoin, source=None, fig=False):
         S_uncorr = PowAbsITM.T*M*PowAbsITM
         TCSeff = 1-sqrt(ifo.TCS.SRCloss/S_uncorr)
 
-        print('Thermal load on ITM:    %8.3f W' % sum(PowAbsITM))
-        print('Thermal load on BS:     %8.3f W' %
-              (ifo.Materials.MassThickness*ifo.Optics.SubstrateAbsorption*pbs))
-        #fprintf(['Required TCS efficiency: %8.3f' ...
-        #              '(estimate, see IFOModel.m for definition)\n'],    TCSeff);  
+        logging.info('Thermal load on ITM:    %8.3f W' % sum(PowAbsITM))
+        logging.info('Thermal load on BS:     %8.3f W' %
+                     (ifo.Materials.MassThickness*ifo.Optics.SubstrateAbsorption*pbs))
         if (ifo.Laser.Power*prfactor != pbs):
-            print('Lensing limited input power: %7.2f W' % (pbs/prfactor))
+            logging.info('Lensing limited input power: %7.2f W' % (pbs/prfactor))
 
         if source:
-            print('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
-            print('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
-            print('Stochastic Omega: %4.1g Universes' % score.Omega)
+            logging.info('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
+            logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
+            logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
         plot.plot_noise(noises)
 

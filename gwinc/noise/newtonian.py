@@ -1,6 +1,8 @@
-from __future__ import division, print_function
+from __future__ import division
 import scipy.constants
 from numpy import pi, sqrt
+import logging
+
 
 def gravg(f, ifo):
     """Return estimate of newtonian noise contribribution to |h(f)|^2
@@ -87,7 +89,7 @@ def ground(Seismic, f):
 
     # modelization of seismic noise (velocity)
     if 'Site' not in Seismic:
-        print('defaulting to Livingston site')
+        logging.info('defaulting to Livingston site')
         Seismic.Site = 'LLO'
 
     if Seismic.Site == 'LHO':

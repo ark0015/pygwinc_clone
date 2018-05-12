@@ -128,7 +128,7 @@ def precompPower(ifo, PRfixed=True):
 
     #pbs = min([pbs, pbsl]);
     if pbs > pbsl:
-        print('P_BS exceeds BS Thermal limit!')
+        logging.warning('P_BS exceeds BS Thermal limit!')
 
     return pbs, parm, finesse, prfactor, Tpr
 
