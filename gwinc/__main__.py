@@ -62,8 +62,8 @@ group.add_argument('--interactive', '-i', action='store_true',
                    help="open interactive shell when plotting")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
-parser.add_argument('IFO', nargs='?', default=IFO,
-                    help="IFO name or description file path (.yaml or .mat)")
+parser.add_argument('IFO', default=IFO,
+                    help="IFO name or description file path (.yaml, .mat, .m)")
 
 
 def main():
