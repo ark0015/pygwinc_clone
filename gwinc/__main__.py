@@ -1,3 +1,4 @@
+from __future__ import print_function
 import signal
 import argparse
 import numpy as np
@@ -72,8 +73,8 @@ def main():
     ifo = load_ifo(args.IFO)
 
     if args.dump:
-        for k,v in sorted(ifo.walk()):
-            print('{:50} {}'.format(k,v))
+        ifo = precompIFO(ifo)
+        print(ifo.to_txt(), end='')
         return
 
     freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
