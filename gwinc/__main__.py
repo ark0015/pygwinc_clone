@@ -107,6 +107,11 @@ def main():
     logging.info("calculating noises...")
     score, noises, ifo = gwinc(freq, ifo)
 
+    logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
+    logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
+    logging.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
+    logging.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
+
     if args.title:
         title = args.title
     else:
