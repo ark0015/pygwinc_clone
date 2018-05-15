@@ -23,9 +23,9 @@ FHI = 6000
 NPOINTS = 3000
 # comparisons to skip
 SKIP = [
-    'Seismic',
-    'Suspension Thermal',
-    'Newtonian Gravity',
+    # 'Seismic',
+    # 'Suspension Thermal',
+    # 'Newtonian Gravity',
     'Total',
     ]
 
