@@ -29,6 +29,13 @@ def precompIFO(ifo, PRfixed=True):
         ifo.Materials.Substrate.Temp = ifo.Constants.Temp
 
     ##############################
+    # suspension vertical-horizontal coupling
+
+    if 'VHCoupling' not in ifo.Suspension:
+        ifo.Suspension.VHCoupling = Struct()
+        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / ifo.Constants.R_earth
+
+    ##############################
     # optics values
 
     # calculate optics' parameters
