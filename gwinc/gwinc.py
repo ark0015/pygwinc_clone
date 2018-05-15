@@ -95,7 +95,7 @@ def noise_calc(ifo, f):
     return noises
 
 
-def gwinc(freq, ifoin, source=None, fig=False):
+def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
     """Calculate strain noise budget for a specified interferometer model.
 
     Argument `freq` is the frequency array for which the noises will
@@ -113,12 +113,6 @@ def gwinc(freq, ifoin, source=None, fig=False):
     """
 
     ifo = copy.deepcopy(ifoin)
-
-    modeSR = False
-    PRfixed = True
-
-    # stick it into the IFO so that it gets passed around
-    ifo.modeSR = modeSR
 
     # add some precomputed info to the ifo struct
     ifo = precompIFO(ifo, PRfixed)
