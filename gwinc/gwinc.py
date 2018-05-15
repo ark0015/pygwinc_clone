@@ -40,8 +40,6 @@ def noise_calc(ifo, f):
     ifo.Suspension.hTable = hTable
     ifo.Suspension.vTable = vTable
 
-    if 'Temp' not in ifo.Materials.Substrate:
-        ifo.Materials.Substrate.Temp = ifo.Constants.Temp
 
     noises['Quantum Vacuum'] = noise.quantum.shotrad(f, ifo)
     noises['Suspension Thermal']  = noise.suspensionthermal.suspR(f, ifo)
