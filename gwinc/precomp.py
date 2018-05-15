@@ -56,12 +56,50 @@ def precompIFO(ifo, PRfixed=True):
         dCap = ifo.Optics.ETM.CoatingThicknessCap
         ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
 
+    ##############################
+    # beam parameters
+
+    armlen = ifo.Infrastructure.Length
+
+    # g-factors
+    g1 = 1 - armlen / ifo.Optics.Curvature.ITM
+    g2 = 1 - armlen / ifo.Optics.Curvature.ETM
+    gcav = sqrt(g1 * g2 * (1 - g1 * g2))
+    gden = g1 - 2 * g1 * g2 + g2
+
+    if (g1 * g2 * (1 - g1 * g2)) <= 0:
+        raise Exception('Unstable arm cavity g-factors.  Change ifo.Optics.Curvature')
+    elif gcav < 1e-3:
+        log.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
+
+    ws = sqrt(armlen * ifo.Laser.Wavelength / pi)
+    w1 = ws * sqrt(abs(g2) / gcav)
+    w2 = ws * sqrt(abs(g1) / gcav)
+
+    # waist size
+    w0 = ws * sqrt(gcav / abs(gden))
+    zr = pi * w0**2 / ifo.Laser.Wavelength
+    z1 = armlen * g2 * (1 - g1) / gden
+    z2 = armlen * g1 * (1 - g2) / gden
+
+    ifo.Optics.ITM.BeamRadius = w1
+    ifo.Optics.ETM.BeamRadius = w2
+
+    ##############################
+    # calc power and IFO parameters
+
     pbs, parm, finesse, prfactor, Tpr = precompPower(ifo, PRfixed)
 
     ifo.gwinc.pbs = pbs
     ifo.gwinc.parm = parm
     ifo.gwinc.finesse = finesse
     ifo.gwinc.prfactor = prfactor
+    ifo.gwinc.gITM = g1
+    ifo.gwinc.gETM = g2
+    ifo.gwinc.BeamWaist = w0
+    ifo.gwinc.BeamRayleighRange = zr
+    ifo.gwinc.BeamWaistToITM = z1
+    ifo.gwinc.BeamWaistToETM = z2
     ifo.Optics.PRM.Transmittance = Tpr
 
     ##############################
@@ -178,25 +216,3 @@ def precompQuantum(ifo):
     fGammaIFO = fGammaArm * ((1 + rSR) / (1 - rSR))
 
     return fSQL, fGammaIFO, fGammaArm
-
-
-def SpotSizes(g1, g2, L, lambda_):
-    """Calculate spot sizes using FP cavity parameters.
-
-    All parameters are in SI units.
-
-    ex.  w1, w2 = SpotSizes(0.9, 0.81, 3995, 1550e-9)
-
-    """
-
-    w1 = (L*lambda_/pi) * sqrt(g2/g1/(1-g1*g2))
-    w1 = sqrt(w1)
-
-    w2 = (L*lambda_/pi) * sqrt(g1/g2/(1-g1*g2))
-    w2 = sqrt(w2)
-
-    w0 = g1*g2*(1-g1*g2) / (g1 + g2 - 2*g1*g2)**2
-    w0 = (L*lambda_/pi) * sqrt(w0)
-    w0 = sqrt(w0)
-
-    return w1, w2, w0
