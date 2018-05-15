@@ -11,12 +11,11 @@ import argparse
 
 import logging
 logging.basicConfig(format='%(message)s',
-                    level=logging.WARNING)
+                    level=logging.DEBUG)
 
 from .. import load_ifo, gwinc
 
 
-IFO = 'aLIGO'
 FLO = 5
 FHI = 6000
 NPOINTS = 3000
@@ -32,9 +31,11 @@ SKIP = [
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
+    parser.add_argument('IFO', help='IFO name or description file')
     args = parser.parse_args()
 
-    ifo = load_ifo(IFO)
+    logging.info("loading IFO '{}'...".format(args.IFO))
+    ifo = load_ifo(args.IFO)
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 
