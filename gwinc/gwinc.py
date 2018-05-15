@@ -13,7 +13,6 @@ def noise_calc(ifo, f):
     """Calculate all IFO noises and return as dict
 
     """
-    noises = {}
 
     # quad cases, for backward compatability
     if ifo.Suspension.Type in (0, 1, 2):
@@ -40,6 +39,9 @@ def noise_calc(ifo, f):
     ifo.Suspension.hTable = hTable
     ifo.Suspension.vTable = vTable
 
+    ##############################
+
+    noises = {}
 
     noises['Quantum Vacuum'] = noise.quantum.shotrad(f, ifo)
     noises['Suspension Thermal']  = noise.suspensionthermal.suspR(f, ifo)
@@ -52,7 +54,7 @@ def noise_calc(ifo, f):
     noises['Coating Thermo-Optic'] = noise.coatingthermal.thermooptic(f, ifo)
 
     # calc semiconductor noise sources
-    if 'isSemiConductor' in ifo.Materials.Substrate.__dict__ and ifo.Materials.Substrate.isSemiConductor:
+    if 'isSemiConductor' in ifo.Materials.Substrate and ifo.Materials.Substrate.isSemiConductor:
         noises['ITM Thermo-Refractive'] = noise.substratethermal.thermorefractiveITM(f, ifo)
         noises['ITM Carrier Density'] = noise.substratethermal.carrierdensity(f, ifo)
 
@@ -60,7 +62,7 @@ def noise_calc(ifo, f):
     # Brownian noise scales as Neff (correlation-corrected spot number)
     # Displacement noises scale as N^2
     # Thermo-optic noise scales as N (incoherent between spots)
-    if 'NFolded' in ifo.Infrastructure.__dict__:
+    if 'NFolded' in ifo.Infrastructure:
         logging.info('FOLDED')
         if ifo.Infrastructure.travellingWave:
             N = ifo.Infrastructure.NFolded
