@@ -79,7 +79,7 @@ Seismic:
   #darmSeiSusFile: 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
 Suspension:
-  Type: 'BQuad' # 0 for cylindrical suspension
+  Type: 'BQuad'
   # Suspension fiber temperatures [TOP UIM PUM TST]
   Temp:
     - 300.0

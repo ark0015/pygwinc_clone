@@ -6,10 +6,13 @@ from scipy.io.matlab.mio5_params import mat_struct
 
 
 def suspR(f, ifo):
-    """Thermal noise for quadruple pendulum
-    switches to various suspension types based on ifo.Suspension.Type
-    the general case calls the suspTYPE function to generate TFs"""
+    """Suspention thermal noise.
 
+    Assumes suspension transfer functions and V-H coupling have been
+    pre-calculated and populated into the relevant `ifo` struct
+    fields.
+
+    """
     # Assign Physical Constants
     kB   = scipy.constants.k
     Temp = ifo.Suspension.Temp
@@ -65,18 +68,9 @@ def suspR(f, ifo):
             w = 2*pi*f
             noise += 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
 
-    if ifo.Suspension.Type == 'Quad_MB':
-        raise Exception('not dealing with Quad_MB suspensions currently')
-        #mbquadlite2lateral_20090819TM_TN;
-        #tvec = sqrt(xvec.^2 + (1e-3*zvec).^2);
-        #tvec = tvec*2;  % 4 masses
-        #nn.SuspThermalB = interp1(fvec, tvec, f, [], 0);
-        #noise = nn.SuspThermalB/ifo.Infrastructure.Length;  % convert to strain
-        #noise = noise.^2; %square to make strain^2
-    else:
-        # turn into gravitational wave strain; 4 masses
-        noise *= 4 / ifo.Infrastructure.Length**2
-        return np.squeeze(noise)
+    # 4 masses, turn into gravitational wave strain
+    noise *= 4 / ifo.Infrastructure.Length**2
+    return np.squeeze(noise)
 
 
 def suspBQuad(f, ifo):

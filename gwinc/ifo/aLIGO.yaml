@@ -68,9 +68,7 @@ Seismic:
   Omicron: 1                      # Feedforward cancellation factor
 
 Suspension:
-  # 0 for cylindrical suspension
-  #Type: 'Quad'
-  Type: 2
+  Type: 'Quad'
   # 0: round, 1: ribbons
   FiberType: 0
   BreakStress: 750e6              # Pa; ref. K. Strain

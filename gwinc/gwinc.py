@@ -13,16 +13,14 @@ def noise_calc(ifo, f):
     """Calculate all IFO noises and return as dict
 
     """
+    ##############################
+    # suspension transfer functions
+    #
+    # this needs to be done here, instead of in precompIFO, because it
+    # requires the frequency vector
 
-    # quad cases, for backward compatability
-    if ifo.Suspension.Type in (0, 1, 2):
-        hForce, vForce, hTable, vTable = noise.suspensionthermal.suspQuad(f, ifo)
-    elif ifo.Suspension.Type == 'Quad':
-        ifo.Suspension.Type = 0
-        hForce, vForce, hTable, vTable = noise.suspensionthermal.suspQuad(f, ifo)
-    else:
-        fname = noise.suspensionthermal.__dict__['susp' + str(ifo.Suspension.Type)]
-        hForce, vForce, hTable, vTable = fname(f, ifo)
+    fname = eval('noise.suspensionthermal.susp{}'.format(ifo.Suspension.Type))
+    hForce, vForce, hTable, vTable = fname(f, ifo)
 
     # if the suspension code supports different temps for the stages
     try:
