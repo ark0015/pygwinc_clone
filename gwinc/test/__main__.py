@@ -5,6 +5,8 @@ import os
 import sys
 import signal
 import pickle
+import subprocess
+import hashlib
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -28,6 +30,25 @@ SKIP = [
     ]
 
 
+def path_hash(path):
+    """Calculate SHA1 hash of path, either directory or file"""
+    path = os.path.expanduser(path)
+    if os.path.isdir(path):
+        d = path
+        f = '.'
+    else:
+        d = os.path.dirname(path)
+        f = os.path.basename(path)
+    CWD = os.getcwd()
+    os.chdir(d)
+    cmd = 'find {} -type f ! -wholename "*/.*" -print0 | sort -z | xargs -0 sha1sum | sha1sum'.format(f)
+    sha1sum_out = subprocess.check_output(cmd, shell=True)
+    sha1sum = sha1sum_out.split()[0]
+    os.chdir(CWD)
+    return sha1sum
+
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
@@ -39,23 +60,36 @@ def main():
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 
-    matdata = os.path.join(os.path.dirname(__file__), 'matlab.pkl')
-    if os.path.exists(matdata):
-        logging.info("using existing {}...".format(matdata))
-        with open(matdata, 'rb') as f:
+    mdata_pkl = os.path.join(os.path.dirname(__file__), '{}.pkl'.format(args.IFO))
+    ifo_hash = hashlib.sha1(ifo.to_txt()).hexdigest()
+    gwinc_hash = path_hash(os.getenv('GWINCPATH'))
+
+    mrecalc = True
+
+    if os.path.exists(mdata_pkl):
+        logging.info("loading MATLAB data {}...".format(mdata_pkl))
+        with open(mdata_pkl, 'rb') as f:
             if sys.version_info.major > 2:
                 mdata = pickle.load(f, encoding='latin1')
             else:
                 mdata = pickle.load(f)
-    else:
-        logging.info("calculating matlab noise...")
-        gwincpath = os.path.join(os.path.dirname(__file__), 'gwinc')
-        from ..gwinc_matlab import gwinc_matlab
-        score, noises, ifo = gwinc_matlab(freq, ifo, gwincpath=gwincpath)
-        mdata = dict(score=score, noises=noises, ifo=ifo)
-        with open(matdata, 'wb') as f:
-            pickle.dump(mdata, f)
 
+        # don't recalculcate MAT gwinc if ifo and gwinc dir hashes
+        # haven't changed.
+        if mdata['ifo_hash'] == ifo_hash and mdata['gwinc_hash'] == gwinc_hash:
+            mrecalc = False
+        if mdata['ifo_hash'] != ifo_hash:
+            logging.info("ifo hash has changed: {}".format(ifo_hash))
+        if mdata['gwinc_hash'] != gwinc_hash:
+            logging.info("GWINC hash has changed: {}".format(gwinc_hash))
+
+    if mrecalc:
+        logging.info("calculating MATLAB noises...")
+        from ..gwinc_matlab import gwinc_matlab
+        mscore, mnoises, mifo = gwinc_matlab(freq, ifo)
+        mdata = dict(score=mscore, noises=mnoises, ifo=mifo, ifo_hash=ifo_hash, gwinc_hash=gwinc_hash)
+        with open(mdata_pkl, 'wb') as f:
+            pickle.dump(mdata, f)
 
     score, noises, ifo = gwinc(freq, ifo)
 
