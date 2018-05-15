@@ -19,19 +19,23 @@ def precompIFO(ifo, PRfixed=True):
 
     if 'gwinc' not in ifo:
         ifo.gwinc = Struct()
+
     ifo.gwinc.PRfixed = PRfixed
 
-    ################################# DERIVED TEMP
+    ##############################
+    # derived temp
 
     if 'Temp' not in ifo.Materials.Substrate:
         ifo.Materials.Substrate.Temp = ifo.Constants.Temp
 
-    ################################# DERIVED OPTICS VALES
-    # Calculate optics' parameters
+    ##############################
+    # optics values
+
+    # calculate optics' parameters
     ifo.Materials.MirrorVolume = pi*ifo.Materials.MassRadius**2 * \
                                  ifo.Materials.MassThickness
     ifo.Materials.MirrorMass = ifo.Materials.MirrorVolume* \
-                               ifo.Materials.Substrate.MassDensity # kg
+                               ifo.Materials.Substrate.MassDensity
     ifo.Optics.ITM.Thickness = ifo.Materials.MassThickness
 
     # coating layer optical thicknesses - mevans 2 May 2008
@@ -45,32 +49,32 @@ def precompIFO(ifo, PRfixed=True):
         dCap = ifo.Optics.ETM.CoatingThicknessCap
         ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
 
-    # compute power on BS
     pbs, parm, finesse, prfactor, Tpr = precompPower(ifo, PRfixed)
+
     ifo.gwinc.pbs = pbs
     ifo.gwinc.parm = parm
     ifo.gwinc.finesse = finesse
     ifo.gwinc.prfactor = prfactor
     ifo.Optics.PRM.Transmittance = Tpr
 
-    # compute quantum noise parameters
+    ##############################
+    # calc quantum parameters
+
     fSQL, fGammaIFO, fGammaArm = precompQuantum(ifo)
+
     ifo.gwinc.fSQL = fSQL
     ifo.gwinc.fGammaIFO = fGammaIFO
     ifo.gwinc.fGammaArm = fGammaArm
 
-    ##################################### LOAD SAVED DATA
-    # precompute bessels zeros for finite mirror corrections
-    #if ~exist('besselzeros')
-    # load saved values, or just compute them
-    #try
-    #  load besselzeros
-    #catch
+    ##############################
+    # precompute bessels zeros, needed in coat and substrate thermal
+
     besselzeros = scipy.special.jn_zeros(1, 300)
     ifo.Constants.BesselZeros = besselzeros
 
-    # Seismic noise term is saved in a .mat file defined in your respective IFOModel.m
-    # It is loaded here and put into the ifo structure.
+    ##############################
+    # saved seismic spectrum
+
     if 'darmSeiSusFile' in ifo.Seismic and ifo.Seismic.darmSeiSusFile:
         darmsei = loadmat(ifo.Seismic.darmSeiSusFile)
         ifo.Seismic.darmseis_f = darmsei['darmseis_f'][0]
@@ -80,10 +84,9 @@ def precompIFO(ifo, PRfixed=True):
 
 
 def precompPower(ifo, PRfixed=True):
-    """Compute power on beamsplitter and finesse and power recycling factor.
+    """Compute power on beamsplitter, finesse, and power recycling factor.
 
     """
-
     # constants
     c       = scipy.constants.c
     pin     = ifo.Laser.Power
