@@ -5,6 +5,42 @@ import scipy.constants
 from scipy.io.matlab.mio5_params import mat_struct
 
 
+def construct_eom_matrix(k, m, f):
+    """construct matrix for equations of motion.
+
+    `k` is the array for the spring constants and `f` is the freq
+    vector.
+
+    """
+    w = 2*pi * f
+    A = zeros((4,4,f.size), dtype=complex)
+    A[0,1,:] = -k[1,:]; A[1,0,:] = A[1,2,:]
+    A[1,2,:] = -k[2,:]; A[2,1,:] = A[1,2,:]
+    A[2,3,:] = -k[3,:]; A[3,2,:] = A[2,3,:]
+    A[0,0,:] = k[0,:] + k[1,:] - m[0] * w**2
+    A[1,1,:] = k[1,:] + k[2,:] - m[1] * w**2
+    A[2,2,:] = k[2,:] + k[3,:] - m[2] * w**2
+    A[3,3,:] = k[3,:] - m[3] * w**2
+    return A
+
+
+def calc_transfer_functions(A, B, k, f):
+    """calculate transfer function from A/B matrices
+
+    """
+    X = zeros([B.size,A[0,0,:].size], dtype=complex)
+    for j in range(A[0,0,:].size):
+        X[:,j] = np.linalg.solve(A[:,:,j], B)
+    # transfer function from the force on the TM to TM motion
+    hForce     = zeros(f.shape, dtype=complex)
+    hForce[:]  = X[3,:]
+    # transfer function from the table motion to TM motion
+    hTable     = zeros(f.shape, dtype=complex)
+    hTable[:]  = X[0,:]
+    hTable     = hTable * k[0,:]
+    return hForce, hTable
+
+
 def suspQuad(f, ifo):
     """Suspension for quadruple pendulum
     
@@ -33,43 +69,6 @@ def suspQuad(f, ifo):
     
     modification for the different temperatures between the stages
     K.Arai Mar 1., 2012"""
-
-    # helper functions
-    def construct_eom_matrix(k, m, f):
-        """construct a matrix for eq of motion
-        k is the array for the spring constants
-        f is the freq vector"""
-
-        w = 2*pi * f
-
-        A = zeros((4,4,f.size), dtype=complex)
-
-        A[0,1,:] = -k[1,:]; A[1,0,:] = A[1,2,:]
-        A[1,2,:] = -k[2,:]; A[2,1,:] = A[1,2,:]
-        A[2,3,:] = -k[3,:]; A[3,2,:] = A[2,3,:]
-        A[0,0,:] = k[0,:] + k[1,:] - m[0] * w**2
-        A[1,1,:] = k[1,:] + k[2,:] - m[1] * w**2
-        A[2,2,:] = k[2,:] + k[3,:] - m[2] * w**2
-        A[3,3,:] = k[3,:] - m[3] * w**2
-        return A
-
-    def calc_transfer_functions(A, B, k, f):
-
-        X = zeros([B.size,A[0,0,:].size], dtype=complex)
-
-        for j in range(A[0,0,:].size):
-            X[:,j] = np.linalg.solve(A[:,:,j], B)
-
-        # transfer function from the force on the TM to TM motion
-        hForce     = zeros(f.shape, dtype=complex)
-        hForce[:]  = X[3,:]
-
-        # transfer function from the table motion to TM motion
-        hTable     = zeros(f.shape, dtype=complex)
-        hTable[:]  = X[0,:]
-        hTable     = hTable * k[0,:]
-
-        return hForce, hTable
 
     # default arguments
     fiberType = 0
@@ -356,43 +355,6 @@ def suspBQuad(f, ifo):
     
     modification for the different temperatures between the stages
     K.Arai Mar 1., 2012"""
-
-    # helper functions
-    def construct_eom_matrix(k, m, f):
-        """construct a matrix for eq of motion
-        k is the array for the spring constants
-        f is the freq vector"""
-
-        w = 2*pi * f
-
-        A = zeros((4,4,f.size), dtype=complex)
-
-        A[0,1,:] = -k[1,:]; A[1,0,:] = A[1,2,:]
-        A[1,2,:] = -k[2,:]; A[2,1,:] = A[1,2,:]
-        A[2,3,:] = -k[3,:]; A[3,2,:] = A[2,3,:]
-        A[0,0,:] = k[0,:] + k[1,:] - m[0] * w**2
-        A[1,1,:] = k[1,:] + k[2,:] - m[1] * w**2
-        A[2,2,:] = k[2,:] + k[3,:] - m[2] * w**2
-        A[3,3,:] = k[3,:] - m[3] * w**2
-        return A
-
-    def calc_transfer_functions(A, B, k, f):
-
-        X = zeros([B.size,A[0,0,:].size], dtype=complex)
-
-        for j in range(A[0,0,:].size):
-            X[:,j] = np.linalg.solve(A[:,:,j], B)
-
-        # transfer function from the force on the TM to TM motion
-        hForce     = zeros(f.shape, dtype=complex)
-        hForce[:]  = X[3,:]
-
-        # transfer function from the table motion to TM motion
-        hTable     = zeros(f.shape, dtype=complex)
-        hTable[:]  = X[0,:]
-        hTable     = hTable * k[0,:]
-
-        return hForce, hTable
 
     # default arguments
     fiberType = 0
