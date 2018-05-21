@@ -48,8 +48,8 @@ def suspQuad(f, ifo, material='Silica'):
     material used for test mass suspension stage.  steel used for all
     other stages.  Violin modes are included.
 
-    fiberType = suspension sub type 0 => round fibers, otherwise ribbons
-    
+    ifo.Suspension.FiberType should be: 0=round, 1=ribbons.
+
     hForce, vForce = transfer functions from the force on the TM to TM
     motion these should have the correct losses for the mechanical
     system such that the thermal noise is:
@@ -73,9 +73,6 @@ def suspQuad(f, ifo, material='Silica'):
     stages by K.Arai.
 
     """
-    # default arguments
-    fiberType = 0
-  
     # Assign Physical Constants
     g         = scipy.constants.g
     kB        = scipy.constants.k
@@ -171,14 +168,14 @@ def suspQuad(f, ifo, material='Silica'):
     N3      = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
     N4      = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
-    if ifo.Suspension.FiberType == 0:
+    if ifo.Suspension.FiberType == 0: # Round
         r_fib = ifo.Suspension.Fiber.Radius
         xsect = pi * r_fib**2     # cross-sectional area
         II4 = r_fib**4 * pi/4     # x-sectional moment of inertia
         mu_v = 2 / r_fib          # mu/(V/S), vertical motion
         mu_h = 4 / r_fib          # mu/(V/S), horizontal motion
         tau_si = 7.372e-2 * rho * C * (4*xsect/pi) / K # TE time constant
-    else:
+    elif ifo.Suspension.FiberType == 1: # Ribbon
         W   = ifo.Suspension.Ribbon.Width
         t   = ifo.Suspension.Ribbon.Thickness
         xsect = W * t
@@ -186,6 +183,8 @@ def suspQuad(f, ifo, material='Silica'):
         mu_v = 2 * (W + t)/(W*t)
         mu_h = (3 * N4 * W + t)/(N4*W + t)*2*(W+t)/(W*t)
         tau_si = (rho * C * t**2) / (K * pi**2)
+    else:
+        raise Exception("Unsupported suspension type: {}".format(ifo.Suspension.FiberType))
 
     # loss factor, last stage suspension, vertical
     phiv4   = phi_si * (1 + mu_v * ds)
