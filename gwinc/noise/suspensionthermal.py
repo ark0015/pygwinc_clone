@@ -4,7 +4,7 @@ import numpy as np
 import scipy.constants
 
 
-def suspR(f, ifo):
+def susptherm(f, ifo):
     """Suspention thermal noise.
 
     Assumes suspension transfer functions and V-H coupling have been

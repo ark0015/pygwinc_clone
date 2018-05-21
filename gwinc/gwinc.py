@@ -43,7 +43,7 @@ def noise_calc(ifo, f):
     noises = {}
 
     noises['Quantum Vacuum'] = noise.quantum.shotrad(f, ifo)
-    noises['Suspension Thermal']  = noise.suspensionthermal.suspR(f, ifo)
+    noises['Suspension Thermal']  = noise.suspensionthermal.susptherm(f, ifo)
     noises['Excess Gas']  = noise.residualgas.gas(f, ifo)
     noises['Substrate Brownian']  = noise.substratethermal.subbrownian(f, ifo)
     noises['Coating Brownian']  = noise.coatingthermal.coatbrownian(f, ifo)
