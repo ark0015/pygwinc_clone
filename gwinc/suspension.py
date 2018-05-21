@@ -2,7 +2,8 @@ from __future__ import division
 from numpy import pi, sqrt, sin, cos, tan, real, imag, zeros
 import numpy as np
 import scipy.constants
-from scipy.io.matlab.mio5_params import mat_struct
+
+from .struct import Struct
 
 
 def construct_eom_matrix(k, m, f):
@@ -282,8 +283,8 @@ def suspQuad(f, ifo, material='Silica'):
     kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
-    hForce = mat_struct()
-    vForce = mat_struct()
+    hForce = Struct()
+    vForce = Struct()
     hForce.singlylossy = zeros((4, f.size), dtype=complex)
     vForce.singlylossy = zeros((4, f.size), dtype=complex)
     for ii in range(4): # specify the stage to turn on the loss
