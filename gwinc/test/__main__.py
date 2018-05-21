@@ -52,6 +52,7 @@ def path_hash(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
+    parser.add_argument('--save', '-s', help='save plot to file')
     parser.add_argument('IFO', help='IFO name or description file')
     args = parser.parse_args()
 
@@ -124,22 +125,28 @@ def main():
     if args.plot:
         spec = (len(diffs), 2)
         for i, name in enumerate(diffs):
-            ax = plt.subplot2grid(spec, (i, 0))
-            ax.loglog(freq, np.sqrt(noises[name]), label='pygwinc')
-            ax.loglog(freq, np.sqrt(mnoises[name]), label='matlab')
-            ax.grid()
-            ax.legend(loc='upper right')
+            axl = plt.subplot2grid(spec, (i, 0))
+            axl.loglog(freq, np.sqrt(noises[name]), label='pygwinc')
+            axl.loglog(freq, np.sqrt(mnoises[name]), label='matlab')
+            axl.grid()
+            axl.legend(loc='upper right')
             # ax.set_title(name)
-            ax.set_ylabel(name)
+            axl.set_ylabel(name)
     
-            ax = plt.subplot2grid(spec, (i, 1))
-            ax.loglog(freq, diffs[name], label=name)
-            ax.grid()
+            axr = plt.subplot2grid(spec, (i, 1))
+            axr.loglog(freq, diffs[name], label=name)
+            axr.grid()
             # ax.set_title(name)
+
+        axl.set_xlabel("frequency [Hz]")
+        axr.set_xlabel("frequency [Hz]")
     
         plt.suptitle("noises that differ by more than 1% [(mat-py)/py]")
-        plt.show()
-
+        if args.save:
+            plt.gcf().set_size_inches(11, 20)
+            plt.savefig(args.save)
+        else:
+            plt.show()
 
     if len(diffs) > 0:
         return 1
