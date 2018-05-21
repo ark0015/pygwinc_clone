@@ -5,6 +5,7 @@ from numpy import log10, pi, sqrt
 import logging
 
 from .precomp import precompIFO
+from . import suspension
 from . import noise
 from . import plot
 
@@ -19,7 +20,7 @@ def noise_calc(ifo, f):
     # this needs to be done here, instead of in precompIFO, because it
     # requires the frequency vector
 
-    fname = eval('noise.suspensionthermal.susp{}'.format(ifo.Suspension.Type))
+    fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
     hForce, vForce, hTable, vTable = fname(f, ifo)
 
     # if the suspension code supports different temps for the stages
