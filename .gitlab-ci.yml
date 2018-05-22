@@ -12,7 +12,7 @@ test:
   - apt-get update -qq
   - apt-get install -y -qq python-yaml python-scipy python-matplotlib python-ipython
   - export MPLBACKEND=agg
-  - python -m gwinc.test
+  #- python -m gwinc.test aLIGO
   - python -m gwinc gwinc/ifo/aLIGO.yaml -s aLIGO.png
   - python -m gwinc gwinc/ifo/Voyager.yaml -s Voyager.png
   after_script:
