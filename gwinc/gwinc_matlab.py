@@ -1,10 +1,10 @@
 import os
 import tempfile
 import scipy.io
-import scipy.constants
 import numpy as np
 import logging
 
+from . import const
 from .struct import Struct
 
 ##################################################
@@ -96,68 +96,6 @@ class Matlab:
 
 ##################################################
 
-def ifo_add_constants(ifo):
-    """Add "constants" sub-Struct to ifo Struct
-
-    This is required by MATLAB gwinc.
-
-    """
-    # permittivity of free space [F / m]
-    #ifo.Constants.E0      = 8.8541878176e-12
-    ifo.Constants.E0      = scipy.constants.epsilon_0
-    # Plancks constant [J s]
-    #ifo.Constants.hbar    = 1.054572e-34
-    ifo.Constants.hbar    = scipy.constants.hbar
-    # Planks constant [J s]
-    #ifo.Constants.h       = ifo.Constants.hbar * 2 * pi
-    # Boltzman constant [J / K]
-    #ifo.Constants.kB      = 1.380658e-23
-    ifo.Constants.kB      = scipy.constants.k
-    # gas constant [J / (K * mol)]
-    #ifo.Constants.R       = 8.31447215
-    # electron mass [kg]
-    #ifo.Constants.m_e     = 9.10938291e-31
-    # speed of light in vacuum [m / s]
-    #ifo.Constants.c       = 2.99792458e8
-    ifo.Constants.c       = scipy.constants.c
-    # seconds in a year [s]
-    ifo.Constants.yr      = 365.2422 * 86400
-    # mass of Earth [kg]
-    #ifo.Constants.M_earth = 5.972e24
-    # radius of Earth [m]
-    ifo.Constants.R_earth = 6.3781e6
-    # sampling frequency [Hz]
-    #ifo.Constants.fs      = 16384
-    # Astronomical unit, IAU 2012 Resolution B2 [m]
-    ifo.Constants.AU      = 149597870700
-    # IAU 2015 Resolution B2 [m]
-    ifo.Constants.parsec  = ifo.Constants.AU * (648000 / np.pi)
-    # IAU 2015 Resolution B2 [m]
-    ifo.Constants.Mpc     = ifo.Constants.parsec * 1e6
-    # IAU 2015 Resolution B3 [m^3 / s^2; G * MSol]
-    ifo.Constants.SolarMassParameter = 1.3271244e20
-    # gravitational const [m^3 / (kg  s^2)]
-    #ifo.Constants.G       = 6.67408e-11
-    ifo.Constants.G       = scipy.constants.G
-    # solar mass [kg]
-    # http://arxiv.org/abs/1507.07956
-    ifo.Constants.MSol    = ifo.Constants.SolarMassParameter / ifo.Constants.G
-    # gravitational acceleration [m / s^2]
-    #ifo.Constants.g       = 9.806
-    ifo.Constants.g       = scipy.constants.g
-    # Hubble constant [ms^( - 1)]
-    # http://physics.nist.gov/cuu/Constants/
-    ifo.Constants.H0      = 67110
-    # http://arxiv.org/pdf/1303.5076v3.pdf
-    # Mass density parameter
-    ifo.Constants.omegaM  = 0.3175
-    # http://arxiv.org/pdf/1303.5076v3.pdf
-    # Cosmological constant density parameter
-    # omegaK = 0 (flat universe) is assumed
-    ifo.Constants.omegaLambda = 1 - ifo.Constants.omegaM
-    return ifo
-
-
 NOISE_NAME_MAP = {
     'Quantum': 'Quantum Vacuum',
     'Newtonian': 'Newtonian Gravity',
@@ -168,6 +106,20 @@ NOISE_NAME_MAP = {
     'SuspThermal': 'Suspension Thermal',
     'ResGas': 'Excess Gas',
 }
+
+
+def ifo_matlab_transform(ifo):
+    """Prep the ifo structure for use with MATLAB gwinc
+
+    * add "constants" sub-Struct
+
+    """
+    # add constants
+    ifo.Constants = Struct.from_dict(const.CONSTANTS)
+
+    return ifo
+
+
 def _rename_noises(d):
     nd = {}
     for k,v in d.items():
@@ -199,7 +151,7 @@ def gwinc_matlab(f, ifo, plot=False):
     matlab = Matlab()
 
     # add Constants attribute to ifo structure
-    ifo_add_constants(ifo)
+    ifo_matlab_transform(ifo)
 
     matlab.load_array('f', f)
     matlab.load_struct('ifo', ifo)

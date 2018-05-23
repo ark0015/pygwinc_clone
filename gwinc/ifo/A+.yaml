@@ -30,8 +30,6 @@
 # Updated numbers March 2018: LIGO-T1800044
 
 Constants:
-  # earth radius
-  R_earth: 6.3781e6
   # Temperature of the Vacuum
   Temp: 290                       # K
 

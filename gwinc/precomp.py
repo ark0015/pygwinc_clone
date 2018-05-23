@@ -4,6 +4,7 @@ from scipy.io import loadmat
 import scipy.special
 import logging
 
+from .const import CONSTANTS
 from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
 
@@ -33,7 +34,7 @@ def precompIFO(ifo, PRfixed=True):
 
     if 'VHCoupling' not in ifo.Suspension:
         ifo.Suspension.VHCoupling = Struct()
-        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / ifo.Constants.R_earth
+        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / CONSTANTS['R_earth']
 
     ##############################
     # optics values
