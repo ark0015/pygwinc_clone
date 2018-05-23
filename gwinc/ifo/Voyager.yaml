@@ -86,7 +86,7 @@ Suspension:
     - 123.0
   VHCoupling:
     theta: 1e-3 # vertical-horizontal x-coupling
-  FiberType: 1        # 0 = round, 1 = ribbons
+  FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
     Thickness: 115e-6 # m

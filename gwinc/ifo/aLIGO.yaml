@@ -66,8 +66,7 @@ Seismic:
 
 Suspension:
   Type: 'Quad'
-  # 0: round, 1: ribbons
-  FiberType: 0
+  FiberType: 'Round'
   BreakStress: 750e6              # Pa; ref. K. Strain
   Temp: 290
   VHCoupling:

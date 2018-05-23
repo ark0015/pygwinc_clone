@@ -6,6 +6,13 @@ import scipy.constants
 from .struct import Struct
 
 
+# supported fiber geometries
+FIBER_TYPES = [
+    'Round',
+    'Ribbon',
+]
+
+
 def construct_eom_matrix(k, m, f):
     """construct matrix for equations of motion.
 
@@ -169,14 +176,14 @@ def suspQuad(f, ifo, material='Silica'):
     N3      = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
     N4      = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
 
-    if ifo.Suspension.FiberType == 0: # Round
+    if ifo.Suspension.FiberType == 'Round':
         r_fib = ifo.Suspension.Fiber.Radius
         xsect = pi * r_fib**2     # cross-sectional area
         II4 = r_fib**4 * pi/4     # x-sectional moment of inertia
         mu_v = 2 / r_fib          # mu/(V/S), vertical motion
         mu_h = 4 / r_fib          # mu/(V/S), horizontal motion
         tau_si = 7.372e-2 * rho * C * (4*xsect/pi) / K # TE time constant
-    elif ifo.Suspension.FiberType == 1: # Ribbon
+    elif ifo.Suspension.FiberType == 'Ribbon':
         W   = ifo.Suspension.Ribbon.Width
         t   = ifo.Suspension.Ribbon.Thickness
         xsect = W * t

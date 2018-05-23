@@ -5,6 +5,7 @@ import numpy as np
 import logging
 
 from . import const
+from . import suspension
 from .struct import Struct
 
 ##################################################
@@ -113,6 +114,7 @@ def ifo_matlab_transform(ifo):
 
     * add "Constants" sub-Struct
     * copy Temp to Constants
+    * change Suspension.FiberType string into number
 
     """
     # add constants
@@ -120,6 +122,9 @@ def ifo_matlab_transform(ifo):
 
     # copy tempurature into Constants
     ifo.Constants.Temp = ifo.Infrastructure.Temp
+
+    # translate FiberType string to int
+    ifo.Suspension.FiberType = suspension.FIBER_TYPES.index(ifo.Suspension.FiberType)
 
     return ifo
 
