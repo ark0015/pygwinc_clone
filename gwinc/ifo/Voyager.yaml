@@ -27,11 +27,9 @@
 # * 13. Fejer
 # * 14. Braginsky
 
-Constants:
-  Temp: 295 # K; Temperature of the Vacuum
-  
 Infrastructure:
   Length: 3995 # m
+  Temp: 295 # K; Temperature of the Vacuum
   ResidualGas:
     pressure: 4.0e-7         # Pa
     mass: 3.35e-27           # kg,   Mass of H_2 (ref. 10)

@@ -27,7 +27,7 @@ def precompIFO(ifo, PRfixed=True):
     # derived temp
 
     if 'Temp' not in ifo.Materials.Substrate:
-        ifo.Materials.Substrate.Temp = ifo.Constants.Temp
+        ifo.Materials.Substrate.Temp = ifo.Infrastructure.Temp
 
     ##############################
     # suspension vertical-horizontal coupling
@@ -114,9 +114,12 @@ def precompIFO(ifo, PRfixed=True):
 
     ##############################
     # precompute bessels zeros, needed in coat and substrate thermal
+    # FIXME: can we move this into const and just compute at load
+    # time?
 
-    besselzeros = scipy.special.jn_zeros(1, 300)
-    ifo.Constants.BesselZeros = besselzeros
+    if 'Constants' not in ifo:
+        ifo.Constants = Struct()
+    ifo.Constants.BesselZeros = scipy.special.jn_zeros(1, 300)
 
     ##############################
     # saved seismic spectrum

@@ -111,11 +111,15 @@ NOISE_NAME_MAP = {
 def ifo_matlab_transform(ifo):
     """Prep the ifo structure for use with MATLAB gwinc
 
-    * add "constants" sub-Struct
+    * add "Constants" sub-Struct
+    * copy Temp to Constants
 
     """
     # add constants
     ifo.Constants = Struct.from_dict(const.CONSTANTS)
+
+    # copy tempurature into Constants
+    ifo.Constants.Temp = ifo.Infrastructure.Temp
 
     return ifo
 

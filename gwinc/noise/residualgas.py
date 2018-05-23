@@ -16,7 +16,7 @@ def gas(f, ifo):
     L      = ifo.Infrastructure.Length
     Lambda = ifo.Laser.Wavelength
     k      = scipy.constants.k
-    T      = ifo.Constants.Temp
+    T      = ifo.Infrastructure.Temp
     P      = ifo.Infrastructure.ResidualGas.pressure            # Pressure inside the vacuum
     M      = ifo.Infrastructure.ResidualGas.mass
     R1     = ifo.Optics.Curvature.ITM                           # Radius of curvature of ITM

@@ -29,12 +29,9 @@
 #
 # Updated numbers March 2018: LIGO-T1800044
 
-Constants:
-  # Temperature of the Vacuum
-  Temp: 290                       # K
-
 Infrastructure:
   Length: 3995                    # m
+  Temp: 290                       # K
   ResidualGas:
     pressure: 4.0e-7              # Pa
     mass: 3.35e-27                # kg; Mass of H_2 (ref. 10)
