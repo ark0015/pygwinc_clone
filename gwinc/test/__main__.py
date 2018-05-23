@@ -21,6 +21,7 @@ from .. import load_ifo, gwinc
 FLO = 5
 FHI = 6000
 NPOINTS = 3000
+FRACTIONAL_TOLERANCE = 0.01
 # comparisons to skip
 SKIP = [
     # 'Seismic',
@@ -113,7 +114,7 @@ def main():
         diff = np.sqrt(mnoise) - np.sqrt(noise)
         frac = abs(diff / np.sqrt(noise))
 
-        if max(frac) < 0.01:
+        if max(frac) < FRACTIONAL_TOLERANCE:
             continue
 
         logging.warning("EXCESSIVE DIFFERENCE: '{}'".format(name))
