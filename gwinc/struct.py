@@ -78,6 +78,9 @@ class Struct(object):
     def __getitem__(self, item):
         return self.__dict__[item]
 
+    def __setitem__(self, item, value):
+        self.__dict__[item] = value
+
     def __contains__(self, item):
         return item in self.__dict__
 
