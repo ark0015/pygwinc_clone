@@ -63,7 +63,7 @@ def main():
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 
     mdata_pkl = os.path.join(os.path.dirname(__file__), '{}.pkl'.format(args.IFO))
-    ifo_hash = hashlib.sha1(ifo.to_txt()).hexdigest()
+    ifo_hash = hashlib.sha1(ifo.to_txt().encode()).hexdigest()
     gwinc_hash = path_hash(os.getenv('GWINCPATH'))
 
     mrecalc = True

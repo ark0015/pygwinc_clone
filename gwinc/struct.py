@@ -166,7 +166,7 @@ class Struct(object):
         """
         txt = io.StringIO()
         for k, v in sorted(self.walk()):
-            if isinstance(v, (int, long, float, complex)):
+            if isinstance(v, (int, float, complex)):
                 base = fmt
             elif isinstance(v, np.ndarray):
                 v = np.array2string(v, separator='', max_line_width=np.Inf, formatter={'all':lambda x: "{:0.6e} ".format(x)})
