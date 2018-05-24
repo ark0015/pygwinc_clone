@@ -27,7 +27,6 @@ SKIP = [
     # 'Seismic',
     # 'Suspension Thermal',
     # 'Newtonian Gravity',
-    'Total',
     ]
 
 
@@ -69,7 +68,7 @@ def main():
     mrecalc = True
 
     if os.path.exists(mdata_pkl):
-        logging.info("loading MATLAB data {}...".format(mdata_pkl))
+        logging.info("loading matgwinc data {}...".format(mdata_pkl))
         with open(mdata_pkl, 'rb') as f:
             if sys.version_info.major > 2:
                 mdata = pickle.load(f, encoding='latin1')
@@ -83,23 +82,24 @@ def main():
         if mdata['ifo_hash'] != ifo_hash:
             logging.info("ifo hash has changed: {}".format(ifo_hash))
         if mdata['gwinc_hash'] != gwinc_hash:
-            logging.info("GWINC hash has changed: {}".format(gwinc_hash))
+            logging.info("matgwinc hash has changed: {}".format(gwinc_hash))
 
     if mrecalc:
-        logging.info("calculating MATLAB noises...")
+        logging.info("calculating matgwinc noises...")
         from ..gwinc_matlab import gwinc_matlab
         mscore, mnoises, mifo = gwinc_matlab(freq, ifo)
         mdata = dict(score=mscore, noises=mnoises, ifo=mifo, ifo_hash=ifo_hash, gwinc_hash=gwinc_hash)
         with open(mdata_pkl, 'wb') as f:
             pickle.dump(mdata, f)
 
+    logging.info("calculating pygwinc noises...")
     score, noises, ifo = gwinc(freq, ifo)
 
     mnoises = mdata['noises']
 
     diffs = {}
     for name, noise in noises.items():
-        if name == 'Freq':
+        if name in ['Freq']:
             continue
         if name in SKIP:
             logging.warning("SKIPPING TEST: '{}'".format(name))
@@ -117,8 +117,9 @@ def main():
         if max(frac) < FRACTIONAL_TOLERANCE:
             continue
 
-        logging.warning("EXCESSIVE DIFFERENCE: '{}'".format(name))
-        logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
+        logging.warning("EXCESSIVE DIFFERENCE: {:{w}} {:6.1f}%".format(
+            name, max(frac)*100, w=max([len(n) for n in noises])))
+        # logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
 
         diffs[name] = frac
 
@@ -128,23 +129,28 @@ def main():
         for i, name in enumerate(diffs):
             axl = plt.subplot2grid(spec, (i, 0))
             axl.loglog(freq, np.sqrt(noises[name]), label='pygwinc')
-            axl.loglog(freq, np.sqrt(mnoises[name]), label='matlab')
+            axl.loglog(freq, np.sqrt(mnoises[name]), label='matgwinc')
             axl.grid()
             axl.legend(loc='upper right')
-            # ax.set_title(name)
             axl.set_ylabel(name)
-    
+
+            frac = diffs[name]
             axr = plt.subplot2grid(spec, (i, 1))
-            axr.loglog(freq, diffs[name], label=name)
+            axr.loglog(freq, frac, label=name)
+            axr.axhline(y=max(frac), color='r', linestyle='--')
             axr.grid()
-            # ax.set_title(name)
+            axr.text(max(freq)+4000, max(frac), '{:.1f}%'.format(max(frac)*100),
+                     horizontalalignment='left', verticalalignment='center',
+                     color='red')
 
         axl.set_xlabel("frequency [Hz]")
         axr.set_xlabel("frequency [Hz]")
     
-        plt.suptitle("noises that differ by more than 1% [(mat-py)/py]")
+        plt.suptitle("""{} mat/py gwinc noise comparison
+Noises that differ by more than {}% [(mat-py)/py]""".format(args.IFO, FRACTIONAL_TOLERANCE*100))
+
         if args.save:
-            plt.gcf().set_size_inches(11, 20)
+            plt.gcf().set_size_inches(11, len(diffs)*4)
             plt.savefig(args.save)
         else:
             plt.show()
