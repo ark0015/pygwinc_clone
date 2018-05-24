@@ -4,15 +4,22 @@ import scipy.constants
 
 
 def gas(f, ifo):
-    """The following function models the noise spectrum caused by the passage of
-    residual gas molecules through the laser beams in the arms of the  
-    interferometer.  The method used here is presented by Rainer Weiss,
-    Micheal E. Zucker, and Stanley E. Whitcomb in their paper Optical
-    Pathlength Noise in Sensitive Interferometers Due to Residual Gas.
-    Added to Bench by Zhigang Pan, Summer 2006
-    Cleaned up by PF, Apr 07; eliminated numerical integration and 
-    substituted first order expansion of exp, to speed it up"""
+    """Residual gas noise in arm cavities
 
+    The following function models the noise spectrum caused by the
+    passage of residual gas molecules through the laser beams in the
+    arms of the interferometer.
+
+    The method used here is presented by Rainer Weiss, Micheal
+    E. Zucker, and Stanley E. Whitcomb in their paper Optical
+    Pathlength Noise in Sensitive Interferometers Due to Residual Gas.
+
+    Added to Bench by Zhigang Pan, Summer 2006
+    Cleaned up by PF, Apr 07
+    Eliminated numerical integration and substituted first order
+    expansion of exp, to speed it up.
+
+    """
     L      = ifo.Infrastructure.Length
     Lambda = ifo.Laser.Wavelength
     k      = scipy.constants.k

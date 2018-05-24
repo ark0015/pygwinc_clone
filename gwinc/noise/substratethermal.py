@@ -6,9 +6,11 @@ import scipy.integrate
 import scipy.constants
 
 def carrierdensity(f, ifo):
-    """strain noise psd arising from charge carrier density
-    fluctuations in ITM substrate (for semiconductor substrates)."""
+    """Strain noise arising from charge carrier density fluctuations in ITM substrate
 
+    For semiconductor substrates
+
+    """
     w = ifo.Optics.ITM.BeamRadius
     L = ifo.Infrastructure.Length
     H = ifo.Materials.MassThickness
@@ -49,12 +51,16 @@ def carrierdensity(f, ifo):
     psdMeters = 2 * (psdElec + psdHole)
     
     n = psdMeters / (gPhase*L)**2
+
     return n
 
 
 def thermorefractiveITM(f, ifo):
-    """strain noise psd arising from thermorefractive 
-    fluctuations in ITM substrate (for semiconductor substrates)."""
+    """Strain noise from thermorefractive fluctuations in ITM substrate
+
+    For semiconductor substrates.
+
+    """
     
     w = ifo.Optics.ITM.BeamRadius
     L = ifo.Infrastructure.Length
@@ -92,13 +98,14 @@ def thermorefractiveITM(f, ifo):
     psdMeters = 2*psd # two itms
     
     n = psdMeters / (gPhase*L)**2
+
     return n
 
 
 def subbrownian(f, ifo):
-    """strain noise psd arising from the Brownian thermal noise 
-    due to mechanical loss in the substrate material"""
+    """Strain noise from the Brownian thermal noise due to substrate mechanical loss
 
+    """
     wITM = ifo.Optics.ITM.BeamRadius
     wETM = ifo.Optics.ETM.BeamRadius
     Y = ifo.Materials.Substrate.MirrorY
@@ -131,8 +138,9 @@ def subbrownian(f, ifo):
 
 
 def subbrownianFiniteCorr(ifo, opticName):
-    """Estimate amplitude coefficient of
-    mirror thermal noise contribution for finite-size test masses.
+    """Amplitude coefficient of mirror thermal noise
+
+    Contribution for finite-size test masses.
     
     [cftm, aftm] = subbrownianFiniteCorr(ifo, opticName)
     cftm = finite mirror correction factor
@@ -141,8 +149,9 @@ def subbrownianFiniteCorr(ifo, opticName):
            S_x(f) = (8 * kB * T / (2*pi*f)) * Phi(f) * aftm
     
     Equation references to Bondu, et al. Physics Letters A 246 (1998)
-    227-236 (hereafter BHV) and Liu and Thorne gr-qc/0002055 (hereafter LT)"""
+    227-236 (hereafter BHV) and Liu and Thorne gr-qc/0002055 (hereafter LT)
 
+    """
     # get some numbers
     a = ifo.Materials.MassRadius
     h = ifo.Materials.MassThickness
@@ -187,8 +196,9 @@ def subbrownianFiniteCorr(ifo, opticName):
 
 
 def subtherm(f, ifo):
-    """noise psd arising from thermoelastic fluctuations in mirror"""
+    """Noise from thermoelastic fluctuations in mirror
 
+    """
     wITM = ifo.Optics.ITM.BeamRadius
     wETM = ifo.Optics.ETM.BeamRadius
     sigma = ifo.Materials.Substrate.MirrorSigma
@@ -217,12 +227,14 @@ def subtherm(f, ifo):
 
 
 def subthermFiniteCorr(ifo, opticName):
-    """finite size test mass correction to noise amplitude coefficient
+    """Finite size test mass correction to noise amplitude coefficient
+
     (Liu & Thorne gr-qc/0002055 equation 46)
     
     Equation references to Bondu, et al. Physics Letters A 246 (1998)
-    227-236 (hereafter BHV) or Liu and Thorne gr-qc/0002055 (hereafter LT)"""
+    227-236 (hereafter BHV) or Liu and Thorne gr-qc/0002055 (hereafter LT)
 
+    """
     # extract some numbers
     a = ifo.Materials.MassRadius
     h = ifo.Materials.MassThickness

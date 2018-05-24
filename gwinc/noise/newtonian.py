@@ -6,6 +6,7 @@ import logging
 
 def gravg(f, ifo):
     """Return estimate of newtonian noise contribribution to |h(f)|^2
+
     N = GRAVG(F, IFO) returns the gravity gradient (Newtonian) noise
     contribution in strain^2/Hz for four mirrors.
     
@@ -25,8 +26,8 @@ def gravg(f, ifo):
     added to Bench by Gregg Harry 8/27/03
     seismic spectrum modified by Jan Harms 05/11/2010
     Calculates gravity gradient noise for four mirrors
-    ** --- Add reference here -- **"""
 
+    """
     L     = ifo.Infrastructure.Length
     G     = scipy.constants.G
     rho   = ifo.Seismic.Rho
@@ -52,7 +53,8 @@ def gravg(f, ifo):
 
 
 def ground(Seismic, f):
-    """Returns estimate of seismic displacement spectrum
+    """Estimate of seismic displacement spectrum
+
     N = GROUND(SEISMIC, F) returns the estimated ground (seismic)
     displacement spectrum in meters / rtHz at frequencies F using
     parameters SEISMIC (usually a field of the IFOMODEL).
@@ -66,19 +68,20 @@ def ground(Seismic, f):
         ylabel('meters / rtHz');
         xlabel('Hz');
     
-      This function is currently only used by gravg.m (Newtonian Noise).
+    This function is currently only used by gravg.m (Newtonian Noise).
     
-      Jan says: The seismic NN is 90th percentile. But this was just to
-      lift the spectra above the aLIGO GWINC sensitivity. 90th, 95th,
-      whatever percentile does not matter since you want to guarantee that
-      NN is not limiting at any time. So in the spectral plot the only
-      important information is that NN can be high enough to be seen in
-      the detector.
+    Jan says: The seismic NN is 90th percentile. But this was just to
+    lift the spectra above the aLIGO GWINC sensitivity. 90th, 95th,
+    whatever percentile does not matter since you want to guarantee
+    that NN is not limiting at any time. So in the spectral plot the
+    only important information is that NN can be high enough to be
+    seen in the detector.
     
-      References:
-        Waldman and Fritschel, 'Reference Seismic Data for LLO', T0900312
-        https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=3315"""
+    References:
+      Waldman and Fritschel, 'Reference Seismic Data for LLO', T0900312
+      https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=3315
 
+    """
     fk = Seismic.KneeFrequency
     a1 = Seismic.LowFrequencyLevel
     a2 = a1*100

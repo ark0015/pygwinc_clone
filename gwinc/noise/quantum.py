@@ -6,12 +6,12 @@ import logging
 
 
 def shotrad(f, ifo):
-    """Quantum noise model
+    """Quantum noise
     
     corresponding author: mevans
-    modifications for resonant delay lines: Stefan Ballmer"""
+    modifications for resonant delay lines: Stefan Ballmer
 
-
+    """
     # deal with multiple bounces, required for resonant delay lines
     # Stefan Ballmer 2012
     if 'NFolded' in ifo.Infrastructure:
@@ -220,7 +220,9 @@ def shotrad(f, ifo):
 
 
 def shotradSignalRecycled(f, ifo):
-    """Quantum noise model - signal recycled IFO (see shotrad for more info)
+    """Quantum noise model for signal recycled IFO
+
+    See shotrad for more info.
     
     All references to Buonanno & Chen PRD 64 042006 (2001) (hereafter BnC)
     Updated to include losses DEC 2006 Kirk McKenzie using BnC notation
@@ -236,8 +238,9 @@ def shotradSignalRecycled(f, ifo):
     coeff = frequency dependent overall noise coefficient (Nx1)
     Mifo = IFO input-output relation for the AS port
     Msig = signal transfer to the AS port
-    Mnoise = noise fields produced by losses in the IFO at the AS port"""
+    Mnoise = noise fields produced by losses in the IFO at the AS port
 
+    """
     # f                                           % Signal Freq. [Hz]
     lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
     hbar    = scipy.constants.hbar               # Plancks Constant [Js]
@@ -359,9 +362,11 @@ def shotradSignalRecycled(f, ifo):
 
 
 def make2x2TF(A11, A12, A21, A22):
-    """Create a transfer matrix with 2x2xnF
-      The vectors must all have nF elements"""
+    """Create transfer matrix with 2x2xnF
 
+    The vectors must all have nF elements.
+
+    """
     nF = max([size(A11), size(A12), size(A21), size(A22)])
 
     # if any input is just a number, expand it
@@ -386,16 +391,15 @@ def make2x2TF(A11, A12, A21, A22):
 
 
 def getProdTF(lhs, rhs):
-    """Compute the product of 2 or more Nout x Nin x Naf
-    frequency dependent transfer matrices.  (see also getTF)
+    """Compute the product of M Nout x Nin x Naf frequency dependent transfer matrices
+
+    See also getTF.
     
     NOTE: To perform more complicated operations on transfer
           matrices, see LTI object FRD ("help frd").  This
           function is the same as: freqresp(frd(lhs) * frd(rhs), f)
-    
-    %% Example:
-    mOL = getProdTF(mCtrl, sigAC);"""
 
+    """
     # check matrix size
     if lhs.shape[1] != rhs.shape[0]:
         raise Exception('Matrix size mismatch size(lhs, 2) = %d != %d = size(rhs, 1)' % (lhs.shape[1], rhs.shape[0]))
@@ -425,9 +429,11 @@ def getProdTF(lhs, rhs):
 
 
 def sqzInjectionLoss(Min, L):
-    """Add injection losses to the squeezed field
-    lambda_in is defined as ifo.Squeezer.InjectionLoss"""
+    """Injection losses for squeezed field
 
+    lambda_in is defined as ifo.Squeezer.InjectionLoss
+
+    """
     eye2 = np.eye(Min.shape[0], Min.shape[1])
     Meye = np.transpose(np.tile(eye2, (Min.shape[2],1,1)), axes=(1,2,0))
 
@@ -436,8 +442,9 @@ def sqzInjectionLoss(Min, L):
 
 
 def sqzFilterCavityChain(f, params, Mn):
-    """compute the transfer relation for a chain of filter cavities
-    noise added by cavity losses are also output
+    """Transfer relation for a chain of filter cavities
+
+    Noise added by cavity losses are also output.
     
     f = frequency vector [Hz]
     param.fdetune = detuning [Hz]
@@ -458,8 +465,9 @@ def sqzFilterCavityChain(f, params, Mn):
         [Mc, Mn] = sqzFilterCavityChain(f, params);
         Mn = [getProdTF(Mc, Mn0), Mn];
     
-    corresponding author: mevans"""
+    corresponding author: mevans
 
+    """
     # make an identity TF
     Mc = make2x2TF(ones(f.shape), 0, 0, 1)
 
@@ -487,10 +495,14 @@ def sqzFilterCavityChain(f, params, Mn):
 
 
 def sqzFilterCavity(f, Lcav, Ti, Te, Lrt, fdetune, MinR, MinT=1):
-    """Function which gives the reflection matrix (for vacuum fluctuations entering the input mirror) and the
-    transmission matrix (for vacuum fluctuations entering the end mirror) of
-    one filter cavity. The input parameters are the cavity parameters and the
-    2X2 matrix of the incoming fields in the two-photon formalism
+    """Reflection/transmission matrix for filter cavity
+
+    Function which gives the reflection matrix for vacuum fluctuations
+    entering the input mirror and the transmission matrix for vacuum
+    fluctuations entering the end mirror of one filter cavity.  The
+    input parameters are the cavity parameters and the 2X2 matrix of
+    the incoming fields in the two-photon formalism.
+
     (R_alpha x S_r) for a freq independent squeezed field.
     f = vector frequency in Hz
     Lf = length of the filter cavity
@@ -508,7 +520,9 @@ def sqzFilterCavity(f, Lcav, Ti, Te, Lrt, fdetune, MinR, MinT=1):
          and unsqueezed input. [] can be used to avoid adding a noise
          term to Mnoise.
     
-    corresponding authors: LisaB, mevans"""
+    corresponding authors: LisaB, mevans
+
+    """
 
     # reflectivities
     Ri = 1 - Ti

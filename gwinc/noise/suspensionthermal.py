@@ -70,5 +70,3 @@ def susptherm(f, ifo):
     # 4 masses, turn into gravitational wave strain
     noise *= 4 / ifo.Infrastructure.Length**2
     return np.squeeze(noise)
-
-
