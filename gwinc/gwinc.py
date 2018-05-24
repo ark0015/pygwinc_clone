@@ -2,6 +2,7 @@ from __future__ import division
 import copy
 import numpy as np
 from numpy import log10, pi, sqrt
+from collections import OrderedDict
 import logging
 
 from .precomp import precompIFO
@@ -41,17 +42,17 @@ def noise_calc(ifo, f):
 
     ##############################
 
-    noises = {}
+    noises = OrderedDict()
 
     noises['Quantum Vacuum'] = noise.quantum.shotrad(f, ifo)
     noises['Suspension Thermal']  = noise.suspensionthermal.susptherm(f, ifo)
-    noises['Excess Gas']  = noise.residualgas.gas(f, ifo)
-    noises['Substrate Brownian']  = noise.substratethermal.subbrownian(f, ifo)
     noises['Coating Brownian']  = noise.coatingthermal.coatbrownian(f, ifo)
-    noises['Substrate Thermo-Elastic']  = noise.substratethermal.subtherm(f, ifo)
-    noises['Newtonian Gravity']  = noise.newtonian.gravg(f, ifo)
-    noises['Seismic'] = noise.seismic.seismic(f, ifo)[0]
     noises['Coating Thermo-Optic'] = noise.coatingthermal.thermooptic(f, ifo)
+    noises['Substrate Thermo-Elastic']  = noise.substratethermal.subtherm(f, ifo)
+    noises['Substrate Brownian']  = noise.substratethermal.subbrownian(f, ifo)
+    noises['Seismic'] = noise.seismic.seismic(f, ifo)[0]
+    noises['Newtonian Gravity']  = noise.newtonian.gravg(f, ifo)
+    noises['Excess Gas']  = noise.residualgas.gas(f, ifo)
 
     # calc semiconductor noise sources
     if 'isSemiConductor' in ifo.Materials.Substrate and ifo.Materials.Substrate.isSemiConductor:
