@@ -1,4 +1,5 @@
 import os
+import copy
 import tempfile
 import scipy.io
 import numpy as np
@@ -143,7 +144,7 @@ def _rename_noises(d):
     return nd
 
 
-def gwinc_matlab(f, ifo, plot=False):
+def gwinc_matlab(f, ifoin, plot=False):
     """Execute gwinc in MATLAB with the specified ifo model.
 
     This uses the python matlab.engine (see Matlab class) to calculate
@@ -157,10 +158,11 @@ def gwinc_matlab(f, ifo, plot=False):
     the noise budget.
 
     """
-    matlab = Matlab()
+    ifo = copy.deepcopy(ifoin)
 
-    # add Constants attribute to ifo structure
     ifo_matlab_transform(ifo)
+
+    matlab = Matlab()
 
     matlab.load_array('f', f)
     matlab.load_struct('ifo', ifo)
