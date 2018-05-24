@@ -49,7 +49,7 @@ def noise_calc(ifo, f):
     noises['Coating Brownian']  = noise.coatingthermal.coatbrownian(f, ifo)
     noises['Substrate Thermo-Elastic']  = noise.substratethermal.subtherm(f, ifo)
     noises['Newtonian Gravity']  = noise.newtonian.gravg(f, ifo)
-    noises['Seismic'] = noise.seismic.seismic(f, ifo)
+    noises['Seismic'] = noise.seismic.seismic(f, ifo)[0]
     noises['Coating Thermo-Optic'] = noise.coatingthermal.thermooptic(f, ifo)
 
     # calc semiconductor noise sources

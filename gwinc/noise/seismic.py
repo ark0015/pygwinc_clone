@@ -5,27 +5,15 @@ from scipy.interpolate import interp1d
 
 
 def seismic(f, ifo):
-    """seismic noise psd at frequencies f for given ifo.
-      n = seismic(f,ifo)
-      [nh,nv] = seismic(f,ifo)
-      [n,nh,nv] = seismic(f,ifo)
-    
-    Modified to include realistic SEI + SUS models (Rana, 11/2005)"""
+    """Seismic noise.
 
-    # Interpolate the log10 onto the ifo frequency array
-    #   n = interp1(ifo.Seismic.darmseis_f, ...
-    #     log10(ifo.Seismic.darmseis_x), f, 'cubic', -30);
+    Return (noise, noise_vertical, noise_horizontal)
 
-    ##########################################################
-    # Suspension TFs
-    ##########################################################
+    """
     hTable = ifo.Suspension.hTable
     vTable = ifo.Suspension.vTable
 
-    # and vertical to beamline coupling angle
     theta = ifo.Suspension.VHCoupling.theta
-
-    ##########################################################
 
     # noise input, horizontal and vertical
     nx, np_ = seisBSC(f)
@@ -44,15 +32,15 @@ def seismic(f, ifo):
     nv *= 4 / ifo.Infrastructure.Length**2
     n  *= 4 / ifo.Infrastructure.Length**2
 
-    return n
+    return n, nh, nv
 
 
 def seisBSC(f):
-    """get rough ISI noise source spectra
-    nx - ISI translational DOFs
-    np - ISI rotational DOFs"""
+    """Rough ISI noise source spectra.
 
+    Returns (ISI translational DOFs, ISI rotational DOFs)
 
+    """
     # translational DOFs (from Rana's bsc_seismic.m)
     SEI_F = np.array([0.01, 0.03, 0.1, 0.2, 0.5, 1, 10, 30, 300])
     SEI_X = np.array([3e-6, 1e-6, 2e-7, 2e-7, 8e-10, 1e-11, 3e-13, 3e-14, 3e-14])
