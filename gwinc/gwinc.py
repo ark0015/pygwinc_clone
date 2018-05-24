@@ -13,12 +13,13 @@ from . import plot
 def noise_calc(ifo, f):
     """Calculate all IFO noises and return as dict
 
+    Assumes ifo has already been run through precompIFO().
+
     """
     ##############################
-    # suspension transfer functions
+    # suspension transfer function
     #
-    # this needs to be done here, instead of in precompIFO, because it
-    # requires the frequency vector
+    # used in seismic and susptherm calculations
 
     fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
     hForce, vForce, hTable, vTable = fname(f, ifo)
@@ -112,7 +113,6 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
     Returns tuple of (score, noises, ifo)
 
     """
-
     ifo = copy.deepcopy(ifoin)
 
     # add some precomputed info to the ifo struct
