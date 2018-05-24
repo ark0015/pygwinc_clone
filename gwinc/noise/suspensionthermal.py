@@ -68,5 +68,6 @@ def susptherm(f, ifo):
             noise += 4 * kB * Temp[ii] * abs(imag(dxdF[ii,:])) / w
 
     # 4 masses, turn into gravitational wave strain
-    noise *= 4 / ifo.Infrastructure.Length**2
+    noise *= 4 * ifo.gwinc.dhdl_sqr
+
     return np.squeeze(noise)

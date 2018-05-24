@@ -7,6 +7,7 @@ import logging
 
 from .precomp import precompIFO
 from . import suspension
+from . import util
 from . import noise
 from . import plot
 
@@ -39,6 +40,13 @@ def noise_calc(ifo, f):
 
     ifo.Suspension.hTable = hTable
     ifo.Suspension.vTable = vTable
+
+    ##############################
+    # strain to length conversion
+    #
+    # used for converting displacement to strain in all noise calculations
+
+    ifo.gwinc.dhdl_sqr, ifo.gwinc.sinc_sqr = util.dhdl(f, ifo.Infrastructure.Length)
 
     ##############################
 

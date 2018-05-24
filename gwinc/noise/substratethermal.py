@@ -133,7 +133,8 @@ def subbrownian(f, ifo):
     csurf = 8 * kBT * (csurfITM + csurfETM) / (2 * pi * f)
 
     # account for 2 ITM and 2 ETM, and convert to strain whith 1/L^2
-    n = 2 * (csurf + cbulk) / L**2
+    n = 2 * (csurf + cbulk) * ifo.gwinc.dhdl_sqr
+
     return n
 
 
@@ -222,7 +223,8 @@ def subtherm(f, ifo):
     SETM = SETM * subthermFiniteCorr(ifo, 'ETM')
 
     # 2 mirrors each type, factor omega^2, dimensionless strain
-    n = 2*(SITM + SETM)/(2*pi*f*L)**2
+    n = 2 * (SITM + SETM)/(2*pi*f)**2 * ifo.gwinc.dhdl_sqr
+
     return n
 
 

@@ -26,7 +26,7 @@ def coatbrownian(f, ifo):
     SbrITM  = getCoatBrownian(f, ifo, wBeam_ITM, dOpt_ITM)
     SbrETM  = getCoatBrownian(f, ifo, wBeam_ETM, dOpt_ETM)
 
-    n = 2 * (SbrITM + SbrETM) / Length**2
+    n = 2 * (SbrITM + SbrETM) * ifo.gwinc.dhdl_sqr
 
     return n
 
@@ -135,7 +135,8 @@ def thermooptic(f, ifo):
     StoITM, junk1, junk2, junk3  = getCoatThermoOptic(f, ifo, wBeam_ITM, dOpt_ITM[:])
     StoETM, junk1, junk2, junk3  = getCoatThermoOptic(f, ifo, wBeam_ETM, dOpt_ETM[:])
   
-    n = 2 * (StoITM + StoETM) / Length**2
+    n = 2 * (StoITM + StoETM) * ifo.gwinc.dhdl_sqr
+
     return n
 
 
