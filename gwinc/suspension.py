@@ -2,6 +2,7 @@ from __future__ import division
 from numpy import pi, sqrt, sin, cos, tan, real, imag, zeros
 import numpy as np
 import scipy.constants
+import logging
 
 from .struct import Struct
 
@@ -10,6 +11,7 @@ from .struct import Struct
 FIBER_TYPES = [
     'Round',
     'Ribbon',
+    'Tapered',
 ]
 
 
@@ -21,14 +23,16 @@ def construct_eom_matrix(k, m, f):
 
     """
     w = 2*pi * f
-    A = zeros((4,4,f.size), dtype=complex)
-    A[0,1,:] = -k[1,:]; A[1,0,:] = A[1,2,:]
-    A[1,2,:] = -k[2,:]; A[2,1,:] = A[1,2,:]
-    A[2,3,:] = -k[3,:]; A[3,2,:] = A[2,3,:]
-    A[0,0,:] = k[0,:] + k[1,:] - m[0] * w**2
-    A[1,1,:] = k[1,:] + k[2,:] - m[1] * w**2
-    A[2,2,:] = k[2,:] + k[3,:] - m[2] * w**2
-    A[3,3,:] = k[3,:] - m[3] * w**2
+    nstages = m.size
+    A = zeros((nstages, nstages, f.size), dtype=complex)
+    for n in range(nstages-1):
+        # mass and restoring forces (diagonal elements)
+        A[n, n, :] = k[n, :] + k[n+1, :] - m[n] * w**2
+        # couplings to stages above and below
+        A[n, n+1, :] = -k[n+1, :]
+        A[n+1, n, :] = -k[n+1, :]
+    # mass and restoring force of bottom stage
+    A[-1, -1, :] = k[-1, :] - m[-1] * w**2
     return A
 
 
@@ -36,16 +40,17 @@ def calc_transfer_functions(A, B, k, f):
     """calculate transfer function from A/B matrices
 
     """
-    X = zeros([B.size,A[0,0,:].size], dtype=complex)
-    for j in range(A[0,0,:].size):
-        X[:,j] = np.linalg.solve(A[:,:,j], B)
+    vlen = A[0, 0, :].size
+    X = zeros([B.size, vlen], dtype=complex)
+    for j in range(vlen):
+        X[:, j] = np.linalg.solve(A[:, :, j], B)
     # transfer function from the force on the TM to TM motion
     hForce     = zeros(f.shape, dtype=complex)
-    hForce[:]  = X[3,:]
+    hForce[:]  = X[-1, :]
     # transfer function from the table motion to TM motion
     hTable     = zeros(f.shape, dtype=complex)
-    hTable[:]  = X[0,:]
-    hTable     = hTable * k[0,:]
+    hTable[:]  = X[0, :]
+    hTable     = hTable * k[0, :]
     return hForce, hTable
 
 
@@ -81,251 +86,336 @@ def suspQuad(f, ifo, material='Silica'):
     stages by K.Arai.
 
     """
-    # Assign Physical Constants
-    g         = scipy.constants.g
-    kB        = scipy.constants.k
+    g = scipy.constants.g
 
-    Temp      = ifo.Suspension.Temp
-    # if only one temp is given, use it for all stages
-    if np.isscalar(Temp) or len(Temp) == 1:
-        Temp = [Temp, Temp, Temp, Temp]
+    sus = ifo.Suspension
 
-    alpha_si  = ifo.Suspension[material].Alpha            # coeff. thermal expansion
-    beta_si   = ifo.Suspension[material].dlnEdT           # temp. dependence Youngs modulus
-    rho       = ifo.Suspension[material].Rho              # mass density
-    C         = ifo.Suspension[material].C
-    K         = ifo.Suspension[material].K                # W/(m kg)
-    ds        = ifo.Suspension[material].Dissdepth        # surface loss dissipation depth
-    phi_si    = ifo.Suspension[material].Phi
-    Y_si      = ifo.Suspension[material].Y                # Young's modulus
+    # bottom stage fiber Type
+    FiberType = sus.FiberType
+    assert FiberType in FIBER_TYPES
 
-    rho_st    = ifo.Suspension.C70Steel.Rho
-    C_st      = ifo.Suspension.C70Steel.C
-    K_st      = ifo.Suspension.C70Steel.K
-    Y_st      = ifo.Suspension.C70Steel.Y
-    alpha_st  = ifo.Suspension.C70Steel.Alpha
-    beta_st   = ifo.Suspension.C70Steel.dlnEdT
-    phi_steel = ifo.Suspension.C70Steel.Phi
+    ##############################
+    # Parameter Assignment
 
-    rho_m     = ifo.Suspension.MaragingSteel.Rho
-    C_m       = ifo.Suspension.MaragingSteel.C
-    K_m       = ifo.Suspension.MaragingSteel.K
-    Y_m       = ifo.Suspension.MaragingSteel.Y
-    alpha_m   = ifo.Suspension.MaragingSteel.Alpha
-    beta_m    = ifo.Suspension.MaragingSteel.dlnEdT
-    phi_marag = ifo.Suspension.MaragingSteel.Phi
+    def scarray():
+        return np.zeros(len(sus.Stage))
 
-    # Begin parameter assignment
+    ds_w  = scarray()
+    dil0 = scarray()
+    mass = scarray()
+    length = scarray()
+    kv0 = scarray()
+    r_w = scarray()
+    t_b = scarray()
+    N_w = scarray()
+    Temp = scarray()
+    # wire material properties
+    alpha_w = scarray()
+    beta_w = scarray()
+    rho_w = scarray()
+    C_w = scarray()
+    K_w = scarray()
+    Y_w = scarray()
+    phi_w = scarray()
+    # blade material properties
+    alpha_b = scarray()
+    beta_b = scarray()
+    rho_b = scarray()
+    C_b = scarray()
+    K_b = scarray()
+    Y_b = scarray()
+    phi_b = scarray()
 
-    # Note that I'm counting stages differently than Morag. Morag's
-    # counting is reflected in the variable names in this funcion; my
-    # counting is reflected in the index into Stage().
-    # Morag's count has stage "n" labeled as 1 and the mirror as stage 4.
-    # I'm counting the mirror as stage 1 and proceeding up. The reason
-    # for the change is my assumption that th eimplication of referring
-    # to stage "n" is that, once you get far enough away from the
-    # mirror, you might have additional stages but not change their
-    # characteristics. The simplest implementation of this would be to
-    # work through the stages sequenctially, starting from 1, until one
-    # reached the end, and then repeat the final stage as many times as
-    # desired. What I've done with the reordering is prepare for the
-    # day when we might do that.
+    # NOTE: reverse suspension list so that the last stage in the list
+    # is the test mass
+    last_stage = len(sus.Stage) - 1
+    for n, stage in enumerate(reversed(sus.Stage)):
+        ##############################
+        # main suspension parameters
 
-    theta   = ifo.Suspension.VHCoupling.theta
+        mass[n] = stage.Mass
+        length[n] = stage.Length
+        dil0[n] = stage.Dilution
+        kv0[n] = stage.K
 
-    m1      = ifo.Suspension.Stage[3].Mass
-    m2      = ifo.Suspension.Stage[2].Mass
-    m3      = ifo.Suspension.Stage[1].Mass
-    m4      = ifo.Suspension.Stage[0].Mass
+        if np.isnan(stage.WireRadius):
+            if 'FiberRadius' in stage:
+                r_w[n] = stage.FiberRadius
+            elif FiberType == 'Ribbon':
+                r_w[n] = sus.Ribbon.Width
+            else:
+                r_w[n] = sus.Fiber.Radius
+        else:
+            r_w[n] = stage.WireRadius
 
-    M1      = m1 + m2 + m3 + m4          # mass supported by stage n
-    M2      =      m2 + m3 + m4          # mass supported by stage ...
-    M3      =           m3 + m4          # mass supported by stage ...
+        # blade thickness
+        t_b[n] = stage.Blade
+        # number of support wires
+        N_w[n] = stage.NWires
 
-    L1      = ifo.Suspension.Stage[3].Length
-    L2      = ifo.Suspension.Stage[2].Length
-    L3      = ifo.Suspension.Stage[1].Length
-    L4      = ifo.Suspension.Stage[0].Length
+        if 'Temp' in stage:
+            Temp[n] = stage.Temp
+        else:
+            Temp[n] = sus.Temp
 
-    dil1    = ifo.Suspension.Stage[3].Dilution
-    dil2    = ifo.Suspension.Stage[2].Dilution
-    dil3    = ifo.Suspension.Stage[1].Dilution
+        ##############################
+        # support wire material parameters
 
-    kv10    = ifo.Suspension.Stage[3].K # N/m, vert. spring constant,
-    kv20    = ifo.Suspension.Stage[2].K
-    kv30    = ifo.Suspension.Stage[1].K
+        if 'WireMaterial' in stage:
+            WireMaterial = stage.WireMaterial
+        elif n == last_stage:
+            WireMaterial = 'Silica'
+        else:
+            WireMaterial = 'C70Steel'
 
-    # Correction for the pendulum restoring force 
-    # replaced m1->M1, m2->M2, m3->M3 
-    # K. Arai Feb. 29, 2012
-    kh10    = M1*g/L1              # N/m, horiz. spring constant, stage n
-    kh20    = M2*g/L2              # N/m, horiz. spring constant, stage 1
-    kh30    = M3*g/L3              # N/m, horiz. spring constant, stage 2
-    kh40    = m4*g/L4              # N/m, horiz. spring constant, last stage
+        logging.debug('stage {} wires: {}'.format(n, WireMaterial))
+        wireMat = sus[WireMaterial]
 
-    r_st1   = ifo.Suspension.Stage[3].WireRadius
-    r_st2   = ifo.Suspension.Stage[2].WireRadius
-    r_st3   = ifo.Suspension.Stage[1].WireRadius
+        alpha_w[n] = wireMat.Alpha  # coeff. thermal expansion
+        beta_w[n] = wireMat.dlnEdT  # temp. dependence Youngs modulus
+        rho_w[n] = wireMat.Rho      # mass density
+        C_w[n] = wireMat.C          # heat capacity
+        K_w[n] = wireMat.K          # W/(m kg)
+        Y_w[n] = wireMat.Y          # Young's modulus
+        phi_w[n] = wireMat.Phi      # loss angle
 
-    t_m1    = ifo.Suspension.Stage[3].Blade
-    t_m2    = ifo.Suspension.Stage[2].Blade
-    t_m3    = ifo.Suspension.Stage[1].Blade
+        # surface loss dissipation depth
+        if 'Dissdepth' in wireMat:
+            ds_w[n] = wireMat.Dissdepth
+        else:
+            # otherwise ignore surface effects
+            ds_w[n] = 0
 
-    N1      = ifo.Suspension.Stage[3].NWires  # number of wires in stage n
-    N2      = ifo.Suspension.Stage[2].NWires  # Number of wires in stage 1
-    N3      = ifo.Suspension.Stage[1].NWires  # Number of wires in stage 1
-    N4      = ifo.Suspension.Stage[0].NWires  # Number of wires in stage 1
+        ##############################
+        # support blade material parameters
 
-    if ifo.Suspension.FiberType == 'Round':
-        r_fib = ifo.Suspension.Fiber.Radius
-        xsect = pi * r_fib**2     # cross-sectional area
-        II4 = r_fib**4 * pi/4     # x-sectional moment of inertia
-        mu_v = 2 / r_fib          # mu/(V/S), vertical motion
-        mu_h = 4 / r_fib          # mu/(V/S), horizontal motion
-        tau_si = 7.372e-2 * rho * C * (4*xsect/pi) / K # TE time constant
-    elif ifo.Suspension.FiberType == 'Ribbon':
-        W   = ifo.Suspension.Ribbon.Width
-        t   = ifo.Suspension.Ribbon.Thickness
-        xsect = W * t
-        II4 = (W * t**3)/12
-        mu_v = 2 * (W + t)/(W*t)
-        mu_h = (3 * N4 * W + t)/(N4*W + t)*2*(W+t)/(W*t)
-        tau_si = (rho * C * t**2) / (K * pi**2)
-    else:
-        raise Exception("Unsupported suspension type: {}".format(ifo.Suspension.FiberType))
+        if 'BladeMaterial' in stage:
+            BladeMaterial = stage.BladeMaterial
+        else:
+            BladeMaterial = 'MaragingSteel'
 
-    # loss factor, last stage suspension, vertical
-    phiv4   = phi_si * (1 + mu_v * ds)
-    Y_si_v  = Y_si * (1 + 1j * phiv4)        # Vertical Young's modulus, silica
+        logging.debug('stage {} blades: {}'.format(n, BladeMaterial))
+        bladeMat = sus[BladeMaterial]
 
-    T4      = m4 * g / N4                   # Tension in last stage
+        alpha_b[n] = bladeMat.Alpha   # coeff. thermal expansion
+        beta_b[n] = bladeMat.dlnEdT   # temp. dependence Youngs modulus
+        rho_b[n] = bladeMat.Rho       # mass density
+        C_b[n] = bladeMat.C           # heat capacity
+        K_b[n] = bladeMat.K           # W/(m kg)
+        Y_b[n] = bladeMat.Y           # Young's modulus
+        phi_b[n] = bladeMat.Phi       # loss angle
 
-    # TE time constant, steel wire 1-3
-    # WHAT IS THIS CONSTANT 7.37e-2?
-    tau_steel1      = 7.37e-2*(rho_st*C_st*(2*r_st1)**2)/K_st
-    tau_steel2      = 7.37e-2*(rho_st*C_st*(2*r_st2)**2)/K_st
-    tau_steel3      = 7.37e-2*(rho_st*C_st*(2*r_st3)**2)/K_st
+    # weight support by lower stages
+    Mg = g * np.flip(np.cumsum(np.flip(mass, 0)), 0)
 
-    # TE time constant, maraging blade 1
-    tau_marag1      = (rho_m*C_m*t_m1**2)/(K_m*pi**2)
-    tau_marag2      = (rho_m*C_m*t_m2**2)/(K_m*pi**2)
-    tau_marag3      = (rho_m*C_m*t_m3**2)/(K_m*pi**2)
+    # Correction for the pendulum restoring force
+    kh0 = Mg / length              # N/m, horiz. spring constant, stage n
 
-    # vertical delta, maraging
-    delta_v1        = Y_m*alpha_m**2*Temp[0]/(rho_m*C_m)
-    delta_v2        = delta_v1
-    delta_v3        = delta_v1
+    ##############################
+    # Thermoelastic Calculations for wires and blades
 
-    # horizontal delta, steel, stage n
-    delta_h1 = Y_st*(alpha_st-beta_st*g*M1/(N1*pi*r_st1**2*Y_st))**2
-    delta_h1 = delta_h1*Temp[0]/(rho_st*C_st)
+    # wire geometry
+    tension = Mg / N_w           # Tension
+    xsect = pi * r_w**2          # cross-sectional area
+    xII = r_w**4 * pi / 4        # x-sectional moment of inertia
+    mu_h = 4 / r_w               # surface to volume ratio, horizontal
+    mu_v = 2 / r_w               # surface to volume ratio, vertical (wire)
 
-    delta_h2 = Y_st*(alpha_st-beta_st*g*M2/(N2*pi*r_st2**2*Y_st))**2
-    delta_h2 = delta_h2*Temp[1]/(rho_st*C_st)
+    # horizontal TE time constant, wires ( WHAT IS THIS CONSTANT 7.37e-2? )
+    tau_h = 7.37e-2 * 4 * (rho_w * C_w * xsect) / (pi * K_w)
 
-    delta_h3 = Y_st*(alpha_st-beta_st*g*M3/(N3*pi*r_st3**2*Y_st))**2
-    delta_h3 = delta_h3*Temp[2]/(rho_st*C_st)
+    # vertical TE time constant, blades
+    tau_v = (rho_b * C_b * t_b**2) / (K_b * pi**2)
 
-    # solutions to equations of motion
-    B = np.array([     0,       0,       0,       1]).T
-    w = 2*pi * f
+    # vertical delta, blades
+    delta_v = Y_b * alpha_b**2 * Temp / (rho_b * C_b)
 
-    # thermoelastic correction factor, silica
-    delta_s = Y_si*(alpha_si-beta_si*T4/(xsect*Y_si))**2*Temp[3]/(rho*C)
+    # deal with ribbon geometry for last stage
+    if FiberType == 'Ribbon':
+        W = sus.Ribbon.Width
+        t = sus.Ribbon.Thickness
+        xsect[-1] = W * t                   # cross-sectional area
+        xII[-1] = (W * t**3)/12             # x-sectional moment of inertia
+        mu_v[-1] = 2 * (W + t) / (W * t)
+        mu_h[-1] = mu_v[-1] * (3 * N_w[-1] * W + t) / (N_w[-1] * W + t)
+        tau_h[-1] = (rho_w[-1] * C_w[-1] * t**2) / (K_w[-1] * pi**2)
 
-    # vertical loss factor, maraging
-    phiv1   = phi_marag+delta_v1*tau_marag1*w/(1+w**2*tau_marag1**2)
-    phiv2   = phi_marag+delta_v2*tau_marag2*w/(1+w**2*tau_marag2**2)
-    phiv3   = phi_marag+delta_v3*tau_marag3*w/(1+w**2*tau_marag3**2)
+    # horizontal delta, wires
+    delta_h = (alpha_w - tension * beta_w / (xsect * Y_w))**2 * Y_w * Temp / (rho_w * C_w)
 
-    # horizontal loss factor, steel, stage n
-    phih1   = phi_steel+delta_h1*tau_steel1*w/(1+w**2*tau_steel1**2)
-    phih2   = phi_steel+delta_h2*tau_steel2*w/(1+w**2*tau_steel2**2)
-    phih3   = phi_steel+delta_h3*tau_steel3*w/(1+w**2*tau_steel3**2)
+    # deal with tapered geometry for last stage
+    if FiberType == 'Tapered':
+        r_end = sus.Fiber.EndRadius
 
-    kv1     = kv10*(1 + 1j*phiv1)           # stage n spring constant, vertical
-    kv2     = kv20*(1 + 1j*phiv2)           # stage 1 spring constant, vertical
-    kv3     = kv30*(1 + 1j*phiv3)           # stage 2 spring constant, vertical
+        # recompute these for
+        xsectEnd = pi * r_end**2      # cross-sectional area (for delta_h)
+        xII[-1] = pi * r_end**4 / 4    # x-sectional moment of inertia
+        mu_h[-1] = 4 / r_end           # surface to volume ratio, horizontal
 
-    kh1     = kh10*(1 + 1j*phih1/dil1)      # stage n spring constant, horizontal
-    kh2     = kh20*(1 + 1j*phih2/dil2)      # stage 1 spring constant, horizontal
-    kh3     = kh30*(1 + 1j*phih3/dil3)      # stage 2 spring constant, horizontal
+        # use this xsect for thermo-elastic noise
+        delta_h[-1] = (alpha_w[-1] - tension[-1] * beta_w[-1] / (xsectEnd * Y_w[-1]))**2 * Y_w[-1] * Temp[-1] / (rho_w[-1] * C_w[-1])
 
-    # loss factor, last stage suspension, horizontal
-    phih4   = phi_si * (1 + mu_h * ds) + \
-              delta_s * (tau_si * w/(1 + tau_si**2*w**2))
+    # bending length, and dilution factors
+    d_bend = sqrt(Y_w * xII / tension)
+    dil = length / d_bend
+    # dil(~isnan(dil0)) = dil0(~isnan(dil0))
+    dil = np.where(~np.isnan(dil0), dil0, dil)
 
-    # violin mode calculations
-    Y_si_h  = Y_si * (1 + 1j*phih4)         # Horizontal Young's modulus
-    simp1   = sqrt(rho/Y_si_h) * w          # simplification factor 1 q
-    simp2   = sqrt(rho * xsect *w**2/T4)    # simplification factor 2 p
+    ##############################
+    # Loss Calculations for wires and blades
 
-    # simplification factor 3 kk
-    simp3   = sqrt(T4 * (1 + II4 * xsect * Y_si_h * w**2 / T4**2) / (Y_si_h * II4))
+    # these calculations use the frequency vector
+    w = 2 * pi * f
 
-    a = simp3 * cos(simp2 * L4)             # simplification factor a
-    b = sin(simp2 * L4)                     # simplification factor b
+    phih = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+    kh = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+    phiv = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+    kv = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+
+    for n, stage in enumerate(sus.Stage):
+        # horizontal loss factor, wires
+        phih[n, :] = phi_w[n] * (1 + mu_h[n] * ds_w[n]) + delta_h[n] * tau_h[n] * w / (1 + w**2 * tau_h[n]**2)
+
+        # complex spring constant, horizontal
+        kh[n, :] = kh0[n] * (1 + 1j * phih[n, :] / dil[n])
+
+        # vertical loss factor, blades
+        phiv[n, :] = phi_b[n] + delta_v[n] * tau_v[n] * w / (1 + w**2 * tau_v[n]**2)
+
+        # complex spring constant, vertical
+        kv[n, :] = kv0[n] * (1 + 1j * phiv[n, :])
+
+    ##############################
+    # last suspension stage
+    # Equations from "GG" (maybe?)
+    #   Suspensions thermal noise in the LIGO gravitational wave detector
+    #   Gabriela Gonzalez, Class. Quantum Grav. 17 (2000) 4409?4435
+    #
+    # Note:
+    #  I in GG = xII
+    #  rho in GG = rho_w * xsect
+    #  delta in GG = d_bend
+    ##############################
+
+    ### Vertical (bounce) ###
+    # loss factor, last stage suspension, vertical (no blades)
+    phiv[-1, :] = phi_w[-1] * (1 + mu_v[-1] * ds_w[-1])
+
+    # vertical Young's modulus
+    Y_v = Y_w[-1] * (1 + 1j * phiv[-1, :])
 
     # vertical spring constant, last stage
-    kv40 = abs(N4 * Y_si_v * xsect / L4)    # this seems to not be used ??
-    kv4 = N4 * Y_si_v * xsect * simp1 / (tan(simp1 * L4))
+    k_z = sqrt(rho_w[-1] / Y_v) * w
+    kv4 = N_w[-1] * xsect[-1] * Y_v * k_z / (tan(k_z * length[-1]))
 
-    # HACK: lower spring constant for silicon blade springs
-    if material == 'Silicon':
-        kv4 /= 16
+    # deal with tapered geometry for last stage
+    if FiberType == 'Tapered' and 'EndLength' in sus.Fiber:
+        l_end = 2 * sus.Fiber.EndLength
+        l_mid = length[-1] - l_end
+
+        kv_mid = N_w[-1] * xsect[-1] * Y_v * k_z / (tan(k_z * l_mid))
+        kv_end = N_w[-1] * xsectEnd * Y_v * k_z / (tan(k_z * l_end))
+        kv4 = kv_mid * kv_end / (kv_mid + kv_end)
+
+    if np.isnan(kv0[-1]):
+        kv[-1, :] = kv4 # no blades
+    else:
+        kv[-1, :] = kv[-1, :] * kv4 / (kv[-1, :] + kv4) # with blades
+
+    ### Horizontal (pendulum and violins) ###
+    # horizontal Young's modulus
+    Y_h  = Y_w[-1] * (1 + 1j * phih[-1, :])
+
+    # simplification factors for later calculations
+    ten4 = tension[-1]                          # T in GG
+    k4 = sqrt(rho_w[-1] * xsect[-1] / ten4) * w	# k in GG
+    d_bend4 = sqrt(Y_h * xII[-1] / ten4)        # complex d_bend(4)
+    dk4 = k4 * d_bend4
+
+    # simp3a is inherited from the previous version of this suspension
+    # thermal noise calculation (part of simp3).
+    #
+    # I'm not sure where this comes from, but it differs from
+    # 1 by less than 1e-6 for frequencies below 100Hz (and less than
+    # 1e-3 up to 10kHz).  What's more, the units appear to be wrong.
+    # (Missing factor of rho * length?)
+    # [mevans June 2015]
+    #
+    # simp3a = sqrt(1 + d_bend4 .* xsect(4) .* w.^2 / ten4)
+    simp3a = 1
+
+    coskl = simp3a * cos(k4 * length[-1])
+    sinkl = sin(k4 * length[-1])
 
     # numerator, horiz spring constant, last stage
-    kh4num  = N4*II4*Y_si_h*simp2*simp3 * (simp2**2 + simp3**2) * (a + simp2 * b)
+    #   numerator of K_xx in eq 9 of GG
+    #     = T k (cos(k L) + k delta sin(k L))
+    #   for w -> 0, this reduces to N_w * T * k
+    kh4num  = N_w[-1] * ten4 * k4 * simp3a * (simp3a**2 + dk4**2) * (coskl + dk4 * sinkl)
+
     # denominator, horiz spring constant, last stage
-    kh4den  = (2 * simp2 * a + (simp2**2 - simp3**2) * b)
+    #   D after equation 8 in GG
+    #   D = sin(k L) - 2 k delta cos(k L)
+    #   for w -> 0, this reduces to k (L - 2 delta)
+    kh4den = ((simp3a**2 - dk4**2) * sinkl - 2 * dk4 * coskl)
+
     # horizontal spring constant, last stage
-    kh4     = -kh4num / kh4den
+    #   K_xx in eq 9 of GG
+    kh[-1, :] = kh4num / kh4den
 
     ###############################################################
     # Equations of motion for the system
     ###############################################################
 
-    m_list = np.hstack((m1, m2, m3, m4))       # array of the mass
-    kh_list = np.vstack((kh1, kh2, kh3, kh4))  # array of the horiz spring constants
-    kv_list = np.vstack((kv1, kv2, kv3, kv4))  # array of the vert spring constants
+    # want TM equations of motion, so index 4
+    B = np.array([0, 0, 0, 1])
+
+    m_list = mass
+    kh_list = kh
+    kv_list = kv
+
+    #m_list=[m1 m2 m3 m4];          # array of the mass
+    #kh_list=[kh1; kh2; kh3; kh4];  # array of the horiz spring constants
+    #kv_list=[kv1; kv2; kv3; kv4];  # array of the vert spring constants
 
     # Calculate TFs turning on the loss of each stage one by one
     hForce = Struct()
     vForce = Struct()
-    hForce.singlylossy = zeros((4, f.size), dtype=complex)
-    vForce.singlylossy = zeros((4, f.size), dtype=complex)
-    for ii in range(4): # specify the stage to turn on the loss
+    hForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+    vForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+
+    for n in range(len(m_list)):
         # horizontal
         k_list = kh_list
         # only the imaginary part of the specified stage is used.
-        k_list = real(k_list) + 1j*imag(np.vstack((k_list[0,:]*(ii==0), k_list[1,:]*(ii==1), k_list[2,:]*(ii==2), k_list[3,:]*(ii==3))))
+        k_list = real(k_list) + 1j*imag([k_list[0,:]*(n==0),
+                                         k_list[1,:]*(n==1),
+                                         k_list[2,:]*(n==2),
+                                         k_list[3,:]*(n==3)])
         # construct Eq of motion matrix
         Ah = construct_eom_matrix(k_list, m_list, f)
         # calculate TFs
-        hForce.singlylossy[ii,:], hTable = calc_transfer_functions(Ah, B, k_list, f)
+        hForce.singlylossy[n,:] = calc_transfer_functions(Ah, B, k_list, f)[0]
 
         # vertical
         k_list = kv_list
-        # only the imaginary part of the specified stage is used.
-        k_list = real(k_list) + 1j*imag(np.vstack((k_list[0,:]*(ii==0), k_list[1,:]*(ii==1), k_list[2,:]*(ii==2), k_list[3,:]*(ii==3))))
+        # only the imaginary part of the specified stage is used
+        k_list = real(k_list) + 1j*imag([k_list[0,:]*(n==0),
+                                         k_list[1,:]*(n==1),
+                                         k_list[2,:]*(n==2),
+                                         k_list[3,:]*(n==3)])
         # construct Eq of motion matrix
         Av = construct_eom_matrix(k_list, m_list, f)
         # calculate TFs
-        vForce.singlylossy[ii,:], vTable = calc_transfer_functions(Av, B, k_list, f)
+        vForce.singlylossy[n,:] = calc_transfer_functions(Av, B, k_list, f)[0]
 
-    # horizontal
-    k_list = kh_list # all of the losses are on
-    # construct Eq of motion matrix
-    Ah = construct_eom_matrix(k_list, m_list, f)
-    # calculate TFs
-    hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, k_list, f)
+    # calculate horizontal TFs with all losses on
+    Ah = construct_eom_matrix(kh_list, m_list, f)
+    hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, kh_list, f)
 
-    # vertical
-    k_list = kv_list # all of the losses are on
-    # construct Eq of motion matrix
-    Av = construct_eom_matrix(k_list, m_list, f)
-    # calculate TFs
-    vForce.fullylossy, vTable = calc_transfer_functions(Av, B, k_list, f)
+    # calculate vertical TFs with all losses on
+    Av = construct_eom_matrix(kv_list, m_list, f)
+    vForce.fullylossy, vTable = calc_transfer_functions(Av, B, kv_list, f)
 
     return hForce, vForce, hTable, vTable #, Ah, Av
 

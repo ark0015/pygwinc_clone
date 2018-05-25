@@ -78,12 +78,6 @@ Seismic:
 
 Suspension:
   Type: 'BQuad'
-  # Suspension fiber temperatures [TOP UIM PUM TST]
-  Temp:
-    - 300.0
-    - 300.0
-    - 300.0
-    - 123.0
   VHCoupling:
     theta: 1e-3 # vertical-horizontal x-coupling
   FiberType: 'Ribbon'
@@ -101,6 +95,7 @@ Suspension:
     #susmat = loadmat('CryogenicLIGO/QuadModel/quad_optimized_masses_for_PUM_with_springs.mat')
     - Mass: 200.0 # kg; susmat['testmass_mass'][0,0]
       Length: 0.4105 # m
+      Temp: 123.0
       Dilution: .nan
       K: .nan
       WireRadius: .nan
@@ -108,6 +103,7 @@ Suspension:
       NWires: 4
     - Mass: 65.9 # kg; susmat['PUMmass'][0,0]
       Length: 0.4105 # m
+      Temp: 300.0
       Dilution: 106.0
       K: 5200.0 # N/m; vertical spring constant
       WireRadius: 310e-6
@@ -115,6 +111,7 @@ Suspension:
       NWires: 4
     - Mass: 87.6 # kg; susmat['UIMmass'][0,0]
       Length: 0.4105 # m
+      Temp: 300.0
       Dilution: 80.0
       K: 3900.0 # N/m; vertical spring constant
       WireRadius: 350e-6
@@ -122,6 +119,7 @@ Suspension:
       NWires: 4
     - Mass: 116.5 # kg; susmat['topmass_mass'][0,0]
       Length: 0.4105 # m
+      Temp: 300.0
       Dilution: 87.0
       K: 3400.0 # N/m; vertical spring constant
       WireRadius: 520e-6
