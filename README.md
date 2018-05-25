@@ -2,26 +2,8 @@
 
 # Python port of GW Interferometer Noise Calculator
 
-![gwinc](http://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
+![gwinc](https://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
 
-## tests
-
-To compare pygwinc vs. matlab gwinc, run the included test command
-(requires a local installation of matlab and its python interface):
-
-*   checkout, or link an existing checkout of, matlab gwinc in
-    the test directory:
-
-        $ cd pygwinc/gwinc/test
-        $ ln -s ~/ligo/src/iscmodeling/gwinc
-
-*   Execute the test command (specifying path to matlab python
-    interface if needed):
-
-        $ PYTHONPATH=/opt/matlab/python/lib/python2.7/site-packages python -m gwinc.test
-
-This will produce difference plots of noises calculated from matlab
-gwinc and pygwinc.
 
 ## basic usage
 
@@ -41,12 +23,13 @@ A convenience function to plot the resulting noise budget is included:
 >>> gwinc.plot_noise(data)
 ```
 
+
 ## command line interface
 
 You can make gwinc plots directly from the command line by executing
 the package directly:
 ```shell
-~/ligo/src/gwinc $ python -m gwinc -h
+~/ligo/src/gwinc $ python3 -m gwinc -h
 usage: gwinc [-h] [--flo FLO] [--fhi FHI] [--npoints NPOINTS] [--title TITLE]
              [--matlab] [--fom FOM] [--dump | --save SAVE | --interactive]
              [IFO]
@@ -80,11 +63,32 @@ optional arguments:
   --interactive, -i     open interactive shell when plotting
 ```
 
+
 ## detector description files
 
-`pygwinc` can load detector descriptions in two different format: the
-original MATLAB gwinc .mat format, or the new YAML .yaml format.
-`pygwinc` includes two .yaml detector descriptions:
+`pygwinc` can load detector descriptions in different formats: the new
+YAML .yaml format, the original MATLAB gwinc .mat format, or even from
+a MATLAB .m file.  `pygwinc` includes .yaml detector descriptions for
+various detectors:
 
     * gwinc/ifo/aLIGO.yaml
+    * gwinc/ifo/A+.yaml
     * gwinc/ifo/Voyager.yaml
+
+
+## comparison with MATLAB gwinc
+
+`pygwinc` includes the ability use MATLAB gwinc directly via the
+MATLAB python interface (see the CLI '--matlab' option above).  This
+also allows for easy direct comparison between the pygwinc and
+matgwinc noise budgets.
+
+If you have a local checkout of matgwinc (at e.g. /path/to/gwinc) and
+a local installation of MATLAB and it's python interface (at
+e.g. /opt/matlab/python/lib/python3.6/site-packages) you can run the
+comparison as so:
+
+        $ GWINCPATH=/path/to/gwinc PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages python3 -m gwinc.test -p aLIGO
+
+This will produce a summary page of the various noise spectra that
+differ between matgwinc and pygwinc.
