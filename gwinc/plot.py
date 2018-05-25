@@ -63,6 +63,7 @@ STYLE_MAP = {
 def plot_noise(
         noises,
         ax = None,
+        displacement = True,
 ):
     f = noises['Freq']
 
@@ -70,6 +71,19 @@ def plot_noise(
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
 
+    if displacement:
+        ax_d = ax.twinx()
+        ax_d.set_yscale('log')
+
+        def convert_ax_h_to_d(ax):
+            """
+            Update second axis according with first axis.
+            """
+            y1, y2 = ax.get_ylim()
+            ax_d.set_ylim(y1 * 4000, y2 * 4000)
+            ax_d.figure.canvas.draw()
+        ax.callbacks.connect("ylim_changed", convert_ax_h_to_d)
+        ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
 
     def plot_dict(noises):
         #use sorted to force a consistent ordering
