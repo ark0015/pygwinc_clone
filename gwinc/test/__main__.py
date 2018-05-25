@@ -13,9 +13,10 @@ import argparse
 
 import logging
 logging.basicConfig(format='%(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 from .. import load_ifo, gwinc
+from ..gwinc_matlab import gwinc_matlab
 try:
     import inspiral_range
 except ImportError:
@@ -36,6 +37,8 @@ SKIP = [
 
 def path_hash(path):
     """Calculate SHA1 hash of path, either directory or file"""
+    if not path or not os.path.exists(path):
+        return
     path = os.path.expanduser(path)
     if os.path.isdir(path):
         d = path
@@ -69,10 +72,13 @@ def main():
     # matgwinc processing
 
     mdata_pkl = os.path.join(os.path.dirname(__file__), '{}.pkl'.format(args.IFO))
+
     ifo_hash = hashlib.sha1(ifo.to_txt().encode()).hexdigest()
     gwinc_hash = path_hash(os.getenv('GWINCPATH'))
+    if not gwinc_hash:
+        logging.warning("GWINCPATH not specified or does not exist; skipping check for changes to matgwinc code.")
 
-    mrecalc = True
+    mrecalc = False
 
     if os.path.exists(mdata_pkl):
         logging.info("loading matgwinc data {}...".format(mdata_pkl))
@@ -82,19 +88,21 @@ def main():
             else:
                 mdata = pickle.load(f)
 
-        # don't recalculcate MAT gwinc if ifo and gwinc dir hashes
-        # haven't changed.
-        if mdata['ifo_hash'] == ifo_hash and mdata['gwinc_hash'] == gwinc_hash:
-            mrecalc = False
         if mdata['ifo_hash'] != ifo_hash:
             logging.info("ifo hash has changed: {}".format(ifo_hash))
-        if mdata['gwinc_hash'] != gwinc_hash:
+            mrecalc = True
+        if gwinc_hash and mdata['gwinc_hash'] != gwinc_hash:
             logging.info("matgwinc hash has changed: {}".format(gwinc_hash))
+            mrecalc = True
+    else:
+        mrecalc = True
 
     if mrecalc:
         logging.info("calculating matgwinc noises...")
-        from ..gwinc_matlab import gwinc_matlab
-        mscore, mnoises, mifo = gwinc_matlab(freq, ifo)
+        try:
+            mscore, mnoises, mifo = gwinc_matlab(freq, ifo)
+        except (ImportError, OSError):
+            sys.exit("MATLAB engine not available.")
         mdata = dict(score=mscore, noises=mnoises, ifo=mifo, ifo_hash=ifo_hash, gwinc_hash=gwinc_hash)
         with open(mdata_pkl, 'wb') as f:
             pickle.dump(mdata, f)
