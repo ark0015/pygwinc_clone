@@ -98,7 +98,7 @@ def noise_calc(ifo, f):
             noises['Seismic'] *= Ndispl**2
             noises['Coating Thermo-Optic'] *= N_TO
         #noises['Mirror Thermal'] = noises['Substrate Brownian'] + noises['Coating Brownian'] + \
-        #                           noises['Substrate Thermo-Elastic'] + noises['Coating Thermo-Optic'] # total mirror thermal 
+        #                           noises['Substrate Thermo-Elastic'] + noises['Coating Thermo-Optic'] # total mirror thermal
 
     noises['Total'] = sum(noises[curve] for curve in noises)
     noises['Freq'] = f
@@ -150,7 +150,7 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
         # Report input parameters
         if ifo.Optics.Type == 'DualCarrier_new':     #include the case for Dual carrier
             finesseA = 2*pi/ifo.Optics.ITM.TransmittanceD1
-            finesseB = 2*pi/ifo.Optics.ITM.TransmittanceD2 
+            finesseB = 2*pi/ifo.Optics.ITM.TransmittanceD2
             pbsA = ifo.Laser.PBSD1
             pbsB = ifo.Laser.PBSD2
             logging.info('Finesse for carrier A:  %7.2f' % finesseA)
@@ -185,7 +185,7 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
                     np.hstack([(finesse*2/pi) * ifo.Optics.ITM.CoatingAbsorption,
                                (2 * ifo.Materials.MassThickness) * ifo.Optics.ITM.SubstrateAbsorption])
 
-        # Stefan's Mysterious TCS Section ~~~~ `~~ ` ` 324@#%@#$ !    
+        # Stefan's Mysterious TCS Section ~~~~ `~~ ` ` 324@#%@#$ !
         M = np.array([[ifo.TCS.s_cc, ifo.TCS.s_cs], [ifo.TCS.s_cs, ifo.TCS.s_ss]])
         S_uncorr = PowAbsITM.T*M*PowAbsITM
         TCSeff = 1-sqrt(ifo.TCS.SRCloss/S_uncorr)
@@ -201,6 +201,6 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
             logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
             logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
-        plot.plot_noise(noises)
+        plot.plot_noise(ifo, noises)
 
     return score, noises, ifo

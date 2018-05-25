@@ -148,13 +148,14 @@ You may interact with plot using "plt." methods, e.g.:
 >>> plt.savefig("foo.pdf")
 ''')
         ipshell.enable_pylab()
-        ipshell.run_code("plot_noise(noises)")
+        ipshell.run_code("plot_noise(ifo, noises)")
         ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
     elif args.plot:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
+            ifo,
             noises,
             ax = ax,
             displacement = args.displacement,

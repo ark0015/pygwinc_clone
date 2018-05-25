@@ -61,6 +61,7 @@ STYLE_MAP = {
 
 
 def plot_noise(
+        ifo,
         noises,
         ax = None,
         displacement = True,
@@ -80,7 +81,7 @@ def plot_noise(
             Update second axis according with first axis.
             """
             y1, y2 = ax.get_ylim()
-            ax_d.set_ylim(y1 * 4000, y2 * 4000)
+            ax_d.set_ylim(y1 * ifo.Infrastructure.Length, y2 * ifo.Infrastructure.Length)
             ax_d.figure.canvas.draw()
         ax.callbacks.connect("ylim_changed", convert_ax_h_to_d)
         ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
