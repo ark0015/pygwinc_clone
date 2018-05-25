@@ -150,10 +150,18 @@ You may interact with plot using "plt." methods, e.g.:
         ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
     elif args.plot:
-        plot_noise(noises)
-        plt.title(title)
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        plot_noise(
+            noises,
+            ax = ax,
+        )
+        ax.set_title(title)
+        fig.tight_layout()
         if args.save:
-            plt.savefig(args.save)
+            fig.savefig(
+                args.save,
+            )
         else:
             plt.show()
 

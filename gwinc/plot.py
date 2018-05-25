@@ -60,8 +60,16 @@ STYLE_MAP = {
 }
 
 
-def plot_noise(noises,):
+def plot_noise(
+        noises,
+        ax = None,
+):
     f = noises['Freq']
+
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+
 
     def plot_dict(noises):
         #use sorted to force a consistent ordering
@@ -85,12 +93,12 @@ def plot_noise(noises,):
                     stylekw.update(style)
                 except KeyError:
                     pass
-                plt.loglog(f, sqrt(noise), **stylekw)
+                ax.loglog(f, sqrt(noise), **stylekw)
     plot_dict(noises)
 
-    plt.loglog(f, sqrt(noises['Total']), color='black', label='Total', lw=4)
+    ax.loglog(f, sqrt(noises['Total']), color='black', label='Total', lw=4)
 
-    plt.grid(
+    ax.grid(
         True,
         which='both',
         lw = .5,
@@ -98,12 +106,12 @@ def plot_noise(noises,):
         alpha = .5,
     )
 
-    plt.legend(
+    ax.legend(
         ncol=2,
         fontsize = 'small',
     )
 
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel(u"Strain [1/\u221AHz]")
-    plt.xlim([min(f), max(f)])
-    plt.ylim([3e-25, 1e-21])
+    ax.set_xlabel('Frequency [Hz]')
+    ax.set_ylabel(u"Strain [1/\u221AHz]")
+    ax.set_xlim([min(f), max(f)])
+    ax.set_ylim([3e-25, 1e-21])
