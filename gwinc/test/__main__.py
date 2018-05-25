@@ -16,6 +16,10 @@ logging.basicConfig(format='%(message)s',
                     level=logging.DEBUG)
 
 from .. import load_ifo, gwinc
+try:
+    import inspiral_range
+except ImportError:
+    inspiral_range = None
 
 
 FLO = 5
@@ -47,7 +51,7 @@ def path_hash(path):
     os.chdir(CWD)
     return sha1sum
 
-
+##################################################
 
 def main():
     parser = argparse.ArgumentParser()
@@ -60,6 +64,9 @@ def main():
     ifo = load_ifo(args.IFO)
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
+
+    ##############################
+    # matgwinc processing
 
     mdata_pkl = os.path.join(os.path.dirname(__file__), '{}.pkl'.format(args.IFO))
     ifo_hash = hashlib.sha1(ifo.to_txt().encode()).hexdigest()
@@ -92,10 +99,48 @@ def main():
         with open(mdata_pkl, 'wb') as f:
             pickle.dump(mdata, f)
 
+    mnoises = mdata['noises']
+
+    ##############################
+    # pygwinc processing
+
     logging.info("calculating pygwinc noises...")
     score, noises, ifo = gwinc(freq, ifo)
 
-    mnoises = mdata['noises']
+    ##############################
+    # calc inspiral ranges
+
+    if inspiral_range:
+        logging.info("calculating inspiral ranges...")
+
+        range_params = {}
+        ffunc = 'range'
+        range_params = inspiral_range.waveform._get_waveform_params(**range_params)
+        range_func = eval('inspiral_range.{}'.format(ffunc))
+
+        mfom = range_func(freq, mnoises['Total'], **range_params)
+        _, mnoises['int73'] = inspiral_range.int73(freq, mnoises['Total'])
+        logging.info("matgwinc range: {} Mpc".format(mfom))
+
+        fom = range_func(freq, noises['Total'], **range_params)
+        _, noises['int73'] = inspiral_range.int73(freq, noises['Total'])
+        logging.info("pygwinc range: {:.3f} Mpc".format(fom))
+
+        fom_title = """inspiral {func} {m1}/{m2} Msol:
+matgwinc: {mfom:.2f} Mpc
+pygwinc: {fom:.2f} Mpc""".format(
+            func=range_func.__name__,
+            m1=range_params['m1'],
+            m2=range_params['m2'],
+            mfom=mfom,
+            fom=fom,
+        )
+
+    else:
+        fom_title = ''
+
+    ##############################
+    # find differences
 
     diffs = {}
     for name, noise in noises.items():
@@ -111,8 +156,13 @@ def main():
             continue
         # logging.info("compare: {}".format(name))
 
-        diff = np.sqrt(mnoise) - np.sqrt(noise)
-        frac = abs(diff / np.sqrt(noise))
+        mn = mnoise
+        pn = noise
+        # _, mn = inspiral_range.int73(freq, mnoise)
+        # _, pn = inspiral_range.int73(freq, noise)
+
+        diff = np.sqrt(mn) - np.sqrt(pn)
+        frac = abs(diff / np.sqrt(pn))
 
         if max(frac) < FRACTIONAL_TOLERANCE:
             continue
@@ -121,24 +171,27 @@ def main():
             name, max(frac)*100, w=max([len(n) for n in noises])))
         # logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
 
-        diffs[name] = frac
+        diffs[name] = (mn, pn, frac)
 
+    ##############################
+    # plot
 
     if args.plot:
-        spec = (len(diffs), 2)
+        spec = (len(diffs)+1, 2)
         for i, name in enumerate(diffs):
+            mn, pn, frac = diffs[name]
+
             axl = plt.subplot2grid(spec, (i, 0))
-            axl.loglog(freq, np.sqrt(noises[name]), label='pygwinc')
-            axl.loglog(freq, np.sqrt(mnoises[name]), label='matgwinc')
+            axl.loglog(freq, np.sqrt(pn), label='pygwinc')
+            axl.loglog(freq, np.sqrt(mn), label='matgwinc')
             axl.grid()
             axl.legend(loc='upper right')
             axl.set_ylabel(name)
 
-            frac = diffs[name]
             axr = plt.subplot2grid(spec, (i, 1))
-            axr.loglog(freq, frac, label=name)
-            axr.axhline(y=max(frac), color='r', linestyle='--')
+            axr.loglog(freq, frac)
             axr.grid()
+            axr.axhline(y=max(frac), color='r', linestyle='--')
             axr.text(max(freq)+4000, max(frac), '{:.1f}%'.format(max(frac)*100),
                      horizontalalignment='left', verticalalignment='center',
                      color='red')
@@ -147,18 +200,22 @@ def main():
         axr.set_xlabel("frequency [Hz]")
     
         plt.suptitle("""{} mat/py gwinc noise comparison
-Noises that differ by more than {}% [(mat-py)/py]""".format(args.IFO, FRACTIONAL_TOLERANCE*100))
+Noises that differ by more than {}% [(mat-py)/py]
+{}""".format(args.IFO, FRACTIONAL_TOLERANCE*100, fom_title))
 
         if args.save:
-            plt.gcf().set_size_inches(11, len(diffs)*4)
+            plt.gcf().set_size_inches(11, (len(diffs)+1)*4)
             plt.savefig(args.save)
         else:
             plt.show()
+
+    ##############################
 
     if len(diffs) > 0:
         return 1
     return 0
 
+##################################################
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal.SIG_DFL)
