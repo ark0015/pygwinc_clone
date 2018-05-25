@@ -10,7 +10,9 @@ test:
   - echo $CI_COMMIT_SHA | cut -b1-8 > gitID.txt
   script:
   - apt-get update -qq
-  - apt-get install -y -qq python3-yaml python3-scipy python3-matplotlib python3-ipython
+  - apt-get install -y -qq python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3
+  - git clone https://gitlab-ci-token:ci_token@git.ligo.org/gwinc/inspiral_range.git
+  - export PYTHONPATH=inspiral_range
   - export MPLBACKEND=agg
   - python3 -m gwinc aLIGO -s aLIGO.png
   - python3 -m gwinc A+ -s A+.png
