@@ -71,9 +71,9 @@ YAML .yaml format, the original MATLAB gwinc .mat format, or even from
 a MATLAB .m file.  `pygwinc` includes .yaml detector descriptions for
 various detectors:
 
-    * gwinc/ifo/aLIGO.yaml
-    * gwinc/ifo/A+.yaml
-    * gwinc/ifo/Voyager.yaml
+* [aLIGO.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO.yaml)
+* [A+.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/A+.yaml)
+* [Voyager.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager.yaml)
 
 
 ## comparison with MATLAB gwinc
@@ -88,7 +88,14 @@ a local installation of MATLAB and it's python interface (at
 e.g. /opt/matlab/python/lib/python3.6/site-packages) you can run the
 comparison as so:
 
-        $ GWINCPATH=/path/to/gwinc PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages python3 -m gwinc.test -p aLIGO
+        $ export GWINCPATH=/path/to/gwinc
+        $ export PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages
+        $ python3 -m gwinc.test -p aLIGO
 
 This will produce a summary page of the various noise spectra that
 differ between matgwinc and pygwinc.
+
+Latest comparison plots from continuous integration:
+
+* [aLIGO comparison](https://gwinc.docs.ligo.org/pygwinc/aLIGO_test.png)
+* [A+ comparison](https://gwinc.docs.ligo.org/pygwinc/A+_test.png)
