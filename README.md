@@ -9,18 +9,19 @@
 
 `pygwinc` creates noise budgets based on detector descriptions
 provided in either .yml or .mat files (see below).  Once the detector
-description is loaded, the noise budget can be calculated with the
-`gwinc` command:
+description is loaded, the noise budget can be calculated and plotted:
 ```python
 >>> import gwinc
 >>> import numpy as np
->>> ifo = gwinc.load_ifo('aLIGO')
 >>> freq = np.logspace(1, 3, 1000)
->>> score, data, ifo = gwinc.gwinc(freq, ifo)
+>>> ifo = gwinc.load_ifo('aLIGO')
+>>> ifo = gwinc.precompIFO(ifo)
+>>> noises = gwinc.noise_calc(ifo, freq)
+>>> gwinc.plot_noise(ifo, noises)
 ```
-A convenience function to plot the resulting noise budget is included:
+Or the `gwinc` convenience function can be used to handle it all:
 ```
->>> gwinc.plot_noise(data)
+>>> score, data, ifo = gwinc.gwinc(freq, ifo, plot=True)
 ```
 
 
