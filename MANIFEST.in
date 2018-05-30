@@ -1,13 +1,13 @@
 include LICENSE
-include README.rst
+include README.md
 include DISTRIBUTION-README.md
 include MANIFEST.in
 include setup.cfg
 include setup.py
-include setup_opt.py
 include tox.ini
+include CONTRIBUTIONS.md
 
-recursive-include iirrational *.py
-recursive-include iirrational *.m
-recursive-include test *.py
-recursive-include test *.m
+recursive-include *.py
+recursive-include gwinc *.py
+recursive-include matlab *.m
+recursive-include docs *
