@@ -9,18 +9,19 @@
 
 `pygwinc` creates noise budgets based on detector descriptions
 provided in either .yml or .mat files (see below).  Once the detector
-description is loaded, the noise budget can be calculated with the
-`gwinc` command:
+description is loaded, the noise budget can be calculated and plotted:
 ```python
 >>> import gwinc
 >>> import numpy as np
->>> ifo = gwinc.load_ifo('aLIGO')
 >>> freq = np.logspace(1, 3, 1000)
->>> score, data, ifo = gwinc.gwinc(freq, ifo)
+>>> ifo = gwinc.load_ifo('aLIGO')
+>>> ifo = gwinc.precompIFO(ifo)
+>>> noises = gwinc.noise_calc(ifo, freq)
+>>> gwinc.plot_noise(ifo, noises)
 ```
-A convenience function to plot the resulting noise budget is included:
+Or the `gwinc` convenience function can be used to handle it all:
 ```
->>> gwinc.plot_noise(data)
+>>> score, data, ifo = gwinc.gwinc(freq, ifo, plot=True)
 ```
 
 
@@ -71,9 +72,9 @@ YAML .yaml format, the original MATLAB gwinc .mat format, or even from
 a MATLAB .m file.  `pygwinc` includes .yaml detector descriptions for
 various detectors:
 
-    * gwinc/ifo/aLIGO.yaml
-    * gwinc/ifo/A+.yaml
-    * gwinc/ifo/Voyager.yaml
+* [aLIGO.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO.yaml)
+* [A+.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/A+.yaml)
+* [Voyager.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager.yaml)
 
 
 ## comparison with MATLAB gwinc
@@ -88,7 +89,14 @@ a local installation of MATLAB and it's python interface (at
 e.g. /opt/matlab/python/lib/python3.6/site-packages) you can run the
 comparison as so:
 
-        $ GWINCPATH=/path/to/gwinc PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages python3 -m gwinc.test -p aLIGO
+        $ export GWINCPATH=/path/to/gwinc
+        $ export PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages
+        $ python3 -m gwinc.test -p aLIGO
 
 This will produce a summary page of the various noise spectra that
 differ between matgwinc and pygwinc.
+
+Latest comparison plots from continuous integration:
+
+* [aLIGO comparison](https://gwinc.docs.ligo.org/pygwinc/aLIGO_test.png)
+* [A+ comparison](https://gwinc.docs.ligo.org/pygwinc/A+_test.png)
