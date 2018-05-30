@@ -13,7 +13,7 @@ setup_args = dict(
     url              = 'https://git.ligo.org/gwinc/pygwinc',
     author           = 'LIGO Laboratory',
     author_email     = 'jrollins@ligo.caltech.edu ',
-    description      = "Gravitation Wave Interferometer Noice Calculator",
+    description      = "Gravitation Wave Interferometer Noise Calculator",
     license          = 'Copyright 2017 LIGO Laboratory',
     install_requires = [
         'numpy',

@@ -106,7 +106,7 @@ def noise_calc(ifo, f):
     return noises
 
 
-def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
+def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     """Calculate strain noise budget for a specified interferometer model.
 
     Argument `freq` is the frequency array for which the noises will
@@ -117,7 +117,7 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
     the detector to several potential gravitational wave
     sources.
 
-    If `fig` is specified a plot of the budget will be created.
+    If `plot` is True a plot of the budget will be created.
 
     Returns tuple of (score, noises, ifo)
 
@@ -146,7 +146,7 @@ def gwinc(freq, ifoin, source=None, fig=False, PRfixed=True):
     # --------------------------------------------------------
     # output graphics
 
-    if fig:
+    if plot:
         # Report input parameters
         if ifo.Optics.Type == 'DualCarrier_new':     #include the case for Dual carrier
             finesseA = 2*pi/ifo.Optics.ITM.TransmittanceD1
