@@ -1,22 +1,27 @@
 from __future__ import division
-from numpy import pi, sqrt
+from numpy import pi, sqrt, sin, exp
 from scipy.io import loadmat
 import scipy.special
 import logging
+import copy
 
+from . import suspension
 from .const import CONSTANTS
 from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
+from . import util
 
 
-def precompIFO(ifo, PRfixed=True):
+def precompIFO(F_Hz, ifoin, PRfixed=True):
     """Add precomputed data to the IFO model.
 
     To prevent recomputation of these precomputed data, if the
     ifo argument contains ifo.gwinc.PRfixed, and this matches
     the argument PRfixed, no changes are made.
 
+    This function DOES NOT modify IFO. Its return value is a copy of IFO with precomputations filled out.
     """
+    ifo = copy.deepcopy(ifoin)
 
     if 'gwinc' not in ifo:
         ifo.gwinc = Struct()
@@ -71,7 +76,7 @@ def precompIFO(ifo, PRfixed=True):
     if (g1 * g2 * (1 - g1 * g2)) <= 0:
         raise Exception('Unstable arm cavity g-factors.  Change ifo.Optics.Curvature')
     elif gcav < 1e-3:
-        log.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
+        logging.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
 
     ws = sqrt(armlen * ifo.Laser.Wavelength / pi)
     w1 = ws * sqrt(abs(g2) / gcav)
@@ -129,6 +134,36 @@ def precompIFO(ifo, PRfixed=True):
         ifo.Seismic.darmseis_f = darmsei['darmseis_f'][0]
         ifo.Seismic.darmseis_x = darmsei['darmseis_x'][0]
 
+    # --------------------------------------------------------
+    # Suspension
+    # if the suspension code supports different temps for the stages
+    fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
+    hForce, vForce, hTable, vTable = fname(F_Hz, ifo)
+
+    try:
+        # full TF (conventional)
+        ifo.Suspension.hForce = hForce.fullylossy
+        ifo.Suspension.vForce = vForce.fullylossy
+        # TFs with each stage lossy
+        ifo.Suspension.hForce_singlylossy = hForce.singlylossy
+        ifo.Suspension.vForce_singlylossy = vForce.singlylossy
+    except:
+        ifo.Suspension.hForce = hForce
+        ifo.Suspension.vForce = vForce
+
+    ifo.Suspension.hTable = hTable
+    ifo.Suspension.vTable = vTable
+
+    ##############################
+    # strain to length conversion
+    #
+    # used for converting displacement to strain in all noise calculations
+
+    ifo.gwinc.dhdl_sqr, ifo.gwinc.sinc_sqr = dhdl(F_Hz, ifo.Infrastructure.Length)
+
+    ##############################
+    # If we are precomputing everything else, might as well simply function call API by sticking in the F_Hz
+    ifo.gwinc.F_Hz = F_Hz
     return ifo
 
 
@@ -220,3 +255,29 @@ def precompQuantum(ifo):
     fGammaIFO = fGammaArm * ((1 + rSR) / (1 - rSR))
 
     return fSQL, fGammaIFO, fGammaArm
+
+def dhdl(f, armlen):
+    """Strain to length conversion for noise power spetra
+
+    This takes into account the GW wavelength and is only important
+    when this is comparable to the detector arm length.
+
+    From R. Schilling, CQG 14 (1997) 1513-1519, equation 5,
+    with n = 1, nu = 0.05, ignoring overall phase and cos(nu)^2.
+    A small value of nu is used instead of zero to avoid infinities.
+
+    Returns the square of the dh/dL function, and the same divided by
+    the arm length squared.
+
+    """
+    c = scipy.constants.c
+    nu_small = 0.05
+    omega_arm = pi * f * armlen / c
+    omega_arm_f = (1 - sin(nu_small)) * pi * f * armlen / c
+    omega_arm_b = (1 + sin(nu_small)) * pi * f * armlen / c
+    sinc_sqr = 4 / abs(sin(omega_arm_f) * exp(-1j * omega_arm) / omega_arm_f
+                       + sin(omega_arm_b) * exp(1j * omega_arm) / omega_arm_b)**2
+    # keep DC value equal to 1
+    sinc_sqr /= sinc_sqr[0]
+    dhdl_sqr = sinc_sqr / armlen**2
+    return dhdl_sqr, sinc_sqr

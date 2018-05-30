@@ -1,8 +1,8 @@
 from __future__ import division
-import copy
 import numpy as np
 from numpy import pi, sqrt, sin, exp, abs, log10
 import scipy.constants
+from numpy import pi, sqrt
 from collections import OrderedDict
 import logging
 
@@ -10,33 +10,6 @@ from .precomp import precompIFO
 from . import suspension
 from . import noise
 from .plot import plot_noise
-
-
-def dhdl(f, armlen):
-    """Strain to length conversion for noise power spetra
-
-    This takes into account the GW wavelength and is only important
-    when this is comparable to the detector arm length.
-
-    From R. Schilling, CQG 14 (1997) 1513-1519, equation 5,
-    with n = 1, nu = 0.05, ignoring overall phase and cos(nu)^2.
-    A small value of nu is used instead of zero to avoid infinities.
-
-    Returns the square of the dh/dL function, and the same divided by
-    the arm length squared.
-
-    """
-    c = scipy.constants.c
-    nu_small = 0.05
-    omega_arm = pi * f * armlen / c
-    omega_arm_f = (1 - sin(nu_small)) * pi * f * armlen / c
-    omega_arm_b = (1 + sin(nu_small)) * pi * f * armlen / c
-    sinc_sqr = 4 / abs(sin(omega_arm_f) * exp(-1j * omega_arm) / omega_arm_f
-                       + sin(omega_arm_b) * exp(1j * omega_arm) / omega_arm_b)**2
-    # keep DC value equal to 1
-    sinc_sqr /= sinc_sqr[0]
-    dhdl_sqr = sinc_sqr / armlen**2
-    return dhdl_sqr, sinc_sqr
 
 
 def noise_calc(ifo, f):
@@ -49,32 +22,6 @@ def noise_calc(ifo, f):
     # suspension transfer function
     #
     # used in seismic and susptherm calculations
-
-    fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
-    hForce, vForce, hTable, vTable = fname(f, ifo)
-
-    # if the suspension code supports different temps for the stages
-    try:
-        # full TF (conventional)
-        ifo.Suspension.hForce = hForce.fullylossy
-        ifo.Suspension.vForce = vForce.fullylossy
-        # TFs with each stage lossy
-        ifo.Suspension.hForce_singlylossy = hForce.singlylossy
-        ifo.Suspension.vForce_singlylossy = vForce.singlylossy
-    except:
-        ifo.Suspension.hForce = hForce
-        ifo.Suspension.vForce = vForce
-
-    ifo.Suspension.hTable = hTable
-    ifo.Suspension.vTable = vTable
-
-    ##############################
-    # strain to length conversion
-    #
-    # used for converting displacement to strain in all noise calculations
-
-    ifo.gwinc.dhdl_sqr, ifo.gwinc.sinc_sqr = dhdl(f, ifo.Infrastructure.Length)
-
     ##############################
 
     noises = OrderedDict()
@@ -149,10 +96,9 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     Returns tuple of (score, noises, ifo)
 
     """
-    ifo = copy.deepcopy(ifoin)
-
     # add some precomputed info to the ifo struct
-    ifo = precompIFO(ifo, PRfixed)
+    #this implicitly deepcopies and the return value is the copy
+    ifo = precompIFO(freq, ifoin, PRfixed)
 
     pbs      = ifo.gwinc.pbs
     parm     = ifo.gwinc.parm
@@ -163,6 +109,8 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
         #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
 
     noises = noise_calc(ifo, freq)
+
+    #TODO decide if all this below this should remain, since it is already inside of __main__
 
     # report astrophysical scores if so desired
     score = None
@@ -229,5 +177,4 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
             logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
         plot_noise(ifo, noises)
-
     return score, noises, ifo
