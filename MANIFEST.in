@@ -1,0 +1,13 @@
+include LICENSE
+include README.rst
+include DISTRIBUTION-README.md
+include MANIFEST.in
+include setup.cfg
+include setup.py
+include setup_opt.py
+include tox.ini
+
+recursive-include iirrational *.py
+recursive-include iirrational *.m
+recursive-include test *.py
+recursive-include test *.m
