@@ -121,25 +121,23 @@ def main():
     if inspiral_range:
         logging.info("calculating inspiral ranges...")
 
-        range_params = {}
-        ffunc = 'range'
-        range_params = inspiral_range.waveform._get_waveform_params(**range_params)
-        range_func = eval('inspiral_range.{}'.format(ffunc))
+        range_func = inspiral_range.range
+        H = inspiral_range.waveform.CBCWaveform(freq)
 
-        mfom = range_func(freq, mnoises['Total'], **range_params)
+        mfom = range_func(freq, mnoises['Total'], H=H)
         _, mnoises['int73'] = inspiral_range.int73(freq, mnoises['Total'])
-        logging.info("matgwinc range: {} Mpc".format(mfom))
+        logging.info("matgwinc range: {:.2f} Mpc".format(mfom))
 
-        fom = range_func(freq, noises['Total'], **range_params)
+        fom = range_func(freq, noises['Total'], H=H)
         _, noises['int73'] = inspiral_range.int73(freq, noises['Total'])
-        logging.info("pygwinc range: {:.3f} Mpc".format(fom))
+        logging.info("pygwinc range: {:.2f} Mpc".format(fom))
 
         fom_title = """inspiral {func} {m1}/{m2} Msol:
 matgwinc: {mfom:.2f} Mpc
 pygwinc: {fom:.2f} Mpc""".format(
             func=range_func.__name__,
-            m1=range_params['m1'],
-            m2=range_params['m2'],
+            m1=H.params['m1'],
+            m2=H.params['m2'],
             mfom=mfom,
             fom=fom,
         )

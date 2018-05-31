@@ -28,6 +28,7 @@ If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom argument,
 e.g.:
 
+  gwinc --fom range ...
   gwinc --fom range:m1=20,m2=20 ...
 
 See documentation for inspiral_range package for details.
@@ -53,7 +54,7 @@ parser.add_argument('--title', '-t',
 parser.add_argument('--matlab', '-m', action='store_true',
                     help="use MATLAB gwinc engine to calculate noises")
 parser.add_argument('--fom',
-                    help="calculate inspiral range for resultant spectrum ('func:param=val,param=val')")
+                    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
 parser.add_argument('-D', '--displacement', action='store_true', default = False, dest='displacement',
                    help="supress adding displacement sensitivity axis")
 group = parser.add_mutually_exclusive_group()
@@ -89,9 +90,9 @@ def main():
     if args.fom:
         import inspiral_range
         try:
-            ffunc, fargs = args.fom.split(':')
+            range_func, fargs = args.fom.split(':')
         except ValueError:
-            ffunc = args.fom
+            range_func = args.fom
             fargs = ''
         range_params = {}
         for param in fargs.split(','):
@@ -103,8 +104,6 @@ def main():
             if p != 'approximant':
                 v = float(v)
             range_params[p] = v
-        range_params = inspiral_range.waveform._get_waveform_params(**range_params)
-        range_func = eval('inspiral_range.{}'.format(ffunc))
 
     logging.info("calculating noises...")
     score, noises, ifo = gwinc(freq, ifo)
@@ -120,14 +119,15 @@ def main():
         title = '{} GWINC Noise Budget'.format(args.IFO)
 
     if args.fom:
-        logging.info("calculating inspiral range...")
-        logging.debug("params: {}".format(range_params))
-        fom = range_func(freq, noises['Total'], **range_params)
-        logging.info("{}({}) = {} Mpc".format(ffunc, fargs, fom))
-        fom_title = '{func} {m1}/{m2}: {fom:.3f} Mpc'.format(
-            func=range_func.__name__,
-            m1=range_params['m1'],
-            m2=range_params['m2'],
+        logging.info("calculating inspiral {}...".format(range_func))
+        H = inspiral_range.CBCWaveform(freq, **range_params)
+        logging.debug("params: {}".format(H.params))
+        fom = eval('inspiral_range.{}'.format(range_func))(freq, noises['Total'], H=H)
+        logging.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
+        fom_title = '{func} {m1}/{m2} Msol: {fom:.2f} Mpc'.format(
+            func=range_func,
+            m1=H.params['m1'],
+            m2=H.params['m2'],
             fom=fom,
             )
         title += '\n{}'.format(fom_title)
