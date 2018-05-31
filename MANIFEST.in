@@ -1,13 +1,7 @@
-include LICENSE
-include README.md
-include DISTRIBUTION-README.md
-include MANIFEST.in
-include setup.cfg
-include setup.py
-include tox.ini
 include CONTRIBUTIONS.md
+include setup.cfg
+include tox.ini
 
-recursive-include *.py
-recursive-include gwinc *.py
+recursive-include gwinc *.yaml
 recursive-include matlab *.m
 recursive-include docs *
