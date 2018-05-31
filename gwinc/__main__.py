@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import signal
 import argparse
 import numpy as np
@@ -6,7 +7,8 @@ from matplotlib import pyplot as plt
 from IPython.terminal.embed import InteractiveShellEmbed
 
 import logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(format='%(message)s',
+                    level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from .ifo import available_ifos, load_ifo
 from .precomp import precompIFO

@@ -13,7 +13,7 @@ import argparse
 
 import logging
 logging.basicConfig(format='%(message)s',
-                    level=logging.INFO)
+                    level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from .. import load_ifo, gwinc
 from ..gwinc_matlab import gwinc_matlab
