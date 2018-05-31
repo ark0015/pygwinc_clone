@@ -30,17 +30,18 @@ Or the `gwinc` convenience function can be used to handle it all:
 You can make gwinc plots directly from the command line by executing
 the package directly:
 ```shell
-~/ligo/src/gwinc $ python3 -m gwinc -h
+$ python3 -m gwinc -h
 usage: gwinc [-h] [--flo FLO] [--fhi FHI] [--npoints NPOINTS] [--title TITLE]
              [--matlab] [--fom FOM] [--dump | --save SAVE | --interactive]
              [IFO]
 
-Plot GWINC noise budget for specified IFO
+Plot GWINC noise budget for specified IFO.
 
 If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom argument,
 e.g.:
 
+  gwinc --fom horizon ...
   gwinc --fom range:m1=20,m2=20 ...
 
 See documentation for inspiral_range package for details.
@@ -58,7 +59,7 @@ optional arguments:
                         plot title
   --matlab, -m          use MATLAB gwinc engine to calculate noises
   --fom FOM             calculate inspiral range for resultant spectrum
-                        ('func:param=val,param=val')
+                        ('func[:param=val,param=val]')
   --dump, -d            print IFO parameters to stdout and exit
   --save SAVE, -s SAVE  save figure to file
   --interactive, -i     open interactive shell when plotting
@@ -88,11 +89,11 @@ If you have a local checkout of matgwinc (at e.g. /path/to/gwinc) and
 a local installation of MATLAB and it's python interface (at
 e.g. /opt/matlab/python/lib/python3.6/site-packages) you can run the
 comparison as so:
-
-        $ export GWINCPATH=/path/to/gwinc
-        $ export PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages
-        $ python3 -m gwinc.test -p aLIGO
-
+```shell
+$ export GWINCPATH=/path/to/matgwinc
+$ export PYTHONPATH=/opt/matlab/python/lib/python3.6/site-packages
+$ python3 -m gwinc.test -p aLIGO
+```
 This will produce a summary page of the various noise spectra that
 differ between matgwinc and pygwinc.
 
