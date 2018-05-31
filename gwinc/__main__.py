@@ -57,7 +57,7 @@ parser.add_argument('--matlab', '-m', action='store_true',
                     help="use MATLAB gwinc engine to calculate noises")
 parser.add_argument('--fom',
                     help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
-parser.add_argument('-D', '--displacement', action='store_true', default = False, dest='displacement',
+parser.add_argument('--displacement', '-D', action='store_true', default=False, dest='displacement',
                    help="supress adding displacement sensitivity axis")
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--dump', '-d', dest='dump', action='store_true',
@@ -159,8 +159,8 @@ You may interact with plot using "plt." methods, e.g.:
         plot_noise(
             ifo,
             noises,
-            ax = ax,
-            displacement = args.displacement,
+            ax=ax,
+            displacement=args.displacement,
         )
         ax.set_title(title)
         fig.tight_layout()
