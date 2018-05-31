@@ -206,7 +206,7 @@ pygwinc: {fom:.2f} Mpc""".format(
         axr.set_xlabel("frequency [Hz]")
     
         plt.suptitle("""{} mat/py gwinc noise comparison
-Noises that differ by more than {}% [(mat-py)/py]
+noises that differ by more than {}% [(mat-py)/py]
 {}""".format(args.IFO, FRACTIONAL_TOLERANCE*100, fom_title))
 
         if args.save:
