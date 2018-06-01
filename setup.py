@@ -37,6 +37,12 @@ setup_args = dict(
         exclude = ['docs',],
     ),
 
+    entry_points={
+        'console_scripts': [
+            'gwinc = gwinc.__main__:main',
+        ],
+    },
+
     include_package_data = True,
     zip_safe = True,
 )
