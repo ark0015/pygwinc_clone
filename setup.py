@@ -7,7 +7,7 @@ version = '0.1'
 
 
 setup_args = dict(
-    name             = 'gwinc',
+    name             = 'pygwinc',
     version          = version,
     url              = 'https://git.ligo.org/gwinc/pygwinc',
     author           = 'LIGO Laboratory',
