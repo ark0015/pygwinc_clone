@@ -73,6 +73,8 @@ parser.add_argument('IFO', default=IFO,
 
 
 def main():
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     args = parser.parse_args()
 
     ifo = load_ifo(args.IFO)
@@ -173,5 +175,4 @@ You may interact with plot using "plt." methods, e.g.:
 
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
     main()
