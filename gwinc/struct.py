@@ -14,8 +14,8 @@ from scipy.io.matlab.mio5_params import mat_struct
 # An apparent bug in python-yaml prevents it from regognizing
 # scientific notation as a float.  The following is a modified version
 # of the parser that recognize scientific notation appropriately.
-loader = yaml.SafeLoader
-loader.add_implicit_resolver(
+yaml_loader = yaml.SafeLoader
+yaml_loader.add_implicit_resolver(
     'tag:yaml.org,2002:float',
     re.compile('''^(?:
      [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
@@ -242,7 +242,7 @@ class Struct(object):
 
         with open(path, 'r') as f:
             if ext in ['.yaml', '.yml']:
-                d = yaml.load(f, Loader=loader)
+                d = yaml.load(f, Loader=yaml_loader)
                 return cls.from_dict(d)
             elif ext == '.mat':
                 s = loadmat(f, squeeze_me=True, struct_as_record=False)
