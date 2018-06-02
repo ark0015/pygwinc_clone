@@ -70,7 +70,7 @@ group.add_argument('--save', '-s',
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
 parser.add_argument('IFO', default=IFO,
-                    help="IFO name or description file path (.yaml, .mat, .m)")
+                    help="IFO name or description file path (.yaml, .mat, .m), or full HDF5 data file")
 
 
 def main():
@@ -78,14 +78,24 @@ def main():
 
     args = parser.parse_args()
 
-    ifo = load_ifo(args.IFO)
+    ##########
+    # initial arg processing
+
+    if os.path.splitext(args.IFO)[1] == '.hdf5':
+        title, ifo, noises = util.load_hdf5(args.IFO)
+
+    else:
+        ifo = load_ifo(args.IFO)
+        noises = None
+        if args.title:
+            title = args.title
+        else:
+            title = '{} GWINC Noise Budget'.format(args.IFO)
 
     if args.dump:
         ifo = precompIFO(ifo)
         print(ifo.to_txt(), end='')
         return
-
-    freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
 
     if args.matlab:
         gwinc = gwinc_matlab.gwinc_matlab
@@ -110,18 +120,21 @@ def main():
                 v = float(v)
             range_params[p] = v
 
-    logging.info("calculating noises...")
-    score, noises, ifo = gwinc(freq, ifo)
+    ##########
+    # main calculations
+
+    if noises:
+        freq = noises['Freq']
+
+    else:
+        logging.info("calculating noises...")
+        freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
+        score, noises, ifo = gwinc(freq, ifo)
 
     logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
     logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
     logging.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
     logging.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
-
-    if args.title:
-        title = args.title
-    else:
-        title = '{} GWINC Noise Budget'.format(args.IFO)
 
     if args.fom:
         logging.info("calculating inspiral {}...".format(range_func))
