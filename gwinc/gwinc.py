@@ -9,7 +9,7 @@ from .precomp import precompIFO
 from . import suspension
 from . import util
 from . import noise
-from . import plot
+from .plot import plot_noise
 
 
 def noise_calc(ifo, f):
@@ -201,6 +201,6 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
             logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
             logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
-        plot.plot_noise(ifo, noises)
+        plot_noise(ifo, noises)
 
     return score, noises, ifo
