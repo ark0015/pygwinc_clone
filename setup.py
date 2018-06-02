@@ -30,6 +30,7 @@ setup_args = dict(
     install_requires = [
         'numpy',
         'scipy',
+        'h5py',
         'matplotlib',
     ],
 
