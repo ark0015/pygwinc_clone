@@ -27,11 +27,21 @@ Available included IFOs: {}
 # for ifo in available_ifos():
 #     description += "  '{}'\n".format(ifo)
 description += """
+
+By default a GWINC noise budget of the specified IFO will calculated,
+and plotted with an interactive plotter.  If the --save option is
+specified the plot will be saved directly to a file (without display)
+(various formats are supported, indicated by file extension).  If the
+requested extension is "hdf5" then the noise traces and IFO parameters
+will be saved to an HDF5 file (without plotting).  The input file
+(IFO) can be an HDF5 file saved from a previous call, in which all
+noise traces and IFO parameters will be loaded from that file.
+
 If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom argument,
 e.g.:
 
-  gwinc --fom range ...
+  gwinc --fom horizon ...
   gwinc --fom range:m1=20,m2=20 ...
 
 See documentation for inspiral_range package for details.
@@ -61,14 +71,14 @@ parser.add_argument('--fom',
 parser.add_argument('--displacement', '-D', action='store_true', default=False, dest='displacement',
                    help="supress adding displacement sensitivity axis")
 group = parser.add_mutually_exclusive_group()
-group.add_argument('--dump', '-d', dest='dump', action='store_true',
-                   help="print IFO parameters to stdout and exit")
 group.add_argument('--interactive', '-i', action='store_true',
-                   help="open interactive shell when plotting")
+                   help="interactive plot with interactive shell")
 group.add_argument('--save', '-s',
                    help="save noise (hdf5) or figure (pdf/png/etc) to file")
 group.add_argument('--yaml', '-y', dest='yaml', action='store_true',
                    help="print specified IFO yaml to stdout and exit")
+group.add_argument('--dump', '-d', dest='dump', action='store_true',
+                   help="print precomp'd IFO parameters to stdout and exit")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
 parser.add_argument('IFO', default=IFO,
