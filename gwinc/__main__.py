@@ -15,6 +15,7 @@ from .precomp import precompIFO
 from .gwinc import gwinc as pygwinc
 from . import gwinc_matlab
 from . import plot_noise
+from . import util
 
 ##################################################
 
@@ -62,10 +63,10 @@ parser.add_argument('--displacement', '-D', action='store_true', default=False, 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--dump', '-d', dest='dump', action='store_true',
                    help="print IFO parameters to stdout and exit")
-group.add_argument('--save', '-s',
-                   help="save figure to file")
 group.add_argument('--interactive', '-i', action='store_true',
                    help="open interactive shell when plotting")
+group.add_argument('--save', '-s',
+                   help="save noise (hdf5) or figure (pdf/png/etc) to file")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
 parser.add_argument('IFO', default=IFO,
@@ -136,7 +137,20 @@ def main():
             )
         title += '\n{}'.format(fom_title)
 
-    if args.interactive:
+    ##########
+    # output
+
+    # save noise traces to HDF5 file
+    if args.save and os.path.splitext(args.save)[1] == '.hdf5':
+        util.save_hdf5(
+            title,
+            ifo,
+            noises,
+            args.save,
+        )
+
+    # interactive shell plotting
+    elif args.interactive:
         ipshell = InteractiveShellEmbed(
             user_ns={'freq': freq,
                      'noises': noises,
@@ -155,6 +169,8 @@ You may interact with plot using "plt." methods, e.g.:
         ipshell.run_code("plot_noise(ifo, noises)")
         ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
+
+    # standard plotting
     elif args.plot:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
