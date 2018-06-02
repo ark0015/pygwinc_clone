@@ -67,6 +67,8 @@ group.add_argument('--interactive', '-i', action='store_true',
                    help="open interactive shell when plotting")
 group.add_argument('--save', '-s',
                    help="save noise (hdf5) or figure (pdf/png/etc) to file")
+group.add_argument('--yaml', '-y', dest='yaml', action='store_true',
+                   help="print specified IFO yaml to stdout and exit")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
 parser.add_argument('IFO', default=IFO,
@@ -92,6 +94,10 @@ def main():
         else:
             title = '{} GWINC Noise Budget'.format(args.IFO)
 
+    if args.yaml:
+        ifo = load_ifo(args.IFO)
+        print(ifo.to_yaml(), end='')
+        return
     if args.dump:
         ifo = precompIFO(ifo)
         print(ifo.to_txt(), end='')
