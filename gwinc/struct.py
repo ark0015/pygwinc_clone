@@ -203,6 +203,15 @@ class Struct(object):
 
 
     @classmethod
+    def from_yaml(cls, y):
+        """Create Struct from YAML string.
+
+        """
+        d = yaml.load(y)
+        return cls.from_dict(d)
+
+
+    @classmethod
     def from_matstruct(cls, s):
         """Create Struct from scipy.io.matlab mat_struct object.
 
