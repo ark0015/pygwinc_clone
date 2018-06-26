@@ -72,10 +72,12 @@ Seismic:
   Site: 'LHO'                      # LHO or LLO (only used for Newtonian noise)
   KneeFrequency: 10                # Hz; freq where 'flat' noise rolls off
   LowFrequencyLevel: 1e-9          # m/rtHz; seismic noise level below f_knee
-  Gamma: .8                        # abruptness of change at f_knee
+  Gamma: 0.8                       # abruptness of change at f_knee
   Rho: 1.8e3                       # kg/m^3; density of the ground nearby
-  Beta: 1                          # quiet times beta = 0.35-0.60; noisy times beta = 0.15-1.4
+  Beta: 0.8                        # quiet times beta = 0.35-0.60; noisy times beta = 0.15-1.4
   Omicron: 10                      # Feedforward cancellation factor
+  TestMassHeight: 1.5              # m
+  RayleighWaveSpeed: 250           # m/s
   #darmSeiSusFile: 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
 Suspension:
