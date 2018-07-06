@@ -1,6 +1,3 @@
-"""Beginnings of a test suite for pygwinc
-
-"""
 import os
 import sys
 import signal
@@ -184,17 +181,20 @@ pygwinc: {fom:.2f} Mpc""".format(
 
     if args.plot:
         spec = (len(diffs)+1, 2)
+        sharex = None
         for i, name in enumerate(diffs):
             mn, pn, frac = diffs[name]
 
-            axl = plt.subplot2grid(spec, (i, 0))
+            axl = plt.subplot2grid(spec, (i, 0), sharex=sharex)
             axl.loglog(freq, np.sqrt(pn), label='pygwinc')
             axl.loglog(freq, np.sqrt(mn), label='matgwinc')
             axl.grid()
             axl.legend(loc='upper right')
             axl.set_ylabel(name)
+            if i == 0:
+                sharex = axl
 
-            axr = plt.subplot2grid(spec, (i, 1))
+            axr = plt.subplot2grid(spec, (i, 1), sharex=sharex)
             axr.loglog(freq, frac)
             axr.grid()
             axr.axhline(y=max(frac), color='r', linestyle='--')
