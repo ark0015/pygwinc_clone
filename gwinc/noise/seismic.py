@@ -46,9 +46,9 @@ def seisBSC(f):
     # translational DOFs
     SEI_T = np.array([3e-6, 1e-6, 2e-7, 2e-7, 8e-10, 1e-11, 3e-13, 3e-14, 3e-14])
     nt = 10**(interp1d(SEI_F, log10(SEI_T))(f))
-  
+
     # rotational DOFs
     SEI_R = np.array([1e-8, 3e-8, 2e-8, 1e-8, 4e-10, 1e-11, 3e-13, 3e-14, 3e-14])
-    nr = 10**(interp1d(SEI_F, log10(SEI_T))(f))
-  
+    nr = 10**(interp1d(SEI_F, log10(SEI_R))(f))
+
     return nt, nr
