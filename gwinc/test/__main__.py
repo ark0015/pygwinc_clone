@@ -52,7 +52,7 @@ def path_hash(path):
     sha1sum_out = subprocess.check_output(cmd, shell=True)
     sha1sum = sha1sum_out.split()[0]
     os.chdir(CWD)
-    return sha1sum
+    return sha1sum.decode()
 
 ##################################################
 
