@@ -12,14 +12,16 @@ from .noise.coatingthermal import getCoatDopt
 from . import util
 
 
-def precompIFO(F_Hz, ifoin, PRfixed=True):
+def precompIFO(f, ifoin, PRfixed=True):
     """Add precomputed data to the IFO model.
 
     To prevent recomputation of these precomputed data, if the
     ifo argument contains ifo.gwinc.PRfixed, and this matches
     the argument PRfixed, no changes are made.
 
-    This function DOES NOT modify IFO. Its return value is a copy of IFO with precomputations filled out.
+    This function DOES NOT modify IFO. Its return value is a copy of
+    IFO with precomputations filled out.
+
     """
     ifo = copy.deepcopy(ifoin)
 
@@ -138,7 +140,7 @@ def precompIFO(F_Hz, ifoin, PRfixed=True):
     # Suspension
     # if the suspension code supports different temps for the stages
     fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
-    hForce, vForce, hTable, vTable = fname(F_Hz, ifo)
+    hForce, vForce, hTable, vTable = fname(f, ifo)
 
     try:
         # full TF (conventional)
@@ -159,11 +161,8 @@ def precompIFO(F_Hz, ifoin, PRfixed=True):
     #
     # used for converting displacement to strain in all noise calculations
 
-    ifo.gwinc.dhdl_sqr, ifo.gwinc.sinc_sqr = dhdl(F_Hz, ifo.Infrastructure.Length)
+    ifo.gwinc.dhdl_sqr, ifo.gwinc.sinc_sqr = dhdl(f, ifo.Infrastructure.Length)
 
-    ##############################
-    # If we are precomputing everything else, might as well simply function call API by sticking in the F_Hz
-    ifo.gwinc.F_Hz = F_Hz
     return ifo
 
 
