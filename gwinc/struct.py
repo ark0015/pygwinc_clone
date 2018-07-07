@@ -156,7 +156,7 @@ class Struct(object):
         """Return text represenation of Struct, one element per line.
 
         Struct keys use '.' to indicate hierarchy.  The `fmt` keyword
-        controls the formatting of numeric values.  MATLAB code can
+        controls the formatting of numeric values.  MATLAB code can be
         generated with the following parameters:
 
         >>> ifo.to_txt(delimiter=' = ', end=';')
@@ -168,7 +168,9 @@ class Struct(object):
         for k, v in sorted(self.walk()):
             if isinstance(v, (int, float, complex)):
                 base = fmt
-            elif isinstance(v, np.ndarray):
+            elif isinstance(v, (list, np.ndarray)):
+                if isinstance(v, list):
+                    v = np.array(v)
                 v = np.array2string(v, separator='', max_line_width=np.Inf, formatter={'all':lambda x: "{:0.6e} ".format(x)})
                 base = 's'
             else:
