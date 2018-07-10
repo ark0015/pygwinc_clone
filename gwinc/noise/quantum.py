@@ -62,7 +62,7 @@ def shotrad(f, ifo):
     #<<<<<<<<<<<<<<<<< Modified to include frequency dependent squeezing angle (LB)
 
     # useful numbers
-    eta   = ifo.Optics.Quadrature.dc#         # Homodyne Readout phase
+    eta = ifo.Optics.Quadrature.dc                      # Homodyne Readout phase
     lambda_PD = 1 - ifo.Optics.PhotoDetectorEfficiency  # PD losses
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -71,10 +71,7 @@ def shotrad(f, ifo):
     if 'Squeezer' not in ifo:
         sqzType = 'None'
     else:
-        if 'Type' not in ifo.Squeezer:
-            sqzType = 'Freq Independent'
-        else:
-            sqzType = ifo.Squeezer.Type
+        sqzType = ifo.Squeezer.get('Type', 'Freq Independent')
   
     # extract common parameters
     if sqzType == 'None':
@@ -82,14 +79,13 @@ def shotrad(f, ifo):
         alpha = 0                                # Squeeze angle
         lambda_in = 0                            # Loss to squeezing before injection [Power]
         ANTISQZ_DB = 0                           # Anti squeezing in db
+        etaRMS = 0
     else:
         SQZ_DB = ifo.Squeezer.AmplitudedB        # Squeeing in dB
         lambda_in = ifo.Squeezer.InjectionLoss   # Loss to squeezing before injection [Power]
         alpha = ifo.Squeezer.SQZAngle            # Freq Indep Squeeze angle
-        if 'AntiAmplitudedB' in ifo.Squeezer:
-            ANTISQZ_DB = ifo.Squeezer.AntiAmplitudedB # Anti squeezing in db
-        else:
-            ANTISQZ_DB = SQZ_DB
+        ANTISQZ_DB = ifo.Squeezer.get('AntiAmplitudedB', SQZ_DB) # Anti squeezing in db
+        etaRMS = ifo.Squeezer.get('LOAngleRMS', 0) # quadrature noise
   
     # switch on squeezing type for other input squeezing modifications
     if sqzType == 'None':
@@ -195,12 +191,17 @@ def shotrad(f, ifo):
     Msig = Msig * sqrt(1 - lambda_PD)
 
     # and compute the final noise
-    vHD = np.array([[sin(eta), cos(eta)]])
-    n = coeff * np.squeeze(sum(abs(getProdTF(vHD, Mnoise))**2, axis=1)) / \
-        np.squeeze(sum(abs(getProdTF(vHD, Msig))**2, axis=1))
+    def HDnoise(eta):
+        vHD = np.array([[sin(eta), cos(eta)]])
+        n = coeff * np.squeeze(sum(abs(getProdTF(vHD, Mnoise))**2, axis=1)) / \
+            np.squeeze(sum(abs(getProdTF(vHD, Msig))**2, axis=1))
+        return n
 
-    # gwinc wants n to be 1xN
-    #n = n.T
+    if etaRMS <= 0:
+        n = HDnoise(eta)
+    else:
+        # include quadrature noise (average of +- the RMS)
+        n = (HDnoise(eta+etaRMS) + HDnoise(eta-etaRMS)) / 2
 
     # the above is the same as
     #    n = coeff * (vHD * Msqz * Msqz' * vHD') / (vHD * Msig * Msig' * vHD')
@@ -216,7 +217,7 @@ def shotrad(f, ifo):
     #       sum(abs((vHD * Msig(:,:,k))).^2);
     #   end
 
-    return n
+    return n * ifo.gwinc.sinc_sqr
 
 
 def shotradSignalRecycled(f, ifo):
