@@ -75,8 +75,15 @@ class Struct(object):
 
     ##########
 
-    def __getitem__(self, item):
-        return self.__dict__[item]
+    def __getitem__(self, key):
+        """Get a (possibly nested) value from the struct.
+
+        """
+        if '.' in key:
+            k, r = key.split('.', 1)
+            return self.__dict__[k][r]
+        else:
+            return self.__dict__[key]
 
     def __setitem__(self, item, value):
         self.__dict__[item] = value
