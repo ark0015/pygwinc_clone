@@ -75,6 +75,12 @@ class Struct(object):
 
     ##########
 
+    def __init__(self, **kwargs):
+        """Arguments can pre-fill the structure
+
+        """
+        self.__dict__.update(kwargs)
+
     def __getitem__(self, key):
         """Get a (possibly nested) value from the struct.
 
@@ -85,11 +91,33 @@ class Struct(object):
         else:
             return self.__dict__[key]
 
-    def __setitem__(self, item, value):
-        self.__dict__[item] = value
+    def get(self, key, default):
+        """Get a (possibly nested) value from the struct, or default.
 
-    def __contains__(self, item):
-        return item in self.__dict__
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+    def setdefault(self, key, default):
+        return self.__dict__.setdefault(key, default)
+
+    def items(self):
+        return self.__dict__.items()
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    def __contains__(self, key):
+        return key in self.__dict__
+
 
     def to_dict(self, array=False):
         """Return nested dictionary representation of Struct.
