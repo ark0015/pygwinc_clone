@@ -19,42 +19,42 @@ PRIORITY_MAP = {
 
 STYLE_MAP = {
     'Quantum Vacuum': dict(
-        color = (0.41568627450980394, 0.23921568627450981, 0.60392156862745094),
+        color = 'xkcd:vibrant purple',
     ),
     'Seismic': dict(
-        color = (0.69411764705882351, 0.34901960784313724, 0.15686274509803921),
+        color = 'xkcd:brown',
     ),
     'Newtonian Gravity': dict(
-        color = (0.20000000000000001, 0.62745098039215685, 0.17254901960784313),
+        color = 'xkcd:green',
     ),
     'Suspension Thermal': dict(
-        color = (0.12156862745098039, 0.47058823529411764, 0.70588235294117652),
+        color = 'xkcd:deep sky blue',
     ),
     'Coating Brownian': dict(
-        color = (0.8901960784313725, 0.10196078431372549, 0.10980392156862745),
+        color = 'xkcd:fire engine red',
     ),
     'Coating Thermo-Optic': dict(
-        color = (0.98431372549019602, 0.60392156862745094, 0.59999999999999998),
+        color = 'xkcd:bright sky blue',
         ls = '--',
     ),
     'ITM Thermo-Refractive': dict(
-        color = (1.0, 0.49803921568627452, 0.0),
+        color = 'xkcd:dark sky blue',
         ls = '--',
     ),
     'ITM Carrier Density': dict(
-        color = (0.99215686274509807, 0.74901960784313726, 0.43529411764705883),
+        color = 'xkcd:grey',
         ls = '--',
     ),
     'Substrate Brownian': dict(
-        color = (0.69803921568627447, 0.87450980392156863, 0.54117647058823526),
+        color = 'xkcd:pumpkin orange',
         ls = '--',
     ),
     'Substrate Thermo-Elastic': dict(
-        color = (0.65098039215686276, 0.80784313725490198, 0.8901960784313725),
+        color = 'xkcd:golden',
         ls = '--',
     ),
     'Excess Gas': dict(
-        color = (0.792156862745098, 0.69803921568627447, 0.83921568627450982),
+        color = 'xkcd:baby shit brown',
         ls = '--',
     ),
 }
@@ -111,14 +111,14 @@ def plot_noise(
                 ax.loglog(f, sqrt(noise), **stylekw)
     plot_dict(noises)
 
-    ax.loglog(f, sqrt(noises['Total']), color='black', label='Total', lw=4)
+    ax.loglog(f, sqrt(noises['Total']), color='xkcd:black', alpha=0.6, label='Total', lw=4)
 
     ax.grid(
         True,
-        which='both',
-        lw = .5,
-        ls = '-',
-        alpha = .5,
+        which = 'both',
+        lw    = 0.5,
+        ls    = '-',
+        alpha = 0.5,
     )
 
     ax.legend(
