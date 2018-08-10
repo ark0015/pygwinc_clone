@@ -85,8 +85,8 @@ Suspension:
   FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
-    Thickness: 115e-6 # m
-    Width: 1150e-6    # m
+    Thickness: 220e-6 # m
+    Width: 2200e-6    # m
   Fiber:
     Radius: 205e-6    # m
   BreakStress: 750e6 # Pa; ref. K. Strain
@@ -105,26 +105,26 @@ Suspension:
       NWires: 4
     - Mass: 65.9 # kg; susmat['PUMmass'][0,0]
       Length: 0.4105 # m
-      Temp: 300.0
+      Temp: 123.0
       Dilution: 106.0
-      K: 5200.0 # N/m; vertical spring constant
-      WireRadius: 310e-6
+      K: 17300.0 # N/m; vertical spring constant
+      WireRadius: 565e-6
       Blade: 4200e-6
       NWires: 4
     - Mass: 87.6 # kg; susmat['UIMmass'][0,0]
       Length: 0.4105 # m
       Temp: 300.0
       Dilution: 80.0
-      K: 3900.0 # N/m; vertical spring constant
-      WireRadius: 350e-6
+      K: 13500.0 # N/m; vertical spring constant
+      WireRadius: 652e-6
       Blade: 4600e-6
       NWires: 4
     - Mass: 116.5 # kg; susmat['topmass_mass'][0,0]
       Length: 0.4105 # m
       Temp: 300.0
       Dilution: 87.0
-      K: 3400.0 # N/m; vertical spring constant
-      WireRadius: 520e-6
+      K: 12900.0 # N/m; vertical spring constant
+      WireRadius: 1012e-6
       Blade: 4300e-6
       NWires: 2
   Silicon:
@@ -142,7 +142,6 @@ Suspension:
     Phi: 2e-9         # Nawrodt (2010)      loss angle  1/Q
     Y: 155.8e9        # Pa       Youngs Modulus
     Dissdepth: 1.5e-3 # 10x smaller surface loss depth (Nawrodt (2010))
-    FiberType: 1      # 0 = round, 1 = ribbons
   Silica:
     Rho: 2200.0       # Kg/m^3
     C: 772.0          # J/Kg/K
