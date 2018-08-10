@@ -164,7 +164,7 @@ def suspQuad(f, ifo, material='Silica'):
         if 'WireMaterial' in stage:
             WireMaterial = stage.WireMaterial
         elif n == last_stage:
-            WireMaterial = 'Silica'
+            WireMaterial = material
         else:
             WireMaterial = 'C70Steel'
 

@@ -61,7 +61,7 @@ def susptherm(f, ifo):
         ##########################################################
 
         dxdF = zeros(hForce.shape, dtype=complex)
-        for n, stage in enumerate(ifo.Suspension.Stage):
+        for n, stage in enumerate(reversed(ifo.Suspension.Stage)):
             # add up the contribution from each stage
 
             # convert to beam line motion.  theta is squared because
