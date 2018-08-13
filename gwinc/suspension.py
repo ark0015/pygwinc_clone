@@ -206,7 +206,7 @@ def suspQuad(f, ifo, material='Silica'):
         phi_b[n] = bladeMat.Phi       # loss angle
 
     # weight support by lower stages
-    Mg = g * np.flip(np.cumsum(np.flip(mass, 0)), 0)
+    Mg = g * np.flipud(np.cumsum(np.flipud(mass)))
 
     # Correction for the pendulum restoring force
     kh0 = Mg / length              # N/m, horiz. spring constant, stage n

@@ -19,42 +19,53 @@ PRIORITY_MAP = {
 
 STYLE_MAP = {
     'Quantum Vacuum': dict(
-        color = 'xkcd:vibrant purple',
+        # color = 'xkcd:vibrant purple',
+        color = '#ad03de',
     ),
     'Seismic': dict(
-        color = 'xkcd:brown',
+        # color = 'xkcd:brown',
+        color = '#653700',
     ),
     'Newtonian Gravity': dict(
-        color = 'xkcd:green',
+        # color = 'xkcd:green',
+        color = '#15b01a',
     ),
     'Suspension Thermal': dict(
-        color = 'xkcd:deep sky blue',
+        # color = 'xkcd:deep sky blue',
+        color = '#0d75f8',
     ),
     'Coating Brownian': dict(
-        color = 'xkcd:fire engine red',
+        # color = 'xkcd:fire engine red',
+        color = '#fe0002',
     ),
     'Coating Thermo-Optic': dict(
-        color = 'xkcd:bright sky blue',
+        # color = 'xkcd:bright sky blue',
+        color = '#02ccfe',
         ls = '--',
     ),
     'ITM Thermo-Refractive': dict(
-        color = 'xkcd:dark sky blue',
+        # color = 'xkcd:dark sky blue',
+        color = '#448ee4',
         ls = '--',
     ),
     'ITM Carrier Density': dict(
-        color = 'xkcd:grey',
+        # color = 'xkcd:grey',
+        color = '#929591',
         ls = '--',
     ),
     'Substrate Brownian': dict(
-        color = 'xkcd:pumpkin orange',
+        # color = 'xkcd:pumpkin orange',
+        color = '#fb7d07',
         ls = '--',
     ),
     'Substrate Thermo-Elastic': dict(
-        color = 'xkcd:golden',
+        # color = 'xkcd:golden',
+        color = '#f5bf03',
         ls = '--',
     ),
     'Excess Gas': dict(
-        color = 'xkcd:baby shit brown',
+        # color = 'xkcd:baby shit brown',
+        color = '#ad900d',
         ls = '--',
     ),
 }
@@ -111,7 +122,7 @@ def plot_noise(
                 ax.loglog(f, sqrt(noise), **stylekw)
     plot_dict(noises)
 
-    ax.loglog(f, sqrt(noises['Total']), color='xkcd:black', alpha=0.6, label='Total', lw=4)
+    ax.loglog(f, sqrt(noises['Total']), color='#000000', alpha=0.6, label='Total', lw=4)
 
     ax.grid(
         True,
