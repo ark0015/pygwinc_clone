@@ -27,11 +27,9 @@
 # * 13. Fejer
 # * 14. Braginsky
 
-Constants:
-  Temp: 295 # K; Temperature of the Vacuum
-  
 Infrastructure:
   Length: 39950 # m; whoa
+  Temp: 295 # K; Temperature of the Vacuum
   ResidualGas:
     pressure: 4.0e-7         # Pa
     mass: 3.35e-27           # kg,   Mass of H_2 (ref. 10)
@@ -88,7 +86,7 @@ Suspension:
     - 123.0
   VHCoupling:
     theta: 1e-3 # vertical-horizontal x-coupling
-  FiberType: 1        # 0 = round, 1 = ribbons
+  FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
     Thickness: 115e-6 # m
