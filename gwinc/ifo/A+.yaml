@@ -38,6 +38,18 @@ Infrastructure:
     polarizability: 7.8e-31       # m^3
 
 TCS:
+  # The presumably dominant effect of a thermal lens in the ITMs is an increased
+  # mode mismatch into the SRC, and thus an increased effective loss of the SRC.
+  # The increase is estimated by calculating the round-trip loss S in the SRC as
+  # 1-S = |<Psi|exp(i*phi)|Psi>|^2, where
+  # |Psi> is the beam hitting the ITM and
+  # phi = P_coat*phi_coat + P_subs*phi_subs
+  # with phi_coat & phi_subs the specific lensing profiles
+  # and P_coat & P_subst the power absorbed in coating and substrate
+  #
+  # This expression can be expanded to 2nd order and is given by
+  # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2
+  # s_cc, s_cs and s_ss were calculated analytically by Phil Willems (4/2007)
   s_cc: 7.024                     # Watt^-2
   s_cs: 7.321                     # Watt^-2
   s_ss: 7.631                     # Watt^-2
@@ -68,18 +80,20 @@ Seismic:
 
 Suspension:
   Type: 'Quad'
-  FiberType: 'Round'
+  FiberType: 'Tapered'
   BreakStress: 750e6              # Pa; ref. K. Strain
   Temp: 290
+  # VHCoupling:
+  #   theta: 1e-3                   # vertical-horizontal x-coupling (computed in precompIFO)
 
   Silica:
-    Rho   : 2200                  # Kg/m^3;
+    Rho   : 2.2e3                 # Kg/m^3;
     C     : 772                   # J/Kg/K;
     K     : 1.38                  # W/m/kg;
     Alpha : 3.9e-7                # 1/K;
     dlnEdT: 1.52e-4               # (1/K), dlnE/dT
     Phi   : 4.1e-10               # from G Harry e-mail to NAR 27April06 dimensionless units
-    Y     : 72e9                  # Pa; Youngs Modulus
+    Y     : 7.2e10                # Pa; Youngs Modulus
     Dissdepth: 1.5e-2             # from G Harry e-mail to NAR 27April06
 
   C70Steel:
@@ -100,8 +114,8 @@ Suspension:
     Phi: 1e-4
     Y: 187e9
 
-  # ref ---- http://design.caltech.edu/Research/MEMS/siliconprop.html
-  # all properties should be for T ~ 20 K
+  # ref http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html
+  # all properties should be for T ~ 120 K
   Silicon:
     Rho: 2329                     # Kg/m^3;  density
     C: 300                        # J/kg/K   heat capacity
@@ -109,9 +123,9 @@ Suspension:
     Alpha: 1e-10                  # 1/K      thermal expansion coeff
     # from Gysin, et. al. PRB (2004)  E(T): E0 - B*T*exp(-T0/T)
     # E0: 167.5e9 Pa   T0: 317 K   B: 15.8e6 Pa/K
-    dlnEdT: -2.0e-5               # (1/K)    dlnE/dT  T=20K
+    dlnEdT: -2e-5                 # (1/K)    dlnE/dT  T=120K
     Phi: 2e-9                     # Nawrodt (2010)      loss angle  1/Q
-    Y: 1.558e11                   # Pa       Youngs Modulus
+    Y: 155.8e9                    # Pa       Youngs Modulus
     Dissdepth: 1.5e-3             # 10x smaller surface loss depth (Nawrodt (2010))
 
   # Note stage numbering: mirror is at beginning of stack, not end
@@ -122,6 +136,9 @@ Suspension:
   Stage:
     # Stage1
     - Mass: 39.6                  # kg; current numbers May 2006 NAR
+      # length adjusted for d = 10mm and d_bend = 4mm
+      # (since 602mm is the CoM separation, and d_bend is accounted for
+      # in suspQuad, so including it here would double count)
       Length: 0.59                # m
       Dilution: .nan              #
       K: .nan                     # N/m; vertical spring constant
@@ -161,9 +178,12 @@ Suspension:
     Width: 1150e-6                # m
 
   Fiber:
-    EndLength: 4.5e-02
-    EndRadius: 4e-04
-    Radius: 2.05e-04
+    Radius: 205e-6                # m
+    # for tapered fibers
+    # EndRadius is tuned to cancel thermo-elastic noise (delta_h in suspQuad)
+    # EndLength is tuned to match bounce mode frequency
+    EndRadius: 400e-6             # m; nominal 400um
+    EndLength: 45e-3              # m; nominal 20mm
 
 ## Optic Material -------------------------------------------------------
 Materials:
@@ -173,14 +193,15 @@ Materials:
   ## Dielectric coating material parameters----------------------------------
   Coating:
     ## high index material: tantala
-    Yhighn: 124e9
-    Sigmahighn: 0.28
+    Yhighn: 124e9                 # LMA (Granata at LVC) 2017 (was 140)
+    Sigmahighn: 0.28              # LMA (Granata at LVC) 2017 (was 0.23)
     CVhighn: 2.1e6                # Crooks et al, Fejer et al
     Alphahighn: 3.6e-6            # 3.6e-6 Fejer et al, 5e-6 from Braginsky
     Betahighn: 1.4e-5             # dn/dT, value Gretarrson (G070161)
     ThermalDiffusivityhighn: 33   # Fejer et al
-    Phihighn: 9.0e-5              # tantala mechanical loss
     Indexhighn: 2.06539
+    Phihighn: 9.0e-5              # tantala mechanical loss
+    Phihighn_slope: 0.1
 
     ## low index material: silica
     Ylown: 72e9
@@ -189,8 +210,9 @@ Materials:
     Alphalown: 5.1e-7             # Fejer et al
     Betalown: 8e-6                # dn/dT,  (ref. 14)
     ThermalDiffusivitylown: 1.38  # Fejer et al
-    Philown: 1.25e-5              # silica mechanical loss
     Indexlown: 1.45
+    Philown: 1.25e-5              # silica mechanical loss
+    Philown_slope: 0.4
 
   ## Substrate Material parameters--------------------------------------------
   Substrate:
@@ -213,11 +235,12 @@ Laser:
 
 ## Optics------------------------------------------------------------------
 Optics:
+  Type: 'SignalRecycled'
   PhotoDetectorEfficiency: 0.9    # photo-detector quantum efficiency
   Loss: 37.5e-6                   # average per mirror power loss
   BSLoss: 0.5e-3                  # power loss near beamsplitter
   coupling: 1.0                   # mismatch btwn arms & SRC modes; used to
-
+                                  # calculate an effective r_srm
   SubstrateAbsorption: 0.5e-4     # 1/m; bulk absorption coef (ref. 2)
   pcrit: 10                       # W; tolerable heating power (factor 1 ATC)
   Quadrature:
