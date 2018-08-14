@@ -120,15 +120,6 @@ def precompIFO(f, ifoin, PRfixed=True):
     ifo.gwinc.fGammaArm = fGammaArm
 
     ##############################
-    # precompute bessels zeros, needed in coat and substrate thermal
-    # FIXME: can we move this into const and just compute at load
-    # time?
-
-    if 'Constants' not in ifo:
-        ifo.Constants = Struct()
-    ifo.Constants.BesselZeros = scipy.special.jn_zeros(1, 300)
-
-    ##############################
     # saved seismic spectrum
 
     if 'darmSeiSusFile' in ifo.Seismic and ifo.Seismic.darmSeiSusFile:

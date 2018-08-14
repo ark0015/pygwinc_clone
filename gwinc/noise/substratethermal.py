@@ -5,6 +5,10 @@ import scipy.special
 import scipy.integrate
 import scipy.constants
 
+from ..const import BESSEL_ZEROS as zeta
+from ..const import J0M as j0m
+
+
 def carrierdensity(f, ifo):
     """Strain noise arising from charge carrier density fluctuations in ITM substrate
 
@@ -159,10 +163,8 @@ def subbrownianFiniteCorr(ifo, opticName):
     w = ifo.Optics[opticName].BeamRadius
     Y = ifo.Materials.Substrate.MirrorY
     sigma = ifo.Materials.Substrate.MirrorSigma
-    zeta = ifo.Constants.BesselZeros
 
     # do the work
-    j0m = scipy.special.jn(0, zeta)
     r0 = w / sqrt(2)                     # LT uses e-folding of power
     km = zeta/a
 
@@ -242,10 +244,8 @@ def subthermFiniteCorr(ifo, opticName):
     h = ifo.Materials.MassThickness
     w = ifo.Optics[opticName].BeamRadius
     sigma = ifo.Materials.Substrate.MirrorSigma
-    zeta = ifo.Constants.BesselZeros
 
     # do the work
-    j0m = scipy.special.jn(0, zeta)
     r0 = w/sqrt(2) # LT uses power e-folding
     km = zeta/a
 

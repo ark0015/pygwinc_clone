@@ -1,4 +1,5 @@
 import scipy.constants
+import scipy.special
 
 
 CONSTANTS = {
@@ -25,3 +26,7 @@ CONSTANTS = {
     'omegaM': 0.3175,
     'omegaLambda': 1 - 0.3175,
 }
+
+
+BESSEL_ZEROS = scipy.special.jn_zeros(1, 300)
+J0M = scipy.special.jn(0, BESSEL_ZEROS)

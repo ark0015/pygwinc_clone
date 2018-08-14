@@ -4,6 +4,9 @@ import scipy.special
 import numpy as np
 from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, max, min, ceil, log
 
+from ..const import BESSEL_ZEROS as zeta
+from ..const import J0M as j0m
+
 
 def coatbrownian(f, ifo):
     """Optical coating Brownian thermal noise
@@ -545,7 +548,6 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
     R = ifo.Materials.MassRadius      #substrate radius
     H = ifo.Materials.MassThickness   #substrate thickness
     lambda_ = ifo.Laser.Wavelength
-    zeta = ifo.Constants.BesselZeros  # zeros of 1st order bessel function (J1)
 
     alphaS = ifo.Materials.Substrate.MassAlpha
     C_S = ifo.Materials.Substrate.MassCM * ifo.Materials.Substrate.MassDensity
@@ -594,9 +596,6 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
 
     # beam size parameter used by Braginsky
     r0 = wBeam / sqrt(2)
-
-    # values of J0 at zeros of J1
-    j0m = scipy.special.jn(0, zeta)
 
     # between eq 77 and 78
     km = zeta / R
