@@ -76,7 +76,7 @@ def shotrad(f, ifo):
     # Homodyne Readout phase
     eta_orig = ifo.Optics.get('Quadrature', Struct()).get('dc', None)
 
-    ifoRead = ifo.Squeezer.get('Readout', None)
+    ifoRead = ifo.get('Squeezer', Struct()).get('Readout', None)
     if ifoRead is None:
         eta = eta_orig
         if eta_orig is None:
