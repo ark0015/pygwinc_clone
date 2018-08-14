@@ -3,15 +3,26 @@ from numpy import pi, sqrt, arctan, sin, cos, exp, size, ones, zeros, log10, con
 import numpy as np
 import scipy.constants
 import logging
+from ..struct import Struct
 
 
 def shotrad(f, ifo):
     """Quantum noise
-    
+
     corresponding author: mevans
     modifications for resonant delay lines: Stefan Ballmer
 
     """
+
+    try:
+        sqzType = ifo.Squeezer.Type
+    except AttributeError:
+        sqzType = None
+
+    #if sqzType == '2mode':
+    #    from .quantum_2mode import shotrad as shotrad_2mode
+    #    return shotrad_2mode(f, ifo)
+
     # deal with multiple bounces, required for resonant delay lines
     # Stefan Ballmer 2012
     if 'NFolded' in ifo.Infrastructure:
@@ -19,7 +30,7 @@ def shotrad(f, ifo):
             ifo.Materials.MirrorMass=ifo.Materials.MirrorMass/ifo.Infrastructure.NFolded**2
         else:
             NN=ifo.Infrastructure.NFolded
-            Ndispl=2*NN-1
+            Ndispl=2 * NN-1
             ifo.Materials.MirrorMass=ifo.Materials.MirrorMass/Ndispl**2
 
     #####################################################
@@ -43,7 +54,7 @@ def shotrad(f, ifo):
         logging.debug(Mn.shape)
         logging.debug(Nfield, Nfreq)
         raise Exception('Inconsistent matrix sizes returned by %s' % str(fname))
-  
+
     # deal with non-standard number of fields
     if Nfield != 2:
         if Nfield == 4:
@@ -55,14 +66,36 @@ def shotrad(f, ifo):
     #####################################################
     # Input Squeezing
     #####################################################
-  
+
     # ------------------------------------------- equation 63 BnC PRD 2004
     #>>>>>>>>    QUANTUM NOISE POWER SPECTRAL DENSITY WITH SQZ [BnC PRD 2004, 62]
     #<<<<<<<<<<<<<<<<< Modified to include losses (KM)
     #<<<<<<<<<<<<<<<<< Modified to include frequency dependent squeezing angle (LB)
-
     # useful numbers
-    eta = ifo.Optics.Quadrature.dc                      # Homodyne Readout phase
+    #TODO, adjust Struct to allow deep defaulted access
+    # Homodyne Readout phase
+    eta_orig = ifo.Optics.get('Quadrature', Struct()).get('dc', None)
+
+    ifoRead = ifo.get('Squeezer', Struct()).get('Readout', None)
+    if ifoRead is None:
+        eta = eta_orig
+        if eta_orig is None:
+            raise Exception("must add Quadrature.dc or Readout...")
+    elif ifoRead.type == 'DC':
+        eta   = np.sign(ifoRead.fringe_side) * np.arccos((ifoRead.defect_PWR_W / ifoRead.readout_PWR_W)**.5)
+    elif ifoRead.type == 'homodyne':
+        eta   = ifoRead.homodyne_eta  # Homodyne Readout phase
+    else:
+        raise Exception("Unknown Readout Type" % Nfield)
+
+    if eta_orig is not None:
+        logging.warn((
+            'Quadrature.dc is redundant with '
+            'Squeezer.Readout and is deprecated.'
+        ))
+        if eta_orig != eta:
+            raise Exception("Quadrature.dc inconsistent with Readout eta")
+
     lambda_PD = 1 - ifo.Optics.PhotoDetectorEfficiency  # PD losses
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -72,7 +105,7 @@ def shotrad(f, ifo):
         sqzType = 'None'
     else:
         sqzType = ifo.Squeezer.get('Type', 'Freq Independent')
-  
+
     # extract common parameters
     if sqzType == 'None':
         SQZ_DB = 0                               # Squeeing in dB
@@ -83,10 +116,10 @@ def shotrad(f, ifo):
     else:
         SQZ_DB = ifo.Squeezer.AmplitudedB        # Squeeing in dB
         lambda_in = ifo.Squeezer.InjectionLoss   # Loss to squeezing before injection [Power]
-        alpha = ifo.Squeezer.SQZAngle            # Freq Indep Squeeze angle
-        ANTISQZ_DB = ifo.Squeezer.get('AntiAmplitudedB', SQZ_DB) # Anti squeezing in db
-        etaRMS = ifo.Squeezer.get('LOAngleRMS', 0) # quadrature noise
-  
+        alpha = ifo.Squeezer.SQZAngle        # Freq Indep Squeeze angle
+        ANTISQZ_DB = ifo.Squeezer.get('AntiAmplitudedB', SQZ_DB)  # Anti squeezing in db
+        etaRMS = ifo.Squeezer.get('LOAngleRMS', 0)  # quadrature noise
+
     # switch on squeezing type for other input squeezing modifications
     if sqzType == 'None':
         pass
@@ -97,33 +130,33 @@ def shotrad(f, ifo):
     elif sqzType == 'Optimal':
         # compute optimal squeezing angle
         alpha = sqzOptimalSqueezeAngle(Mifo, eta)
-      
+
         logging.debug('You are injecting %g dB of squeezing with optimal frequency dependent squeezing angle' % SQZ_DB)
-      
+
     elif sqzType == 'OptimalOptimal':
         # compute optimal squeezing angle, assuming optimal readout phase
         R = SQZ_DB / (20 * log10(exp(1)))
         MnPD = sqzInjectionLoss(Mn, lambda_PD)
         MsigPD = Msig * sqrt(1 - lambda_PD)
         alpha = sqzOptimalSqueezeAngle(Mifo, [], [R, lambda_in], MsigPD, MnPD)
-     
+
         logging.debug('You are injecting %g dB of squeezing with optimal FD squeezing angle, for optimal readout phase' % SQZ_DB)
-      
+
     elif sqzType == 'Freq Dependent':
         logging.debug('You are injecting %g dB of squeezing with frequency dependent squeezing angle' % SQZ_DB)
 
     else:
         raise Exception('ifo.Squeezer.Type must be None, Freq Independent, Optimal, or Frequency Dependent, not "%s"' % sqzType)
-  
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Define input matrix of Squeezing
-    R = SQZ_DB / (20 * log10(exp(1)))                 # Squeeze factor  
-    R_anti = ANTISQZ_DB / (20 * log10(exp(1)))        # Squeeze factor  
+    R = SQZ_DB / (20 * log10(exp(1)))                 # Squeeze factor
+    R_anti = ANTISQZ_DB / (20 * log10(exp(1)))        # Squeeze factor
     Msqz = np.array([[exp(-R), 0], [0, exp(R_anti)]])
 
     # expand to Nfreq
     Msqz = np.transpose(np.tile(Msqz, (Nfreq,1,1)), axes=(1,2,0))
-  
+
     # add input rotation
     MsqzRot = make2x2TF(cos(alpha), -sin(alpha), sin(alpha), cos(alpha))
     Msqz = getProdTF(MsqzRot, Msqz)
@@ -132,7 +165,7 @@ def shotrad(f, ifo):
     #   if strcmp(sqzType, 'Optimal') || strcmp(sqzType, 'OptimalOptimal')
     #     Msqz = [exp(-R) 0; 0 exp(-R)];
     #   end
-  
+
     # Include losses (lambda_in=ifo.Squeezer.InjectionLoss)
     Msqz = sqzInjectionLoss(Msqz, lambda_in)
 
@@ -141,7 +174,7 @@ def shotrad(f, ifo):
     if sqzType == 'Freq Dependent' and 'FilterCavity' in ifo.Squeezer:
         logging.debug('  Applying %d input filter cavities' % np.atleast_1d(ifo.Squeezer.FilterCavity).size)
         Mr, Msqz = sqzFilterCavityChain(f, np.atleast_1d(ifo.Squeezer.FilterCavity), Msqz)
-  
+
     #####################################################
     # IFO Transfer and Output Filter Cavities
     #####################################################
@@ -167,11 +200,12 @@ def shotrad(f, ifo):
             Msig = getProdTF(Mr, Msig)
             #  Mnoise = getProdTF(Mn, Mnoise);
 
-        elif ifo.OutputFilter.Type ==  'Optimal':
+        elif ifo.OutputFilter.Type == 'Optimal':
             logging.debug('  Optimal output filtering!')
 
             # compute optimal angle, including upcoming PD losses
             MnPD = sqzInjectionLoss(Mnoise, lambda_PD)
+            raise NotImplementedError("Cannot do optimal phase yet")
             zeta = sqzOptimalReadoutPhase(Msig, MnPD)
 
             # rotate by that angle, less the homodyne angle
@@ -184,8 +218,8 @@ def shotrad(f, ifo):
 
         else:
             raise Exception('ifo.OutputFilter.Type must be None, Chain or Optimal, not "%s"' % ifo.OutputFilter.Type)
-  
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # add PD efficiency
     Mnoise = sqzInjectionLoss(Mnoise, lambda_PD)
     Msig = Msig * sqrt(1 - lambda_PD)
@@ -224,18 +258,18 @@ def shotradSignalRecycled(f, ifo):
     """Quantum noise model for signal recycled IFO
 
     See shotrad for more info.
-    
+
     All references to Buonanno & Chen PRD 64 042006 (2001) (hereafter BnC)
     Updated to include losses DEC 2006 Kirk McKenzie using BnC notation
     Updated to include squeezing April 2009 KM
     Updated April 2010 KM, LB
-    
+
     moved out of shotrad May 2010, mevans
     output is used in shotrad to compute final noise as
       n = coeff * (vHD * Msqz * Msqz' * vHD') / (vHD * Md * Md' * vHD')
     where
       Msqz = [Mc MsqueezeInput, Mn]
-    
+
     coeff = frequency dependent overall noise coefficient (Nx1)
     Mifo = IFO input-output relation for the AS port
     Msig = signal transfer to the AS port
@@ -363,39 +397,20 @@ def shotradSignalRecycled(f, ifo):
 
 
 def make2x2TF(A11, A12, A21, A22):
-    """Create transfer matrix with 2x2xnF
-
-    The vectors must all have nF elements.
-
     """
-    nF = max([size(A11), size(A12), size(A21), size(A22)])
-
-    # if any input is just a number, expand it
-    if size(A11) == 1:
-        A11 = A11 * ones(nF)
-    if size(A12) == 1:
-        A12 = A12 * ones(nF)
-    if size(A21) == 1:
-        A21 = A21 * ones(nF)
-    if size(A22) == 1:
-        A22 = A22 * ones(nF)
-  
-    # check to be sure that they all match now
-    if any(np.array([size(A11), size(A12), size(A21), size(A22)]) != nF):
-        raise Exception('Input vector length mismatch.')
-  
-    # build output matrix
-    M3 = zeros((2,2,nF), dtype=complex)
-    for k in range(nF):
-        M3[:,:,k] = np.array([[A11[k], A12[k]], [A21[k], A22[k]]])
-    return M3
+    Create transfer matrix with 2x2xnF.
+    """
+    #now using numpy with broadcasting
+    A11, A12, A21, A22 = np.broadcast_arrays(A11, A12, A21, A22)
+    M3 = np.array([[A11, A12], [A21, A22]])
+    return M3.reshape(2, 2, -1)
 
 
 def getProdTF(lhs, rhs):
     """Compute the product of M Nout x Nin x Naf frequency dependent transfer matrices
 
     See also getTF.
-    
+
     NOTE: To perform more complicated operations on transfer
           matrices, see LTI object FRD ("help frd").  This
           function is the same as: freqresp(frd(lhs) * frd(rhs), f)
@@ -446,7 +461,7 @@ def sqzFilterCavityChain(f, params, Mn):
     """Transfer relation for a chain of filter cavities
 
     Noise added by cavity losses are also output.
-    
+
     f = frequency vector [Hz]
     param.fdetune = detuning [Hz]
     param.L = cavity length
@@ -455,17 +470,17 @@ def sqzFilterCavityChain(f, params, Mn):
     param.Te = end mirror trasmission
     param.Le = end mirror loss
     param.Rot = phase rotation after cavity
-    
+
     Mn0 = input noise
     Mc = input to output transfer
     Mn = filtered input noise, plus noise due to cavity losses
-    
+
     Note:
         [Mc, Mn] = sqzFilterCavityChain(f, params, Mn0)
       is the same as
         [Mc, Mn] = sqzFilterCavityChain(f, params);
         Mn = [getProdTF(Mc, Mn0), Mn];
-    
+
     corresponding author: mevans
 
     """
@@ -516,11 +531,11 @@ def sqzFilterCavity(f, Lcav, Ti, Te, Lrt, fdetune, MinR, MinT=1):
          so no noise field is added to Mnoise.  If no argument is given, or
          the scalar 1 is given, an Mr unsqueezed input is assumed and Mr is
          concatenated into Mnoise.
-    MinT: squeezed field injected from the back of the filter cavity 
+    MinT: squeezed field injected from the back of the filter cavity
          with MinR, this argument can be omitted or set to 1 to indicate
          and unsqueezed input. [] can be used to avoid adding a noise
          term to Mnoise.
-    
+
     corresponding authors: LisaB, mevans
 
     """
@@ -590,14 +605,14 @@ def sqzFilterCavity(f, Lcav, Ti, Te, Lrt, fdetune, MinR, MinT=1):
             Mnoise = Mr * MinR
         else:
             Mnoise = getProdTF(Mr, MinR)
-  
+
     # transmitted fields
     if MinT != [] and Te > 0:
         if np.isscalar(MinT) and MinT == 1:
             Mnoise = np.hstack((Mnoise, Mt))
         else:
             Mnoise = np.hstack((Mnoise, getProdTF(Mt, MinT)))
-  
+
     # loss fields
     if Lrt > 0:
         Mnoise = np.hstack((Mnoise, Ml))
