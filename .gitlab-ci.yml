@@ -48,3 +48,5 @@ pages:
     paths:
     - public
     expire_in: 4w
+  only:
+  - master
