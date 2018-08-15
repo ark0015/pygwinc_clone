@@ -74,28 +74,14 @@ STYLE_MAP = {
 def plot_noise(
         ifo,
         noises,
-        ax = None,
-        displacement = True,
+        ax=None,
+        displacement=True,
 ):
     f = noises['Freq']
 
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-
-    if displacement:
-        ax_d = ax.twinx()
-        ax_d.set_yscale('log')
-
-        def convert_ax_h_to_d(ax):
-            """
-            Update second axis according with first axis.
-            """
-            y1, y2 = ax.get_ylim()
-            ax_d.set_ylim(y1 * ifo.Infrastructure.Length, y2 * ifo.Infrastructure.Length)
-            ax_d.figure.canvas.draw()
-        ax.callbacks.connect("ylim_changed", convert_ax_h_to_d)
-        ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
 
     def plot_dict(noises):
         #use sorted to force a consistent ordering
@@ -126,18 +112,25 @@ def plot_noise(
 
     ax.grid(
         True,
-        which = 'both',
-        lw    = 0.5,
-        ls    = '-',
-        alpha = 0.5,
+        which='both',
+        lw=0.5,
+        ls='-',
+        alpha=0.5,
     )
 
     ax.legend(
         ncol=2,
-        fontsize = 'small',
+        fontsize='small',
     )
 
     ax.set_xlabel('Frequency [Hz]')
     ax.set_ylabel(u"Strain [1/\u221AHz]")
     ax.set_xlim([min(f), max(f)])
     ax.set_ylim([3e-25, 1e-21])
+
+    if displacement:
+        ax_d = ax.twinx()
+        ax_d.set_yscale('log')
+        y1, y2 = ax.get_ylim()
+        ax_d.set_ylim(y1*ifo.Infrastructure.Length, y2*ifo.Infrastructure.Length)
+        ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
