@@ -57,6 +57,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
     parser.add_argument('--save', '-s', help='save plot to file')
+    parser.add_argument('--recalc', '-r', action='store_true', help='recalculate all traces')
     parser.add_argument('IFO', help='IFO name or description file')
     args = parser.parse_args()
 
@@ -75,9 +76,10 @@ def main():
     if not gwinc_hash:
         logging.warning("GWINCPATH not specified or does not exist; skipping check for changes to matgwinc code.")
 
-    mrecalc = False
+    mrecalc = args.recalc
 
-    if os.path.exists(mdata_pkl):
+    if os.path.exists(mdata_pkl) and not mrecalc:
+        mrecalc = False
         logging.info("loading matgwinc data {}...".format(mdata_pkl))
         with open(mdata_pkl, 'rb') as f:
             if sys.version_info.major > 2:
@@ -91,8 +93,6 @@ def main():
         if gwinc_hash and mdata['gwinc_hash'] != gwinc_hash:
             logging.info("matgwinc hash has changed: {}".format(gwinc_hash))
             mrecalc = True
-    else:
-        mrecalc = True
 
     if mrecalc:
         logging.info("calculating matgwinc noises...")
