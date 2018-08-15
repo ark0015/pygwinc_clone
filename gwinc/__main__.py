@@ -68,8 +68,8 @@ parser.add_argument('--matlab', '-m', action='store_true',
                     help="use MATLAB gwinc engine to calculate noises")
 parser.add_argument('--fom',
                     help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
-parser.add_argument('--displacement', '-D', action='store_true', default=False, dest='displacement',
-                   help="supress adding displacement sensitivity axis")
+parser.add_argument('--no-displacement', '-nd', action='store_false', dest='displacement',
+                   help="suppress displacement sensitivity axis")
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--interactive', '-i', action='store_true',
                    help="interactive plot with interactive shell")
