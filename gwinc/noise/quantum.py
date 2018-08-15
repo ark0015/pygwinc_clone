@@ -81,18 +81,18 @@ def shotrad(f, ifo):
         eta = eta_orig
         if eta_orig is None:
             raise Exception("must add Quadrature.dc or Readout...")
-    elif ifoRead.type == 'DC':
-        eta   = np.sign(ifoRead.fringe_side) * np.arccos((ifoRead.defect_PWR_W / ifoRead.readout_PWR_W)**.5)
-    elif ifoRead.type == 'homodyne':
-        eta   = ifoRead.homodyne_eta  # Homodyne Readout phase
+    elif ifoRead.Type == 'DC':
+        eta = np.sign(ifoRead.fringe_side) * np.arccos((ifoRead.defect_PWR_W / ifoRead.readout_PWR_W)**.5)
+    elif ifoRead.Type == 'Homodyne':
+        eta = ifoRead.Angle
     else:
-        raise Exception("Unknown Readout Type" % Nfield)
+        raise Exception("Unknown Readout Type")
 
     if eta_orig is not None:
-        logging.warn((
-            'Quadrature.dc is redundant with '
-            'Squeezer.Readout and is deprecated.'
-        ))
+        # logging.warn((
+        #     'Quadrature.dc is redundant with '
+        #     'Squeezer.Readout and is deprecated.'
+        # ))
         if eta_orig != eta:
             raise Exception("Quadrature.dc inconsistent with Readout eta")
 
