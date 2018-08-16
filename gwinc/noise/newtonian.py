@@ -44,7 +44,7 @@ def gravg(f, ifo):
         omicron = 1
 
     # a sort of theta function (Fermi distr.)
-    coeff = 1/(1 + 3**(gamma*(f-fk)))
+    coeff = 3**(-gamma*f)/(3**(-gamma*f) + 3**(-gamma*fk))
 
     # modelization of seismic noise (vertical)
     ground = a*coeff + a*(1-coeff)*(fk/f)**2
