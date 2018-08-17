@@ -15,43 +15,37 @@ FIBER_TYPES = [
 ]
 
 
-def construct_eom_matrix(k, m, f):
-    """construct matrix for equations of motion.
+# quad pendulum equation of motion matrix A =
+# [[k0+k1-m0*w**2,           -k1,             0,          0],
+#  [          -k1, k1+k2-m1*w**2,           -k2,          0],
+#  [            0,           -k2, k2+k3-m2*w**2,        -k3],
+#  [            0,             0,           -k3, k3-m3*w**2]])
+# diagonal elements: mass and restoring forces
+# off-diagonal: coupling to stages above and below
+# want TM equations of motion, so index 4
+# b = [[0], [0], [0], [1]]
+# sympy.linsolve((A, b), x) yields the following two functions
 
-    `k` is the array for the spring constants and `f` is the freq
-    vector.
 
+def tst_force_to_tst_displ(k, m, f):
+    """transfer function for quad pendulum
+    
     """
-    w = 2*pi * f
-    nstages = m.size
-    A = zeros((nstages, nstages, f.size), dtype=complex)
-    for n in range(nstages-1):
-        # mass and restoring forces (diagonal elements)
-        A[n, n, :] = k[n, :] + k[n+1, :] - m[n] * w**2
-        # couplings to stages above and below
-        A[n, n+1, :] = -k[n+1, :]
-        A[n+1, n, :] = -k[n+1, :]
-    # mass and restoring force of bottom stage
-    A[-1, -1, :] = k[-1, :] - m[-1] * w**2
-    return A
+    k0, k1, k2, k3 = k
+    m0, m1, m2, m3 = m
+    w = 2*pi*f
+    X3 = (k2**2*(k0 + k1 - m0*w**2) + (k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2))*(k2 + k3 - m2*w**2))/(-k3**2*(k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2)) + (k3 - m3*w**2)*(k2**2*(k0 + k1 - m0*w**2) - (-k1**2 + (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2))*(k2 + k3 - m2*w**2)))
+    return X3
 
-
-def calc_transfer_functions(A, B, k, f):
-    """calculate transfer function from A/B matrices
-
+def top_displ_to_tst_displ(k, m, f):
+    """transfer function for quad pendulum
+    
     """
-    vlen = A[0, 0, :].size
-    X = zeros([B.size, vlen], dtype=complex)
-    for j in range(vlen):
-        X[:, j] = np.linalg.solve(A[:, :, j], B)
-    # transfer function from the force on the TM to TM motion
-    hForce     = zeros(f.shape, dtype=complex)
-    hForce[:]  = X[-1, :]
-    # transfer function from the table motion to TM motion
-    hTable     = zeros(f.shape, dtype=complex)
-    hTable[:]  = X[0, :]
-    hTable     = hTable * k[0, :]
-    return hForce, hTable
+    k0, k1, k2, k3 = k
+    m0, m1, m2, m3 = m
+    w = 2*pi*f
+    X0 = k1*k2*k3/(k3**2*(k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2)) - (k3 - m3*w**2)*(k2**2*(k0 + k1 - m0*w**2) + (k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2))*(k2 + k3 - m2*w**2)))
+    return X0 * k0
 
 
 def suspQuad(f, ifo, material='Silica'):
@@ -367,57 +361,40 @@ def suspQuad(f, ifo, material='Silica'):
     # Equations of motion for the system
     ###############################################################
 
-    # want TM equations of motion, so index 4
-    B = np.array([0, 0, 0, 1])
-
-    m_list = mass
-    kh_list = kh
-    kv_list = kv
-
-    #m_list=[m1 m2 m3 m4];          # array of the mass
-    #kh_list=[kh1; kh2; kh3; kh4];  # array of the horiz spring constants
-    #kv_list=[kv1; kv2; kv3; kv4];  # array of the vert spring constants
-
     # Calculate TFs turning on the loss of each stage one by one
     hForce = Struct()
     vForce = Struct()
     hForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
     vForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
 
-    for n in range(len(m_list)):
+    for n in range(len(mass)):
         # horizontal
-        k_list = kh_list
         # only the imaginary part of the specified stage is used.
-        k_list = real(k_list) + 1j*imag([k_list[0,:]*(n==0),
-                                         k_list[1,:]*(n==1),
-                                         k_list[2,:]*(n==2),
-                                         k_list[3,:]*(n==3)])
-        # construct Eq of motion matrix
-        Ah = construct_eom_matrix(k_list, m_list, f)
+        k = real(kh) + 1j*imag([kh[0,:]*(n==0),
+                                kh[1,:]*(n==1),
+                                kh[2,:]*(n==2),
+                                kh[3,:]*(n==3)])
         # calculate TFs
-        hForce.singlylossy[n,:] = calc_transfer_functions(Ah, B, k_list, f)[0]
+        hForce.singlylossy[n,:] = tst_force_to_tst_displ(k, mass, f)
 
         # vertical
-        k_list = kv_list
         # only the imaginary part of the specified stage is used
-        k_list = real(k_list) + 1j*imag([k_list[0,:]*(n==0),
-                                         k_list[1,:]*(n==1),
-                                         k_list[2,:]*(n==2),
-                                         k_list[3,:]*(n==3)])
-        # construct Eq of motion matrix
-        Av = construct_eom_matrix(k_list, m_list, f)
+        k = real(kv) + 1j*imag([kv[0,:]*(n==0),
+                                kv[1,:]*(n==1),
+                                kv[2,:]*(n==2),
+                                kv[3,:]*(n==3)])
         # calculate TFs
-        vForce.singlylossy[n,:] = calc_transfer_functions(Av, B, k_list, f)[0]
+        vForce.singlylossy[n,:] = tst_force_to_tst_displ(k, mass, f)
 
     # calculate horizontal TFs with all losses on
-    Ah = construct_eom_matrix(kh_list, m_list, f)
-    hForce.fullylossy, hTable = calc_transfer_functions(Ah, B, kh_list, f)
+    hForce.fullylossy = tst_force_to_tst_displ(kh, mass, f)
+    hTable = top_displ_to_tst_displ(kh, mass, f)
 
     # calculate vertical TFs with all losses on
-    Av = construct_eom_matrix(kv_list, m_list, f)
-    vForce.fullylossy, vTable = calc_transfer_functions(Av, B, kv_list, f)
+    vForce.fullylossy = tst_force_to_tst_displ(kv, mass, f)
+    vTable = top_displ_to_tst_displ(kv, mass, f)
 
-    return hForce, vForce, hTable, vTable #, Ah, Av
+    return hForce, vForce, hTable, vTable
 
 
 def suspBQuad(f, ifo):
