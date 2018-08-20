@@ -322,34 +322,41 @@ def shotradSignalRecycled(f, ifo):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Coefficients [BnC, Equations 5.8 to 5.12]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    exp_1jbeta = exp(1j*beta)
+    cos_beta = exp_1jbeta.real
+    invexp_1jbeta = 1/exp_1jbeta
+    exp_2jbeta = exp_1jbeta**2
+    cos_2beta = exp_2jbeta.real
+    invexp_2jbeta = 1/exp_2jbeta
+    exp_4jbeta = exp_2jbeta**2
     C11_L   = ( (1+rho**2) * ( cos(2*phi) + Kappa/2 * sin(2*phi) ) -
-                2*rho*cos(2*beta) - 1/4*epsilon * ( -2 * (1+exp(2j*beta))**2 * rho + 4 * (1+rho**2) *
-                                                    cos(beta)**2*cos(2*phi) + ( 3+exp(1j*2*beta) ) *
+                2*rho*cos_2beta - 1/4*epsilon * ( -2 * (1+exp_2jbeta)**2 * rho + 4 * (1+rho**2) *
+                                                    cos_beta**2*cos(2*phi) + ( 3+exp_2jbeta ) *
                                                     Kappa * (1+rho**2) * sin(2*phi) ) +
-                lambda_SR * ( exp(2j*beta)*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
+                lambda_SR * ( exp_2jbeta*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
 
     C22_L   = C11_L
 
     C12_L   = tau**2 * ( - ( sin(2*phi) + Kappa*sin(phi)**2 )+
-                         1/2*epsilon*sin(phi) * ( (3+exp(2j*beta)) * Kappa * sin(phi) + 4*cos(beta)**2 * cos(phi)) +
+                         1/2*epsilon*sin(phi) * ( (3+exp_2jbeta) * Kappa * sin(phi) + 4*cos_beta**2 * cos(phi)) +
                          1/2*lambda_SR * ( sin(2*phi)+Kappa*sin(phi)**2) )
 
     C21_L   = tau**2 * ( (sin(2*phi)-Kappa*cos(phi)**2 ) +
-                         1/2*epsilon*cos(phi) * ( (3+exp(2j*beta) )*Kappa*sin(phi) - 4*cos(beta)**2*sin(phi) ) +
+                         1/2*epsilon*cos(phi) * ( (3+exp_2jbeta )*Kappa*sin(phi) - 4*cos_beta**2*sin(phi) ) +
                          1/2*lambda_SR * ( -sin(2*phi) + Kappa*cos(phi)**2) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    D1_L    = ( - (1+rho*exp(2j*beta) ) * sin(phi) +
-                1/4*epsilon * ( 3+rho+2*rho*exp(4*1j*beta) + exp(2j*beta)*(1+5*rho) ) * sin(phi)+
-                1/2*lambda_SR * exp(2j*beta) * rho * sin(phi) )
+    D1_L    = ( - (1+rho*exp_2jbeta ) * sin(phi) +
+                1/4*epsilon * ( 3+rho+2*rho*exp_4jbeta + exp_2jbeta*(1+5*rho) ) * sin(phi)+
+                1/2*lambda_SR * exp_2jbeta * rho * sin(phi) )
 
-    D2_L    = ( - (-1+rho*exp(2j*beta) ) * cos(phi) +
-                1/4*epsilon * ( -3+rho+2*rho*exp(4*1j*beta) + exp(2j*beta) * (-1+5*rho) ) * cos(phi)+
-                1/2*lambda_SR * exp(2j*beta) * rho * cos(phi) )
+    D2_L    = ( - (-1+rho*exp_2jbeta ) * cos(phi) +
+                1/4*epsilon * ( -3+rho+2*rho*exp_4jbeta + exp_2jbeta * (-1+5*rho) ) * cos(phi)+
+                1/2*lambda_SR * exp_2jbeta * rho * cos(phi) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     P11     = 0.5 * sqrt(lambda_SR) * tau * \
-              ( -2*rho*exp(2j*beta)+2*cos(2*phi)+Kappa*sin(2*phi) )
+              ( -2*rho*exp_2jbeta+2*cos(2*phi)+Kappa*sin(2*phi) )
     P22     = P11
     P12     = -sqrt(lambda_SR)*tau*sin(phi)*(2*cos(phi)+Kappa*sin(phi) )
     P21     =  sqrt(lambda_SR)*tau*cos(phi)*(2*sin(phi)-Kappa*cos(phi) )
@@ -360,22 +367,22 @@ def shotradSignalRecycled(f, ifo):
     #   as well as the input-output relation Mc and the signal matrix Md
 
     Q11     = 1 / \
-              ( exp(-2j*beta)+rho**2*exp(2j*beta)-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
-                1/2*epsilon*rho * (exp(-2j*beta)*cos(2*phi)+exp(2j*beta)*
-                                   ( -2*rho-2*rho*cos(2*beta)+cos(2*phi)+Kappa*sin(2*phi) ) +
+              ( invexp_2jbeta+rho**2*exp_2jbeta-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
+                1/2*epsilon*rho * (invexp_2jbeta*cos(2*phi)+exp_2jbeta*
+                                   ( -2*rho-2*rho*cos_2beta+cos(2*phi)+Kappa*sin(2*phi) ) +
                                    2*cos(2*phi)+3*Kappa*sin(2*phi))-1/2*lambda_SR*rho *
-                ( 2*rho*exp(2j*beta)-2*cos(2*phi)-Kappa*sin(2*phi) ) )
+                ( 2*rho*exp_2jbeta-2*cos(2*phi)-Kappa*sin(2*phi) ) )
     Q22     = Q11
     Q12     = 0
     Q21     = 0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    N11     = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp(2j*beta))*sin(phi)+
-                                    2*cos(beta)*(exp(-1j*beta)*cos(phi)-rho*exp(1j*beta)*(cos(phi)+Kappa*sin(phi))))
-    N22     = -sqrt(2*epsilon)*tau*(-exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*cos(phi)
-    N12     = -sqrt(2*epsilon)*tau*(exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*sin(phi);
+    N11     = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp_2jbeta)*sin(phi)+
+                                    2*cos_beta*(invexp_1jbeta*cos(phi)-rho*exp_1jbeta*(cos(phi)+Kappa*sin(phi))))
+    N22     = -sqrt(2*epsilon)*tau*(-invexp_1jbeta+rho*exp_1jbeta)*cos_beta*cos(phi)
+    N12     = -sqrt(2*epsilon)*tau*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi);
     N21     = sqrt(2*epsilon)*tau*(-Kappa*(1+rho)*cos(phi)+
-                                   2*cos(beta)*(exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*sin(phi))
+                                   2*cos_beta*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # overall coefficient
