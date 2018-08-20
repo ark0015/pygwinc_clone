@@ -15,16 +15,34 @@ FIBER_TYPES = [
 ]
 
 
-# quad pendulum equation of motion matrix A =
-# [[k0+k1-m0*w**2,           -k1,             0,          0],
-#  [          -k1, k1+k2-m1*w**2,           -k2,          0],
-#  [            0,           -k2, k2+k3-m2*w**2,        -k3],
-#  [            0,             0,           -k3, k3-m3*w**2]])
-# diagonal elements: mass and restoring forces
-# off-diagonal: coupling to stages above and below
-# want TM equations of motion, so index 4
-# b = [[0], [0], [0], [1]]
-# sympy.linsolve((A, b), x) yields the following two functions
+def generate_symbolic_tfs(stages=4):
+    import sympy as sp
+
+    # construct quad pendulum equation of motion matrix
+    ksyms = sp.numbered_symbols('k')
+    msyms = sp.numbered_symbols('m')
+    w = sp.symbols('w')
+    k = [next(ksyms) for n in range(stages)]
+    m = [next(msyms) for n in range(stages)]
+    A = sp.zeros(stages)
+    for n in range(stages-1):
+        # mass and restoring forces (diagonal elements)
+        A[n, n] = k[n] + k[n+1] - m[n] * w**2
+        # couplings to stages above and below
+        A[n, n+1] = -k[n+1]
+        A[n+1, n] = -k[n+1]
+    # mass and restoring force of bottom stage
+    A[-1, -1] = k[-1] - m[-1] * w**2
+
+    # want TM equations of motion, so index 4
+    b = sp.zeros(stages, 1)
+    b[-1] = 1
+
+    # solve linear system
+    xsyms = sp.numbered_symbols('x')
+    x = [next(xsyms) for n in range(stages)]
+    ans = sp.linsolve((A, b), x)
+    return ans
 
 
 def tst_force_to_tst_displ(k, m, f):
@@ -36,6 +54,7 @@ def tst_force_to_tst_displ(k, m, f):
     w = 2*pi*f
     X3 = (k2**2*(k0 + k1 - m0*w**2) + (k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2))*(k2 + k3 - m2*w**2))/(-k3**2*(k1**2 - (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2)) + (k3 - m3*w**2)*(k2**2*(k0 + k1 - m0*w**2) - (-k1**2 + (k0 + k1 - m0*w**2)*(k1 + k2 - m1*w**2))*(k2 + k3 - m2*w**2)))
     return X3
+
 
 def top_displ_to_tst_displ(k, m, f):
     """transfer function for quad pendulum
