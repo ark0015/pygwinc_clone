@@ -45,7 +45,7 @@ setup_args = dict(
     },
 
     include_package_data = True,
-    zip_safe = True,
+    zip_safe = False,
 )
 
 if __name__ == "__main__":
