@@ -39,79 +39,106 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
 
     The layers are assumed to be alernating low-n high-n layers, with
     low-n first.
-    
+
     f = frequency vector in Hz
     ifo = parameter struct from IFOmodel.m
-    
+
     opticName = name of the Optic struct to use for wBeam and dOpt
-    wBeam = ifoArg.Optics.(opticName).BeamRadius
-    dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
-    
+        wBeam = ifoArg.Optics.(opticName).BeamRadius
+         dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
+
     wBeam = beam radius (at 1 / e^2 power)
-    dOpt = coating layer thickness vector (Nlayer x 1)
-         = the optical thickness, normalized by lambda, of each coating layer.
+     dOpt = coating layer thickness vector (Nlayer x 1)
+          = the optical thickness, normalized by lambda, of each coating layer.
 
     SbrZ = Brownian noise spectra for one mirror in m^2 / Hz
-    
-    adapted from bench62
-    based on Harry et al., Class Quant Grav 24 (2007) 405-415
 
     """
+    # extract substructures
+    sub = ifo.Materials.Substrate
+    coat = ifo.Materials.Coating
 
     # Constants
-    subTemp = ifo.Materials.Substrate.Temp
-    kBT    = scipy.constants.k * subTemp
+    kBT = scipy.constants.k * sub.Temp
     lambda_ = ifo.Laser.Wavelength
 
-    Ysub     = ifo.Materials.Substrate.MirrorY
-    sigmasub = ifo.Materials.Substrate.MirrorSigma
-    
-    Yhighn     = ifo.Materials.Coating.Yhighn
-    sigmahighn = ifo.Materials.Coating.Sigmahighn
-    phihighn   = ifo.Materials.Coating.Phihighn
-    nH         = ifo.Materials.Coating.Indexhighn
-    
-    Ylown     = ifo.Materials.Coating.Ylown
-    sigmalown = ifo.Materials.Coating.Sigmalown
-    philown   = ifo.Materials.Coating.Philown
-    nL        = ifo.Materials.Coating.Indexlown
+    # substrate properties
+    Ysub = sub.MirrorY         # Young's Modulous
+    pratsub = sub.MirrorSigma  # Poisson Ratio
 
-    # compute thickness of each material in the coating
-    dlown  = sum(dOpt[::2])  * lambda_ / nL
-    dhighn = sum(dOpt[1::2]) * lambda_ / nH
-    dCoat  = dlown + dhighn
-    
-    # for debugging, this is a rough but direct estimate
-    Llown = dlown * philown
-    Lhighn = dhighn * phihighn
-    Lsum = Llown + Lhighn
-    Lall = [Lsum, Llown, Lhighn]
-    
-    ################# this part is directly from bench62 #################
-    Yperp = dCoat/(dhighn/Yhighn+dlown/Ylown)
-    phiperp = Yperp/dCoat*(dlown*philown/Ylown + dhighn*phihighn/Yhighn)
-    Ypara = 1/dCoat*(Yhighn*dhighn + Ylown*dlown)
-    phipara = 1/(dCoat*Ypara)*(Ylown*philown*dlown + Yhighn*phihighn*dhighn)
-    
-    # This is a kludge, the real formula is very complicted but this
-    # average works really well
-    sigma1 = 1/2*(sigmahighn+sigmalown)
+    # coating properties
+    Yhighn = coat.Yhighn
+    sigmahighn = coat.Sigmahighn
+    phihighn = coat.Phihighn
+    nH = coat.Indexhighn
 
-    # This is exact
-    sigma2 = (sigmahighn*Yhighn*dhighn+sigmalown*Ylown*dlown)/(Yhighn*dhighn+Ylown*dlown)
+    Ylown = coat.Ylown
+    sigmalown = coat.Sigmalown
+    philown = coat.Philown
+    nL = coat.Indexlown
 
-    # Brownian contribution to coating thermal noise, low Poisson ratio limit
-    # cITM = dITM/(pi*wITM^2)*(Ypara/Ysub^2*phipara+phiperp/Yperp);
-    # cETM = dCoat/(pi*wETM^2)*(Ypara/Ysub^2*phipara+phiperp/Yperp);
+    # make vectors of material properties
+    nN = zeros(dOpt.size)
+    yN = zeros(dOpt.size)
+    pratN = zeros(dOpt.size)
+    phiN = zeros(dOpt.size)
 
-    # Brownian contribution to coating thermal noise, full formula
-    cbnoise = dCoat * (1-sigmasub**2)/(pi*wBeam**2) * (
-        (1/(Yperp*(1-sigmasub**2)) - 2*sigma2**2*Ypara/(Yperp**2*(1-sigmasub**2)*(1-sigma1)))*phiperp
-        + Ypara*sigma2*(1-2*sigmasub)/(Yperp*Ysub*(1-sigma1)*(1-sigmasub))*(phipara-phiperp)
-        + Ypara*(1+sigmasub)*(1-2*sigmasub)**2/(Ysub**2*(1-sigma1**2)*(1-sigmasub))*phipara)
+    # make simple alternating structure (low-index, high-index doublets)
+    # (adapted from the more general calculation in
+    #  Yam, W., Gras, S., & Evans, M. Multimaterial coatings with reduced thermal noise.
+    #  Physical Review D, 91(4), 042002.  (2015).
+    #  http://doi.org/10.1103/PhysRevD.91.042002 )
+    nN[::2] = nL
+    nN[1::2] = nH
 
-    # noise power spectrum
-    SbrZ = 4 * kBT * cbnoise / (2 * pi * f)
+    yN[::2] = Ylown
+    yN[1::2] = Yhighn
+
+    pratN[::2] = sigmalown
+    pratN[1::2] = sigmahighn
+
+    phiN[::2] = philown
+    phiN[1::2] = phihighn
+
+    # geometrical thickness of each layer and total
+    dGeo = lambda_ * dOpt / nN
+    dCoat = sum(dGeo)
+
+    ###################################
+    # Brownian
+    ###################################
+    # coating reflectivity
+    dcdp = getCoatRefl(ifo, dOpt)[1]
+
+    # Z-dir (1 => away from the substrate, -1 => into the substrate)
+    zdir = -1
+    dcdp_z = zdir * dcdp  # z-dir only matters here
+
+    # layer contrubutions (b_j in PhysRevD.91.042002)
+    brLayer = ( (1 - nN * dcdp_z / 2)**2 * (Ysub / yN) +
+                (1 - pratsub - 2 * pratsub**2)**2 * yN /
+                ((1 + pratN)**2 * (1 - 2 * pratN) * Ysub) )/ (1 - pratN)
+
+    # sum them up for total
+    w = 2 * pi * f
+
+    is_low_slope = 'Philown_slope' in coat
+    is_high_slope = 'Phihighn_slope' in coat
+
+    if (not is_low_slope) and (not is_high_slope):
+        # this is the old code for frequency independent loss
+        SbrZ = (4 * kBT / (pi * wBeam**2 * w)) * \
+               sum(dGeo * brLayer * phiN) * (1 - pratsub - 2 * pratsub**2) / Ysub
+    else:
+        SbrZ = (4 * kBT / (pi * wBeam**2 * w)) * \
+               (1 - pratsub - 2 * pratsub**2) / Ysub
+
+        SbrZ = SbrZ * (sum(dGeo[::2] * brLayer[::2] * phiN[::2]) * (f / 100)**(coat.Philown_slope) +
+                       sum(dGeo[1::2] * brLayer[1::2] * phiN[1::2]) * (f / 100)**(coat.Phihighn_slope))
+
+    # for the record: evaluate summation in eq 1 of PhysRevD.91.042002
+    # normalized by total coating thickness to make it unitless
+    cCoat = sum(dGeo * brLayer * phiN) / dCoat
 
     return SbrZ
 
@@ -471,41 +498,14 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     (see also T080101)
 
     """
-    # vector of all refractive indexes
-    nAll = np.concatenate(([nIn], nLayer, [nOut]))
-  
-    # reflectivity of each interface
-    r = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
-  
-    # combine reflectivities
-    rbar = zeros(r.shape, dtype=complex)
-    ephi = zeros(r.shape, dtype=complex)
-
-    ephi[-1] = exp(-4j * pi * dOpt[-1])
-    rbar[-1] = ephi[-1] * r[-1]
-    for n in range(len(dOpt), 0, -1):
-        # one-way phase in this layer
-        if n > 1:
-            ephi[n-1] = exp(-4j * pi * dOpt[n - 2])
-        else:
-            ephi[n-1] = 1
-    
-        # accumulate reflecitivity
-        rbar[n-1] = ephi[n-1] * (r[n-1] + rbar[n]) / (1 + r[n-1] * rbar[n])
-  
-    # reflectivity derivatives
-    dr_dphi = zeros(len(dOpt), dtype=complex)
-    for n in range(len(dOpt), 0, -1):
-        dr_dphi[n-1] = -1j * rbar[n]
-        for m in range(n, 0, -1):
-            dr_dphi[n-1] = dr_dphi[n-1] * ephi[m-1] * (1 - r[m-1]**2) / (1 + r[m-1] * rbar[m])**2
-  
+    # coating reflectivity calc
+    rCoat, dcdp = getCoatRefl2(nIn, nOut, nLayer, dOpt)[:2]
 
     # geometrical distances
     dGeo = dOpt / nLayer
 
     # phase derivatives
-    dphi_dd = 4 * pi * imag(dr_dphi / rbar[0])
+    dphi_dd = 4 * pi * dcdp
 
     # thermo-refractive coupling
     dphi_TR = sum(dphi_dd * (bLayer + sLayer * nLayer) * dGeo)
@@ -515,9 +515,6 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
 
     # total
     dphi_dT = dphi_TR + dphi_TE
-  
-    # coating reflectivity
-    rCoat = rbar[0]
 
     return dphi_dT, dphi_TE, dphi_TR, rCoat
 
@@ -647,7 +644,7 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
         T = zeros(N)
         for n in range(N):
             dOpt[-1] = dTweak[n]
-            r = getCoatRefl(ifo, dOpt)
+            r = getCoatRefl(ifo, dOpt)[0]
             T[n] = 1 - abs(r**2)
 
         return T
@@ -747,7 +744,12 @@ def getCoatRefl(ifo, dOpt):
     dOpt   = optical thickness / lambda of each layer
            = geometrical thickness * refractive index / lambda
 
-    This code is taken from ewa/multidiel1.m
+    rCoat = amplitude reflectivity of coating (complex) = rbar(0)
+    dcdp = d reflection phase / d round-trip layer phase
+    rbar = amplitude reflectivity of coating from this layer down
+    r = amplitude reflectivity of this interface (r(1) is nIn to nLayer(1))
+
+    cf ewa/multidiel1.m
 
     """
     pS = ifo.Materials.Substrate
@@ -766,17 +768,60 @@ def getCoatRefl(ifo, dOpt):
     nAll[2::2] = nH
     nAll[-1] = nS # substrate output
 
+    # backend calculation
+    return getCoatRefl2(nAll[0], nAll[-1], nAll[1:-1], dOpt)
+
+
+def getCoatRefl2(nIn, nOut, nLayer, dOpt):
+    """Coating reflection and phase derivatives
+
+    nIn = refractive index of input medium (e.g., vacuum = 1)
+    nOut = refractive index of output medium (e.g., SiO2 = 1.45231 @ 1064nm)
+    nLayer = refractive index of each layer, ordered input to output (N x 1)
+    dOpt   = optical thickness / lambda of each layer
+           = geometrical thickness * refractive index / lambda
+
+    rCoat = amplitude reflectivity of coating (complex) = rbar(0)
+    dcdp = d reflection phase / d round-trip layer phase
+    rbar = amplitude reflectivity of coating from this layer down
+    r = amplitude reflectivity of this interface (r(1) is nIn to nLayer(1))
+
+    see GWINC getCoatRefl and getCoatTOPhase for more information
+    (see also T080101)
+
+    """
+
+    # Z-dir (1 => away from the substrate, -1 => into the substrate)
+    zdir = 1
+
+    # vector of all refractive indexs
+    nAll = np.concatenate(([nIn], nLayer, [nOut]))
+
     # reflectivity of each interface
-    rInterface = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
+    r = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
 
-    # combine layers as small FP cavities, starting with last reflectivity
-    rCoat = rInterface[-1]
-    for n in reversed(range(dOpt.size)):
-        # one-way phase in this layer
-        phi = 2 * pi * dOpt[n]
+    # combine reflectivities
+    rbar = zeros(r.size, dtype=complex)
+    ephi = zeros(r.size, dtype=complex)
 
+    # round-trip phase in each layer
+    ephi[0] = 1
+    ephi[1:] = exp(4j * zdir * pi * dOpt)
+
+    rbar[-1] = ephi[-1] * r[-1]
+    for n in range(dOpt.size, 0, -1):
         # accumulate reflectivity
-        rCoat = rCoat * exp(-2j * phi)
-        rCoat = (rInterface[n] + rCoat) / (1 + rInterface[n] * rCoat)
+        rbar[n-1] = ephi[n-1] * (r[n-1] + rbar[n]) / (1 + r[n-1] * rbar[n])
 
-    return rCoat
+    # reflectivity derivatives
+    dr_dphi = ephi[:-1] * (1 - r[:-1]**2) / (1 + r[:-1] * rbar[1:])**2
+    dr_dphi = (1j * zdir * rbar[1:]) * np.multiply.accumulate(dr_dphi)
+
+    # shift rbar index
+    rCoat = rbar[0]
+    rbar = rbar[1:]
+
+    # phase derivatives
+    dcdp = -imag(dr_dphi / rCoat)  ### Where did this minus come from???
+
+    return rCoat, dcdp, rbar, r
