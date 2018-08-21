@@ -78,10 +78,10 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
     nL = coat.Indexlown
 
     # make vectors of material properties
-    nN = zeros(dOpt.size)
-    yN = zeros(dOpt.size)
-    pratN = zeros(dOpt.size)
-    phiN = zeros(dOpt.size)
+    nN = zeros(len(dOpt))
+    yN = zeros(len(dOpt))
+    pratN = zeros(len(dOpt))
+    phiN = zeros(len(dOpt))
 
     # make simple alternating structure (low-index, high-index doublets)
     # (adapted from the more general calculation in
@@ -101,7 +101,7 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
     phiN[1::2] = phihighn
 
     # geometrical thickness of each layer and total
-    dGeo = lambda_ * dOpt / nN
+    dGeo = lambda_ * np.asarray(dOpt) / nN
     dCoat = sum(dGeo)
 
     ###################################
@@ -411,7 +411,7 @@ def getCoatLayers(ifo, dOpt):
     nLayer[1::2] = nH
   
     # and geometrical thickness
-    dLayer = lambda_ * np.array(dOpt) / nLayer
+    dLayer = lambda_ * np.asarray(dOpt) / nLayer
 
     # and sigma correction
     sLayer = zeros(Nlayer)
@@ -502,7 +502,7 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     rCoat, dcdp = getCoatRefl2(nIn, nOut, nLayer, dOpt)[:2]
 
     # geometrical distances
-    dGeo = dOpt / nLayer
+    dGeo = np.asarray(dOpt) / nLayer
 
     # phase derivatives
     dphi_dd = 4 * pi * dcdp
@@ -759,7 +759,7 @@ def getCoatRefl(ifo, dOpt):
     nL = pC.Indexlown
     nH = pC.Indexhighn
 
-    Nlayer = dOpt.size
+    Nlayer = len(dOpt)
 
     # refractive index of input, coating, and output materials
     nAll = zeros(Nlayer + 2)
@@ -806,10 +806,10 @@ def getCoatRefl2(nIn, nOut, nLayer, dOpt):
 
     # round-trip phase in each layer
     ephi[0] = 1
-    ephi[1:] = exp(4j * zdir * pi * dOpt)
+    ephi[1:] = exp(4j * zdir * pi * np.asarray(dOpt))
 
     rbar[-1] = ephi[-1] * r[-1]
-    for n in range(dOpt.size, 0, -1):
+    for n in range(len(dOpt), 0, -1):
         # accumulate reflectivity
         rbar[n-1] = ephi[n-1] * (r[n-1] + rbar[n]) / (1 + r[n-1] * rbar[n])
 
