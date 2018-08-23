@@ -18,7 +18,7 @@ test:
   - python3 -m gwinc A+ -s A+.png
   - python3 -m gwinc Voyager -s Voyager.png
   - python3 -m gwinc.test aLIGO -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" -p -s aLIGO_test.png
-  - python3 -m gwinc.test -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" A+ -p -s A+_test.png
+  - python3 -m gwinc.test -t 100e-6 -k Seismic -k "Substrate Thermo-Elastic" A+ -p -s A+_test.png
   after_script:
   - rm gitID.txt
   cache:
