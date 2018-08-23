@@ -9,7 +9,31 @@ from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
 
-def carrierdensity(f, ifo):
+def carrierdensity_adiabatic(f, ifo):
+    """strain noise psd arising from charge carrier density
+    fluctuations in ITM substrate (for semiconductor substrates)."""
+
+    Omega = 2*pi*f
+    H = ifo.Materials.MassThickness
+    gammaElec = ifo.Materials.Substrate.ElectronIndexGamma
+    gammaHole = ifo.Materials.Substrate.HoleIndexGamma
+    diffElec = ifo.Materials.Substrate.ElectronDiffusion
+    diffHole = ifo.Materials.Substrate.HoleDiffusion
+    cdDens = ifo.Materials.Substrate.CarrierDensity
+    r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
+    T = ifo.Optics.ITM.Transmittance
+    L = ifo.Infrastructure.Length
+    Finesse = 2*pi/T
+    gPhase = 2*Finesse/pi
+
+    psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*Omega**2) # units are meters
+    psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*Omega**2) # units are meters
+    psdMeters = 2 * (psdElec + psdHole) # electrons and holes for two ITMs
+    n = psdMeters / (gPhase*L)**2
+    return n
+
+
+def carrierdensity_exact(f, ifo):
     """Strain noise arising from charge carrier density fluctuations in ITM substrate
 
     For semiconductor substrates
@@ -37,7 +61,7 @@ def carrierdensity(f, ifo):
     gPhase = 2*Finesse/pi
 
     omega = 2*pi*f
-    
+
     def integrand(k, om, D):
         return D * k**3 * exp(-k**2 * w**2/4) / (D**2 * k**4 + om**2)
     
@@ -58,8 +82,34 @@ def carrierdensity(f, ifo):
 
     return n
 
+carrierdensity = carrierdensity_adiabatic
 
-def thermorefractiveITM(f, ifo):
+
+def thermorefractiveITM_adiabatic(f, ifo):
+    """strain noise psd arising from thermorefractive
+    fluctuations in ITM substrate (for semiconductor substrates)."""
+
+    Omega = 2*pi*f
+    H = ifo.Materials.MassThickness
+    beta = ifo.Materials.Substrate.dndT
+    kappa = ifo.Materials.Substrate.MassKappa
+    rho = ifo.Materials.Substrate.MassDensity
+    C = ifo.Materials.Substrate.MassCM
+    Temp = ifo.Materials.Substrate.Temp
+    kBT = scipy.constants.k * Temp
+    r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
+    L = ifo.Infrastructure.Length
+    T = ifo.Optics.ITM.Transmittance
+    Finesse = 2*pi/T
+    gPhase = 2*Finesse/pi
+
+    psd = 4*H*beta**2*kappa*kBT*Temp/(pi*r0**4*Omega**2*(rho*C)**2) # units are meters
+    psdMeters = 2*psd # two ITMs
+    n = psdMeters / (gPhase*L)**2
+    return n
+
+
+def thermorefractiveITM_exact(f, ifo):
     """Strain noise from thermorefractive fluctuations in ITM substrate
 
     For semiconductor substrates.
@@ -104,6 +154,8 @@ def thermorefractiveITM(f, ifo):
     n = psdMeters / (gPhase*L)**2
 
     return n
+
+thermorefractiveITM = thermorefractiveITM_adiabatic
 
 
 def subbrownian(f, ifo):
