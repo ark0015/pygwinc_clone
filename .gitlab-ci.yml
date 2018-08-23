@@ -17,14 +17,15 @@ test:
   - python3 -m gwinc aLIGO -s aLIGO.png
   - python3 -m gwinc A+ -s A+.png
   - python3 -m gwinc Voyager -s Voyager.png
-  - python3 -m gwinc.test aLIGO -p -s aLIGO_test.png || true
-  - python3 -m gwinc.test A+ -p -s A+_test.png || true
+  - python3 -m gwinc.test aLIGO -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" -p -s aLIGO_test.png
+  - python3 -m gwinc.test -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" A+ -p -s A+_test.png
   after_script:
   - rm gitID.txt
   cache:
     key: "$CI_PROJECT_NAMESPACE:$CI_PROJECT_NAME:$CI_JOB_NAME"
     untracked: true
   artifacts:
+    when: always
     expire_in: 4w
     paths:
     - aLIGO.png

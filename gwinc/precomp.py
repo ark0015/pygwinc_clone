@@ -261,7 +261,7 @@ def dhdl(f, armlen):
 
     """
     c = scipy.constants.c
-    nu_small = 0.05
+    nu_small = 15*pi/180
     omega_arm = pi * f * armlen / c
     omega_arm_f = (1 - sin(nu_small)) * pi * f * armlen / c
     omega_arm_b = (1 + sin(nu_small)) * pi * f * armlen / c

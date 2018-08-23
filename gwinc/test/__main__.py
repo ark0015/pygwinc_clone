@@ -23,13 +23,6 @@ except ImportError:
 FLO = 5
 FHI = 6000
 NPOINTS = 3000
-FRACTIONAL_TOLERANCE = 0.01
-# comparisons to skip
-SKIP = [
-    # 'Seismic',
-    # 'Suspension Thermal',
-    # 'Newtonian Gravity',
-    ]
 
 
 def path_hash(path):
@@ -58,6 +51,8 @@ def main():
     parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
     parser.add_argument('--save', '-s', help='save plot to file')
     parser.add_argument('--recalc', '-r', action='store_true', help='recalculate all traces')
+    parser.add_argument('--tolerance', '-t', help='fractional tolerance', type=float, default=1e-6)
+    parser.add_argument('--skip', '-k', action='append', help='traces to skip comparing')
     parser.add_argument('IFO', help='IFO name or description file')
     args = parser.parse_args()
 
@@ -145,11 +140,14 @@ pygwinc: {fom:.2f} Mpc""".format(
     ##############################
     # find differences
 
+    skip = args.skip
+    fractional_tolerance = args.tolerance
+
     diffs = {}
     for name, noise in noises.items():
         if name in ['Freq']:
             continue
-        if name in SKIP:
+        if skip and name in skip:
             logging.warning("SKIPPING TEST: '{}'".format(name))
             continue
 
@@ -167,11 +165,11 @@ pygwinc: {fom:.2f} Mpc""".format(
         diff = np.sqrt(mn) - np.sqrt(pn)
         frac = abs(diff / np.sqrt(pn))
 
-        if max(frac) < FRACTIONAL_TOLERANCE:
+        if max(frac) < fractional_tolerance:
             continue
 
-        logging.warning("EXCESSIVE DIFFERENCE: {:{w}} {:6.1f}%".format(
-            name, max(frac)*100, w=max([len(n) for n in noises])))
+        logging.warning("EXCESSIVE DIFFERENCE: {:{w}} {:6.1f} ppm".format(
+            name, max(frac)*1e6, w=max([len(n) for n in noises])))
         # logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
 
         diffs[name] = (mn, pn, frac)
@@ -198,22 +196,26 @@ pygwinc: {fom:.2f} Mpc""".format(
             axr.loglog(freq, frac)
             axr.grid()
             axr.axhline(y=max(frac), color='r', linestyle='--')
-            axr.text(max(freq)+4000, max(frac), '{:.1f}%'.format(max(frac)*100),
+            axr.text(max(freq)+4000, max(frac), '{:.1f} ppm'.format(max(frac)*1e6),
                      horizontalalignment='left', verticalalignment='center',
                      color='red')
 
-        axl.set_xlabel("frequency [Hz]")
-        axr.set_xlabel("frequency [Hz]")
+        if diffs:
+            axl.set_xlabel("frequency [Hz]")
+            axr.set_xlabel("frequency [Hz]")
     
-        plt.suptitle("""{} mat/py gwinc noise comparison
-noises that differ by more than {}% [(mat-py)/py]
-{}""".format(args.IFO, FRACTIONAL_TOLERANCE*100, fom_title))
+            plt.suptitle("""{} mat/py gwinc noise comparison
+noises that differ by more than {} ppm [(mat-py)/py]
+{}""".format(args.IFO, fractional_tolerance*1e6, fom_title))
 
-        if args.save:
-            plt.gcf().set_size_inches(11, (len(diffs)+1)*4)
-            plt.savefig(args.save)
+            if args.save:
+                plt.gcf().set_size_inches(11, (len(diffs)+1)*4)
+                plt.savefig(args.save)
+            else:
+                plt.show()
+
         else:
-            plt.show()
+            logging.warning("All tests passed, so no plot was generated")
 
     ##############################
 
