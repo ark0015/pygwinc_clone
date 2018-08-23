@@ -254,7 +254,209 @@ def shotrad(f, ifo):
     return n * ifo.gwinc.sinc_sqr
 
 
+def compile_ARM_RES_TF():
+    import sympy as sp
+    ID = sp.eye(2)
+    rITM, tArm, exp_2jOmegaL_c, K = sp.symbols('rITM tArm exp_2jOmegaL_c K')
+    ARM = tArm * exp_2jOmegaL_c * sp.Matrix([[1, 0], [-K, 1]])
+    ARM_RES = (ID - rITM*ARM)**-1
+
+    subexprs, ARM_RES_expr = sp.cse(ARM_RES)
+    for expr in subexprs:
+        print(str(expr[0]), '=', str(expr[1]))
+    print('RES', '=', str(ARM_RES_expr[0]).replace('Matrix', 'np.array').replace(', 0]', ', np.zeros(nf)]'))
+
+
+def compile_SEC_RES_TF():
+    import sympy as sp
+    ID = sp.eye(2)
+    phi, exp_1jOmegal_c, tArm, exp_2jOmegaL_c, K, r00, r10, r11, R, T, rITM, tSR, rho = sp.symbols('phi exp_1jOmegal_c tArm exp_2jOmegaL_c K r00 r10 r11 R T rITM tSR rho')
+    SEr = sp.Matrix([[sp.cos(phi), sp.sin(phi)], [-sp.sin(phi), sp.cos(phi)]])
+    SE = SEr * exp_1jOmegal_c
+    ARM = tArm * exp_2jOmegaL_c * sp.Matrix([[1, 0], [-K, 1]])
+    ARM_RES = sp.Matrix([[r00, 0], [r10, r11]])
+    rho_ARM = ARM_RES * ((R + T) * ARM - rITM * ID)
+    SEC = tSR * SE * rho_ARM * SE
+    SEC_RES = (ID + rho*SEC)**-1
+
+    subexprs, SEC_RES_expr = sp.cse(SEC_RES)
+    for expr in subexprs:
+        print(str(expr[0]), '=', str(expr[1]))
+    print('RES', '=', str(SEC_RES_expr[0]).replace('Matrix', 'np.array'))
+
+
 def shotradSignalRecycled(f, ifo):
+    """Quantum noise model for signal recycled IFO (see shotrad for more info)
+
+    New version July 2016 by JH based on transfer function formalism
+
+    coeff = frequency dependent overall noise coefficient (Nx1)
+            (not required anymore, but kept for compatibility with shotrad.m)
+    Mifo = IFO input-output relation for the AS port
+    Msig = signal transfer to the AS port
+    Mnoise = noise fields produced by losses in the IFO at the AS port
+
+    """
+    # f                                          # Signal Freq. [Hz]
+    lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
+    hbar    = scipy.constants.hbar               # Plancks Constant [Js]
+    c       = scipy.constants.c                  # SOL [m/s]
+    omega_0 = 2*pi*c/lambda_                     # Laser angular frequency [rads/s]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    L       = ifo.Infrastructure.Length          # Length of arm cavities [m]
+    l       = ifo.Optics.SRM.CavityLength        # SRC Length [m]
+    T       = ifo.Optics.ITM.Transmittance       # ITM Transmittance [Power]
+    m       = ifo.Materials.MirrorMass           # Mirror mass [kg]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    bsloss  = ifo.Optics.BSLoss                  # BS Loss [Power]
+    mismatch = 1 - ifo.Optics.coupling           # Mismatch
+    mismatch = mismatch + ifo.TCS.SRCloss        # Mismatch
+
+    # BSloss + mismatch has been incorporated into a SRC Loss
+    lambda_SR = 1 - (1 - mismatch) * (1 - bsloss)  # SR cavity loss [Power]
+
+    tau     = sqrt(ifo.Optics.SRM.Transmittance)  # SRM Transmittance [amplitude]
+    rho     = sqrt(1 - tau**2)                   # SRM Reflectivity [amplitude]
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ds      = ifo.Optics.SRM.Tunephase           # SRC Detunning
+    phi     = ds/2
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    lambda_arm = 1 - (1 - ifo.Optics.Loss)**2 * (1 - ifo.Optics.ETM.Transmittance)
+
+    R = 1 - T - ifo.Optics.Loss                  # ITM Reflectivity [Power]
+
+    P = ifo.gwinc.parm                           # use precomputed value
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    nf = len(f)
+
+    ID = np.array([[np.ones(nf), np.zeros(nf)], [np.zeros(nf), np.ones(nf)]])
+
+    # transfer matrices for dark port input and signal field
+    Mifo = zeros((2,2,nf), dtype=complex)
+    Msig = zeros((2,1,nf), dtype=complex)
+
+    # transfer matrices for SEC and arm loss fields
+    Mp = zeros((2,2,nf), dtype=complex)
+    Mn = zeros((2,2,nf), dtype=complex)
+
+    # SRC rotation matrix
+    SEr = np.array([[np.tile(cos(phi), nf), np.tile(sin(phi), nf)],
+                    [np.tile(-sin(phi), nf), np.tile(cos(phi), nf)]])
+
+    # some precomputed parameters
+    tITM = sqrt(T)
+    rITM = sqrt(R)
+
+    tArm = sqrt(1 - lambda_arm)
+    tSR = sqrt(1 - lambda_SR)
+    tSig = sqrt((1 - lambda_arm / 2) * (1 - lambda_SR / 2))
+    RT_SRM = rho**2 + tau**2
+
+    lossArm = sqrt(lambda_arm)
+    lossSR = sqrt(lambda_SR)
+
+    Omega   = 2*pi*f             # Signal angular frequency [rad/s]
+    h_SQL   = sqrt(8 * hbar / (m * (Omega * L)**2))     # SQL Strain
+    K = 16 * P * omega_0 / (m * c**2 * Omega**2)
+
+    # arm cavity
+    exp_2jOmegaL_c = exp(2j*Omega*L/c)
+    ARM = tArm * exp_2jOmegaL_c * np.array([[np.ones(nf), np.zeros(nf)], [-K, np.ones(nf)]])
+
+    # the following code is generated by compile_ARM_RES_TF()
+    # and is equivalent to the following:
+    # RES = zeros((2,2,nf), dtype=complex)
+    # RES = np.linalg.pinv(ID.transpose((2,0,1)) - rITM * ARM.transpose((2,0,1))).transpose((1,2,0))
+    x0 = exp_2jOmegaL_c*rITM*tArm
+    x1 = -x0 + 1
+    x2 = 1/x1
+    RES = np.array([[x2, np.zeros(nf)], [-K*x0/x1**2, x2]])
+    # end of generated code
+
+    rho_ARM = getProdTF(RES, (R + T) * ARM - rITM * ID)
+    tau_ARM = tITM * RES
+
+    # signal-extraction cavity
+    SE = SEr * exp(1j * Omega * l / c)
+    SEC = getProdTF(tSR * SE, getProdTF(rho_ARM, SE))
+
+    exp_1jOmegal_c = exp(1j*Omega*l/c)
+    r00 = RES[0,0,:]
+    r10 = RES[1,0,:]
+    r11 = RES[1,1,:]
+
+    # the following code is generated by compile_SEC_RES_TF()
+    # and is equivalent to the following:
+    # RES = zeros((2,2,nf), dtype=complex)
+    # RES = np.linalg.pinv(ID.transpose((2,0,1)) + rho * SEC.transpose((2,0,1))).transpose((1,2,0))
+    x0 = cos(phi)
+    x1 = exp_2jOmegaL_c*tArm*(R + T)
+    x2 = -rITM + x1
+    x3 = exp_1jOmegal_c**2*r11*tSR*x2
+    x4 = sin(phi)
+    x5 = exp_1jOmegal_c*r00*tSR*x2
+    x6 = exp_1jOmegal_c*tSR*(-K*r11*x1 + r10*x2)
+    x7 = exp_1jOmegal_c*(x0*x6 - x4*x5)
+    x8 = rho*(x0**2*x3 + x4*x7) + 1
+    x9 = x0*x3*x4
+    x10 = exp_1jOmegal_c*(x0*x5 + x4*x6)
+    x11 = x10*x4 + x9
+    x12 = x0*x7 - x9
+    x13 = rho*(x0*x10 - x3*x4**2) + 1
+    x14 = 1/(-rho**2*x11*x12 + x13*x8)
+    x15 = rho*x14
+    RES = np.array([[x14*x8, -x11*x15], [-x12*x15, x13*x14]])
+    # end of generated code
+
+    rho_SEC = getProdTF(RES, RT_SRM * SEC + rho * ID)
+    tau_SEC = tau * getProdTF(RES, SE)
+    tau_SEC_ARM = getProdTF(tau_SEC, tau_ARM)
+
+    # signal field
+    Msig = tSig * exp(1j * Omega * L / c) * \
+           getProdTF(tau_SEC_ARM, np.array([[np.zeros(nf)], [sqrt(2 * K) / h_SQL]]))
+
+    # dark-port input field
+    Mifo = rho_SEC
+
+    # loss field from arm cavity
+    Mn = lossArm * tau_SEC_ARM
+
+    # loss field from signal-extraction cavity
+    Mp = lossSR * tau_SEC
+
+    # adapt to GWINC phase convention
+    Msig = Msig[[1, 0], :, :]
+    Msig[1, 0, :] = -Msig[1, 0, :]
+
+    def adapt_to_gwinc(Mx):
+        My = zeros(Mx.shape, dtype=complex)
+        My[0, 0, :] = Mx[1, 1, :]
+        My[1, 1, :] = Mx[0, 0, :]
+        My[0, 1, :] = -Mx[1, 0, :]
+        My[1, 0, :] = -Mx[0, 1, :]
+        return My
+
+    Mifo = adapt_to_gwinc(Mifo)
+    Mn = adapt_to_gwinc(Mn)
+    Mp = adapt_to_gwinc(Mp)
+
+    # overall coefficient
+    coeff = 1
+
+    # put all loss fields together
+    Mnoise = np.hstack([Mn, Mp])
+
+    return coeff, Mifo, Msig, Mnoise
+
+
+def shotradSignalRecycledBnC(f, ifo):
     """Quantum noise model for signal recycled IFO
 
     See shotrad for more info.
@@ -322,34 +524,41 @@ def shotradSignalRecycled(f, ifo):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Coefficients [BnC, Equations 5.8 to 5.12]
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    exp_1jbeta = exp(1j*beta)
+    cos_beta = exp_1jbeta.real
+    invexp_1jbeta = 1/exp_1jbeta
+    exp_2jbeta = exp_1jbeta**2
+    cos_2beta = exp_2jbeta.real
+    invexp_2jbeta = 1/exp_2jbeta
+    exp_4jbeta = exp_2jbeta**2
     C11_L   = ( (1+rho**2) * ( cos(2*phi) + Kappa/2 * sin(2*phi) ) -
-                2*rho*cos(2*beta) - 1/4*epsilon * ( -2 * (1+exp(2j*beta))**2 * rho + 4 * (1+rho**2) *
-                                                    cos(beta)**2*cos(2*phi) + ( 3+exp(1j*2*beta) ) *
+                2*rho*cos_2beta - 1/4*epsilon * ( -2 * (1+exp_2jbeta)**2 * rho + 4 * (1+rho**2) *
+                                                    cos_beta**2*cos(2*phi) + ( 3+exp_2jbeta ) *
                                                     Kappa * (1+rho**2) * sin(2*phi) ) +
-                lambda_SR * ( exp(2j*beta)*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
+                lambda_SR * ( exp_2jbeta*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
 
     C22_L   = C11_L
 
     C12_L   = tau**2 * ( - ( sin(2*phi) + Kappa*sin(phi)**2 )+
-                         1/2*epsilon*sin(phi) * ( (3+exp(2j*beta)) * Kappa * sin(phi) + 4*cos(beta)**2 * cos(phi)) +
+                         1/2*epsilon*sin(phi) * ( (3+exp_2jbeta) * Kappa * sin(phi) + 4*cos_beta**2 * cos(phi)) +
                          1/2*lambda_SR * ( sin(2*phi)+Kappa*sin(phi)**2) )
 
     C21_L   = tau**2 * ( (sin(2*phi)-Kappa*cos(phi)**2 ) +
-                         1/2*epsilon*cos(phi) * ( (3+exp(2j*beta) )*Kappa*sin(phi) - 4*cos(beta)**2*sin(phi) ) +
+                         1/2*epsilon*cos(phi) * ( (3+exp_2jbeta )*Kappa*cos(phi) - 4*cos_beta**2*sin(phi) ) +
                          1/2*lambda_SR * ( -sin(2*phi) + Kappa*cos(phi)**2) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    D1_L    = ( - (1+rho*exp(2j*beta) ) * sin(phi) +
-                1/4*epsilon * ( 3+rho+2*rho*exp(4*1j*beta) + exp(2j*beta)*(1+5*rho) ) * sin(phi)+
-                1/2*lambda_SR * exp(2j*beta) * rho * sin(phi) )
+    D1_L    = ( - (1+rho*exp_2jbeta ) * sin(phi) +
+                1/4*epsilon * ( 3+rho+2*rho*exp_4jbeta + exp_2jbeta*(1+5*rho) ) * sin(phi)+
+                1/2*lambda_SR * exp_2jbeta * rho * sin(phi) )
 
-    D2_L    = ( - (-1+rho*exp(2j*beta) ) * cos(phi) +
-                1/4*epsilon * ( -3+rho+2*rho*exp(4*1j*beta) + exp(2j*beta) * (-1+5*rho) ) * cos(phi)+
-                1/2*lambda_SR * exp(2j*beta) * rho * cos(phi) )
+    D2_L    = ( - (-1+rho*exp_2jbeta ) * cos(phi) +
+                1/4*epsilon * ( -3+rho+2*rho*exp_4jbeta + exp_2jbeta * (-1+5*rho) ) * cos(phi)+
+                1/2*lambda_SR * exp_2jbeta * rho * cos(phi) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     P11     = 0.5 * sqrt(lambda_SR) * tau * \
-              ( -2*rho*exp(2j*beta)+2*cos(2*phi)+Kappa*sin(2*phi) )
+              ( -2*rho*exp_2jbeta+2*cos(2*phi)+Kappa*sin(2*phi) )
     P22     = P11
     P12     = -sqrt(lambda_SR)*tau*sin(phi)*(2*cos(phi)+Kappa*sin(phi) )
     P21     =  sqrt(lambda_SR)*tau*cos(phi)*(2*sin(phi)-Kappa*cos(phi) )
@@ -360,22 +569,22 @@ def shotradSignalRecycled(f, ifo):
     #   as well as the input-output relation Mc and the signal matrix Md
 
     Q11     = 1 / \
-              ( exp(-2j*beta)+rho**2*exp(2j*beta)-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
-                1/2*epsilon*rho * (exp(-2j*beta)*cos(2*phi)+exp(2j*beta)*
-                                   ( -2*rho-2*rho*cos(2*beta)+cos(2*phi)+Kappa*sin(2*phi) ) +
+              ( invexp_2jbeta+rho**2*exp_2jbeta-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
+                1/2*epsilon*rho * (invexp_2jbeta*cos(2*phi)+exp_2jbeta*
+                                   ( -2*rho-2*rho*cos_2beta+cos(2*phi)+Kappa*sin(2*phi) ) +
                                    2*cos(2*phi)+3*Kappa*sin(2*phi))-1/2*lambda_SR*rho *
-                ( 2*rho*exp(2j*beta)-2*cos(2*phi)-Kappa*sin(2*phi) ) )
+                ( 2*rho*exp_2jbeta-2*cos(2*phi)-Kappa*sin(2*phi) ) )
     Q22     = Q11
     Q12     = 0
     Q21     = 0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    N11     = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp(2j*beta))*sin(phi)+
-                                    2*cos(beta)*(exp(-1j*beta)*cos(phi)-rho*exp(1j*beta)*(cos(phi)+Kappa*sin(phi))))
-    N22     = -sqrt(2*epsilon)*tau*(-exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*cos(phi)
-    N12     = -sqrt(2*epsilon)*tau*(exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*sin(phi);
-    N21     = sqrt(2*epsilon)*tau*(-Kappa*(1+rho)*cos(phi)+
-                                   2*cos(beta)*(exp(-1j*beta)+rho*exp(1j*beta))*cos(beta)*sin(phi))
+    N11     = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp_2jbeta)*sin(phi)+
+                                    2*cos_beta*(invexp_1jbeta*cos(phi)-rho*exp_1jbeta*(cos(phi)+Kappa*sin(phi))))
+    N22     = -sqrt(2*epsilon)*tau*(-invexp_1jbeta+rho*exp_1jbeta)*cos_beta*cos(phi)
+    N12     = -sqrt(2*epsilon)*tau*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi);
+    N21     = sqrt(epsilon/2)*tau*(-Kappa*(1+rho)*cos(phi)+
+                                   2*cos_beta*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # overall coefficient
@@ -421,26 +630,23 @@ def getProdTF(lhs, rhs):
         raise Exception('Matrix size mismatch size(lhs, 2) = %d != %d = size(rhs, 1)' % (lhs.shape[1], rhs.shape[0]))
     N = lhs.shape[0]
     M = rhs.shape[1]
+    if len(lhs.shape) == 3:
+        lhs = np.transpose(lhs, axes=(2, 0, 1))
+    if len(rhs.shape) == 3:
+        rhs = np.transpose(rhs, axes=(2, 0, 1))
 
     # compute product
-    if len(lhs.shape) < 3 or lhs.shape[2] == 1:
-        Nfreq = rhs.shape[2]
-        rslt = zeros((N, M, Nfreq), dtype=complex)
-        for n in range(Nfreq):
-            rslt[:, :, n] = np.dot(np.squeeze(lhs), rhs[:, :, n])
-    elif len(rhs.shape) < 3 or rhs.shape[2] == 1:
-        Nfreq = lhs.shape[2]
-        rslt = zeros((N, M, Nfreq), dtype=complex)
-        for n in range(Nfreq):
-            rslt[:, :, n] = np.dot(lhs[:, :, n], np.squeeze(rhs))
-    elif lhs.shape[2] == rhs.shape[2]:
-        Nfreq = lhs.shape[2]
-        rslt = zeros((N, M, Nfreq), dtype=complex)
-        for n in range(Nfreq):
-            rslt[:, :, n] = np.dot(lhs[:, :, n], rhs[:, :, n])
+    if len(lhs.shape) < 3 or lhs.shape[0] == 1:
+        rslt = np.matmul(lhs, rhs)
+    elif len(rhs.shape) < 3 or rhs.shape[0] == 1:
+        rslt = np.matmul(lhs, rhs)
+    elif lhs.shape[0] == rhs.shape[0]:
+        rslt = np.matmul(lhs, rhs)
     else:
         raise Exception('Matrix size mismatch lhs.shape[2] = %d != %d = rhs.shape[2]' % (lhs.shape[2], rhs.shape[2]))
 
+    if len(rslt.shape) == 3:
+        rslt = np.transpose(rslt, axes=(1, 2, 0))
     return rslt
 
 
