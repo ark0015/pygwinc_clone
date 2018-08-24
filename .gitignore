@@ -9,6 +9,8 @@ __pycache__/
 #vim temporaries
 .*.swp
 .*.swo
+
+#emacs temporaries
 .#*
 
 # Backups

@@ -45,6 +45,13 @@ pages:
   - mv Voyager.png public/
   - mv aLIGO_test.png public/ || true
   - mv A+_test.png public/ || true
+  - apt-get install -y -qq python3-pip python3-dev make
+  - pip3 install sphinx sphinx-rtd-theme
+  - cd docs
+  - make html
+  - cd ..
+  - mv ./build/sphinx/html/* public/
+
   artifacts:
     paths:
     - public
