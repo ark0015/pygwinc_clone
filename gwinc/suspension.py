@@ -234,7 +234,8 @@ def suspQuad(f, ifo, material='Silica'):
     mu_h = 4 / r_w               # surface to volume ratio, horizontal
     mu_v = 2 / r_w               # surface to volume ratio, vertical (wire)
 
-    # horizontal TE time constant, wires ( WHAT IS THIS CONSTANT 7.37e-2? )
+    # horizontal TE time constant, wires
+    # The constant 7.37e-2 is 1/(4*q0^2) from eq 12, C. Zener 10.1103/PhysRev.53.90 (1938)
     tau_h = 7.37e-2 * 4 * (rho_w * C_w * xsect) / (pi * K_w)
 
     # vertical TE time constant, blades
