@@ -6,6 +6,12 @@ from scipy.interpolate import PchipInterpolator as interp1d
 
 def seismic(f, ifo):
     """Seismic noise.
+    """
+    return seismicAll(f, ifo)[0]
+
+
+def seismicAll(f, ifo):
+    """Seismic noise.
 
     Return (noise, noise_vertical, noise_horizontal)
 
@@ -30,7 +36,7 @@ def seismic(f, ifo):
     # Convert into Strain PSD (4 TMs)
     nh *= 4 * ifo.gwinc.dhdl_sqr
     nv *= 4 * ifo.gwinc.dhdl_sqr
-    n  *= 4 * ifo.gwinc.dhdl_sqr
+    n *= 4 * ifo.gwinc.dhdl_sqr
 
     return n, nh, nv
 
