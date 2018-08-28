@@ -1,13 +1,10 @@
 from __future__ import division
 import numpy as np
-from numpy import pi, sqrt, sin, exp, abs, log10
-import scipy.constants
 from numpy import pi, sqrt
 from collections import OrderedDict
 import logging
 
 from .precomp import precompIFO
-from . import suspension
 from . import noise
 from .plot import plot_noise
 

@@ -9,7 +9,6 @@ from . import suspension
 from .const import CONSTANTS
 from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
-from . import util
 
 
 def precompIFO(f, ifoin, PRfixed=True):
@@ -49,7 +48,7 @@ def precompIFO(f, ifoin, PRfixed=True):
     # calculate optics' parameters
     ifo.Materials.MirrorVolume = pi*ifo.Materials.MassRadius**2 * \
                                  ifo.Materials.MassThickness
-    ifo.Materials.MirrorMass = ifo.Materials.MirrorVolume* \
+    ifo.Materials.MirrorMass = ifo.Materials.MirrorVolume * \
                                ifo.Materials.Substrate.MassDensity
     ifo.Optics.ITM.Thickness = ifo.Materials.MassThickness
 
