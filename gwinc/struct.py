@@ -101,7 +101,11 @@ class Struct(object):
             return default
 
     def __setitem__(self, key, value):
-        self.__dict__[key] = value
+        if '.' in key:
+            k, r = key.split('.', 1)
+            self.__dict__[k][r] = value
+        else:
+            self.__dict__[key] = value
 
     def setdefault(self, key, default):
         return self.__dict__.setdefault(key, default)
