@@ -73,7 +73,7 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument('--interactive', '-i', action='store_true',
                    help="interactive plot with interactive shell")
 group.add_argument('--save', '-s',
-                   help="save noise (hdf5) or figure (pdf/png/etc) to file")
+                   help="save noise (hdf5) or figure (pdf/png/svg) to file")
 group.add_argument('--yaml', '-y', dest='yaml', action='store_true',
                    help="print specified IFO yaml to stdout and exit")
 group.add_argument('--dump', '-d', dest='dump', action='store_true',
@@ -92,7 +92,7 @@ def main():
     ##########
     # initial arg processing
 
-    if os.path.splitext(args.IFO)[1] == '.hdf5':
+    if os.path.splitext(args.IFO)[1] in ['.hdf5', '.h5']:
         title, ifo, noises = util.load_hdf5(args.IFO)
 
     else:
@@ -185,7 +185,7 @@ def main():
     # output
 
     # save noise traces to HDF5 file
-    if args.save and os.path.splitext(args.save)[1] == '.hdf5':
+    if args.save and os.path.splitext(args.save)[1] in ['.hdf5', '.h5']:
         util.save_hdf5(
             title,
             ifo,
