@@ -1,7 +1,4 @@
 from numpy import sqrt
-import matplotlib.pyplot as plt
-
-import logging
 
 PRIORITY_MAP = {
     'Quantum Vacuum': 0,
@@ -80,6 +77,7 @@ def plot_noise(
     f = noises['Freq']
 
     if ax is None:
+        import matplotlib.pyplot as plt
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
 
