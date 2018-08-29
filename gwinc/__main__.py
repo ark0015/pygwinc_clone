@@ -122,7 +122,11 @@ def main():
             # set this opportunistically.
             import matplotlib
             matplotlib.use('AGG')
-        from matplotlib import pyplot as plt
+        try:
+            from matplotlib import pyplot as plt
+        except RuntimeError:
+            logging.warning("no display, plotting disabled.")
+            args.plot = False
 
     if args.matlab:
         gwinc = gwinc_matlab.gwinc_matlab
