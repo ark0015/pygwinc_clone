@@ -196,6 +196,26 @@ class Struct(object):
                 except (AttributeError, TypeError):
                     yield k, v
 
+
+    def diff(self, other):
+        """Return tuple of differences between target IFO.
+
+        Returns list of (key, value, other_value) tuples.  Value is
+        None if key not present.
+
+        """
+        diffs = []
+        for k, ov in other.walk():
+            v = self.get(k, None)
+            if ov != v and ov is not v:
+                diffs.append((k, v, ov))
+        for k, v in self.walk():
+            ov = other.get(k, None)
+            if ov is None:
+                diffs.append((k, v, ov))
+        return diffs
+
+
     def to_txt(self, path=None, fmt='0.6e', delimiter=': ', end=''):
         """Return text represenation of Struct, one element per line.
 

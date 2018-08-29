@@ -78,6 +78,8 @@ group.add_argument('--yaml', '-y', action='store_true',
                    help="print IFO as yaml to stdout and exit")
 group.add_argument('--text', '-x', action='store_true',
                    help="print IFO as text table to stdout and exit")
+group.add_argument('--diff', '-d', metavar='IFO',
+                   help="show differences table between another IFO description")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
 parser.add_argument('IFO', default=IFO,
@@ -108,6 +110,18 @@ def main():
         return
     if args.text:
         print(ifo.to_txt(), end='')
+        return
+    if args.diff:
+        fmt = '{:30} {:>20} {:>20}'
+        ifoo = load_ifo(args.diff)
+        diffs = ifo.diff(ifoo)
+        if diffs:
+            print(fmt.format('', args.IFO, args.diff))
+            for p in diffs:
+                k = str(p[0])
+                v = repr(p[1])
+                ov = repr(p[2])
+                print(fmt.format(k, v, ov))
         return
     if args.plot:
         if args.save:
