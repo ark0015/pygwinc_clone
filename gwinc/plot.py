@@ -74,12 +74,23 @@ def plot_noise(
         ax=None,
         displacement=True,
 ):
+    """Plot a GWINC noise budget from calculated noises
+
+    If an axis handle is provided it will be used for the plot.
+    `displacement` may be set to False to supress the right had
+    displacement axis.
+
+    Returns the figure handle used.
+
+    """
     f = noises['Freq']
 
     if ax is None:
         import matplotlib.pyplot as plt
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
+    else:
+        fig = ax.figure
 
     def plot_dict(noises):
         #use sorted to force a consistent ordering
@@ -132,3 +143,5 @@ def plot_noise(
         y1, y2 = ax.get_ylim()
         ax_d.set_ylim(y1*ifo.Infrastructure.Length, y2*ifo.Infrastructure.Length)
         ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
+
+    return fig
