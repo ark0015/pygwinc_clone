@@ -87,6 +87,11 @@ class Struct(object):
         """
         if '.' in key:
             k, r = key.split('.', 1)
+            # FIXME: this is inelegant.  better done with regexp?
+            if len(k.split('[')) > 1:
+                kl, i = k.split('[')
+                i = int(i.strip(']'))
+                return self.__dict__[kl][i][r]
             return self.__dict__[k][r]
         else:
             return self.__dict__[key]
