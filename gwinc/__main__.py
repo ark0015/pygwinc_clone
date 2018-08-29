@@ -111,6 +111,18 @@ def main():
         ifo = precompIFO(ifo)
         print(ifo.to_txt(), end='')
         return
+    if args.plot:
+        if args.save:
+            # FIXME: this silliness seems to be the only way to have
+            # matplotlib usable on systems without a display.  There must
+            # be a better way.  'AGG' is a backend that works without
+            # displays.  but it has to be set before any other matplotlib
+            # stuff is imported.  and we *don't* want it set if we do want
+            # to show an interactive plot.  there doesn't seem a way to
+            # set this opportunistically.
+            import matplotlib
+            matplotlib.use('AGG')
+        from matplotlib import pyplot as plt
 
     if args.matlab:
         gwinc = gwinc_matlab.gwinc_matlab
@@ -134,18 +146,6 @@ def main():
             if p != 'approximant':
                 v = float(v)
             range_params[p] = v
-
-    if args.save:
-        # FIXME: this silliness seems to be the only way to have
-        # matplotlib usable on systems without a display.  There must
-        # be a better way.  'AGG' is a backend that works without
-        # displays.  but it has to be set before any other matplotlib
-        # stuff is imported.  and we *don't* want it set if we do want
-        # to show an interactive plot.  there doesn't seem a way to
-        # set this opportunistically.
-        import matplotlib
-        matplotlib.use('AGG')
-    from matplotlib import pyplot as plt
 
     ##########
     # main calculations
