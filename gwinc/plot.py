@@ -102,7 +102,6 @@ def plot_noise(
             if isinstance(noise, dict):
                 plot_dict(noise)
             else:
-                logging.info("plotting '{}'...".format(name))
                 noise = noises[name]
                 stylekw = dict(
                     color = (0, 0, 0),

@@ -212,6 +212,7 @@ You may interact with plot using "plt." methods, e.g.:
 
     # standard plotting
     elif args.plot:
+        logging.info("plotting...")
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
