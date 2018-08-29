@@ -9,7 +9,7 @@ from . import noise
 from .plot import plot_noise
 
 
-def noise_calc(ifo, f):
+def noise_calc(f, ifo):
     """Calculate all IFO noises and return as dict
 
     Assumes ifo has already been run through precompIFO().
@@ -105,7 +105,7 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
         pass
         #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
 
-    noises = noise_calc(ifo, freq)
+    noises = noise_calc(freq, ifo)
 
     #TODO decide if all this below this should remain, since it is already inside of __main__
 
