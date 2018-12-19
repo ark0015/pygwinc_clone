@@ -4,6 +4,8 @@
 
 ![gwinc](https://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
 
+This is a collection of mostly analytic noise calculations (e.g. quantum, thermal)
+
 
 ## basic usage
 
