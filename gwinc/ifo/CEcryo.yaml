@@ -108,6 +108,7 @@ Suspension:
       WireRadius: .nan
       Blade: .nan # blade thickness
       NWires: 4
+      Temp: 300
     - Mass: 65.9 # kg; susmat['PUMmass'][0,0]
       Length: 0.4105 # m
       Dilution: 106.0
@@ -115,6 +116,7 @@ Suspension:
       WireRadius: 310e-6
       Blade: 4200e-6
       NWires: 4
+      Temp: 300
     - Mass: 87.6 # kg; susmat['UIMmass'][0,0]
       Length: 0.4105 # m
       Dilution: 80.0
@@ -122,6 +124,7 @@ Suspension:
       WireRadius: 350e-6
       Blade: 4600e-6
       NWires: 4
+      Temp: 300
     - Mass: 116.5 # kg; susmat['topmass_mass'][0,0]
       Length: 0.4105 # m
       Dilution: 87.0
@@ -129,6 +132,7 @@ Suspension:
       WireRadius: 520e-6
       Blade: 4300e-6
       NWires: 2
+      Temp: 123
   Silicon:
     # http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html
     # all properties should be for T ~ 120 K
