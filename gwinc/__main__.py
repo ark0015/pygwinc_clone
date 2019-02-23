@@ -55,9 +55,9 @@ NPOINTS = 3000
 parser = argparse.ArgumentParser(prog='gwinc',
                                  description=description,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('--flo', '-fl', default=FLO,
+parser.add_argument('--flo', '-fl', default=FLO, type=float,
                     help="lower frequency bound in Hz [{}]".format(FLO))
-parser.add_argument('--fhi', '--fh', default=FHI,
+parser.add_argument('--fhi', '--fh', default=FHI, type=float,
                     help="upper frequency bound in Hz [{}]".format(FHI))
 parser.add_argument('--npoints', '-n', default=NPOINTS,
                     help="number of frequency points [{}]".format(NPOINTS))
