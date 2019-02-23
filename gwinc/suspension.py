@@ -169,7 +169,7 @@ def suspQuad(f, ifo, material='Silica'):
         if 'Temp' in stage:
             Temp[n] = stage.Temp
         else:
-            Temp[n] = sus.Temp
+            Temp = sus.Temp
 
         ##############################
         # support wire material parameters
