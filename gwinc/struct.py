@@ -324,3 +324,31 @@ class Struct(object):
                 return cls.from_matstruct(s)
             else:
                 raise IOError("Unknown file type: {}".format(ext))
+
+
+def load_struct(path):
+    """Load struct from YAML or MATLAB file.
+
+    Files may be either .yaml, .mat or .m.  For .m files, the file is
+    expected to include either an object or function that corresponds
+    to the basename of the file.  The MATLAB engine will be invoked to
+    execute the .m code and extract the resultant IFO data.
+
+    """
+    root, ext = os.path.splitext(path)
+
+    if ext == '.m':
+        from ..gwinc_matlab import Matlab
+        matlab = Matlab()
+        matlab.addpath(os.path.dirname(path))
+        func_name = os.path.basename(root)
+        matlab.eval("ifo = {};".format(func_name), nargout=0)
+        ifo = matlab.extract('ifo')
+        return Struct.from_matstruct(ifo)
+
+    else:
+        return Struct.from_file(path)
+
+
+# accepted extension types for struct files
+STRUCT_EXT = ['.yaml', '.yml', '.mat', '.m']
