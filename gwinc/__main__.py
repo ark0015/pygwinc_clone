@@ -11,9 +11,8 @@ logging.basicConfig(format='%(message)s',
 
 from .ifo import available_ifos, load_ifo
 from .precomp import precompIFO
-from . import gwinc
 from . import plot_noise
-from . import util
+from . import io
 
 ##################################################
 
@@ -30,10 +29,11 @@ By default a GWINC noise budget of the specified IFO will calculated,
 and plotted with an interactive plotter.  If the --save option is
 specified the plot will be saved directly to a file (without display)
 (various formats are supported, indicated by file extension).  If the
-requested extension is "hdf5" then the noise traces and IFO parameters
-will be saved to an HDF5 file (without plotting).  The input file
-(IFO) can be an HDF5 file saved from a previous call, in which all
-noise traces and IFO parameters will be loaded from that file.
+requested extension is 'hdf5' or 'h5' then the noise traces and IFO
+parameters will be saved to an HDF5 file (without plotting).  The
+input file (IFO) can be an HDF5 file saved from a previous call, in
+which case all noise traces and IFO parameters will be loaded from
+that file.
 
 If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom argument,
@@ -51,9 +51,10 @@ FLO = 5
 FHI = 6000
 NPOINTS = 3000
 
-parser = argparse.ArgumentParser(prog='gwinc',
-                                 description=description,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+parser = argparse.ArgumentParser(
+    prog='gwinc',
+    description=description,
+    formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument('--flo', '-fl', default=FLO, type=float,
                     help="lower frequency bound in Hz [{}]".format(FLO))
 parser.add_argument('--fhi', '--fh', default=FHI, type=float,
@@ -68,7 +69,7 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument('--interactive', '-i', action='store_true',
                    help="interactive plot with interactive shell")
 group.add_argument('--save', '-s',
-                   help="save noise (hdf5) or figure (pdf/png/svg) to file")
+                   help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
 group.add_argument('--yaml', '-y', action='store_true',
                    help="print IFO as yaml to stdout and exit")
 group.add_argument('--text', '-x', action='store_true',
@@ -77,8 +78,8 @@ group.add_argument('--diff', '-d', metavar='IFO',
                    help="show differences table between another IFO description")
 group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
                    help="supress plotting")
-parser.add_argument('IFO', default=IFO,
-                    help="IFO name or description file path (.yaml, .mat, .m), or full HDF5 data file")
+parser.add_argument('IFO',
+                    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
 
 
 def main():
@@ -89,26 +90,34 @@ def main():
     ##########
     # initial arg processing
 
-    if os.path.splitext(args.IFO)[1] in ['.hdf5', '.h5']:
-        title, ifo, noises = util.load_hdf5(args.IFO)
+    if os.path.splitext(os.path.basename(args.IFO))[1] in ['.hdf5', '.h5']:
+        Budget = None
+        freq, traces, attrs = io.load_hdf5(args.IFO)
+        ifo = getattr(attrs, 'IFO', None)
+        plot_style = attrs
 
     else:
-        ifo = load_ifo(args.IFO)
-        noises = None
-        if args.title:
-            title = args.title
-        else:
-            title = '{} GWINC Noise Budget'.format(args.IFO)
+        Budget, ifo, freq, plot_style = load_ifo(args.IFO)
+        # FIXME: this should be done only if specified, to allow for
+        # using any FREQ specified in budget module by default
+        freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
+        traces = None
 
     if args.yaml:
+        if not ifo:
+            parser.exit(2, "no IFO structure available.")
         print(ifo.to_yaml(), end='')
         return
     if args.text:
+        if not ifo:
+            parser.exit(2, "no IFO structure available.")
         print(ifo.to_txt(), end='')
         return
     if args.diff:
+        if not ifo:
+            parser.exit(2, "no IFO structure available.")
         fmt = '{:30} {:>20} {:>20}'
-        ifoo = load_ifo(args.diff)
+        Budget, ifoo, freq, plot_style = load_ifo(args.diff)
         diffs = ifo.diff(ifoo)
         if diffs:
             print(fmt.format('', args.IFO, args.diff))
@@ -118,6 +127,14 @@ def main():
                 ov = repr(p[2])
                 print(fmt.format(k, v, ov))
         return
+
+    if args.title:
+        plot_style['title'] = args.title
+    elif Budget:
+        plot_style['title'] = "GWINC Noise Budget: {}".format(Budget.name)
+    else:
+        plot_style['title'] = "GWINC Noise Budget: {}".format(args.IFO)
+
     if args.plot:
         if args.save:
             # FIXME: this silliness seems to be the only way to have
@@ -156,18 +173,20 @@ def main():
     ##########
     # main calculations
 
-    if noises:
-        freq = noises['Freq']
+    if not traces:
+        if ifo:
+            logging.info("precomputing ifo...")
+            ifo = precompIFO(freq, ifo)
+        logging.info("calculating budget...")
+        budget = Budget(freq=freq, ifo=ifo)
+        budget.load()
+        budget.update()
+        traces = budget.calc_trace()
 
-    else:
-        logging.info("calculating noises...")
-        freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
-        score, noises, ifo = gwinc(freq, ifo)
-
-    logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
-    logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
-    logging.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
-    logging.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
+    # logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
+    # logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
+    # logging.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
+    # logging.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
 
     if args.fom:
         logging.info("calculating inspiral {}...".format(range_func))
@@ -181,30 +200,35 @@ def main():
             m2=H.params['m2'],
             fom=fom,
             )
-        title += '\n{}'.format(fom_title)
+        plot_style['title'] += '\n{}'.format(fom_title)
 
     ##########
     # output
 
     # save noise traces to HDF5 file
     if args.save and os.path.splitext(args.save)[1] in ['.hdf5', '.h5']:
-        util.save_hdf5(
-            title,
-            ifo,
-            noises,
-            args.save,
+        logging.info("saving budget traces {}...".format(args.save))
+        if ifo:
+            plot_style['IFO'] = ifo.to_yaml()
+        io.save_hdf5(
+            path=args.save,
+            freq=freq,
+            traces=traces,
+            **plot_style
         )
 
     # interactive shell plotting
     elif args.interactive:
         ipshell = InteractiveShellEmbed(
-            user_ns={'freq': freq,
-                     'noises': noises,
-                     'ifo': ifo,
-                     'plot_noise': plot_noise,
+            user_ns={
+                'freq': freq,
+                'traces': traces,
+                'ifo': ifo,
+                'plot_style': plot_style,
+                'plot_noise': plot_noise,
             },
             banner1='''
-PYGWINC interactive plotter
+GWINC interactive plotter
 
 You may interact with plot using "plt." methods, e.g.:
 
@@ -212,20 +236,21 @@ You may interact with plot using "plt." methods, e.g.:
 >>> plt.savefig("foo.pdf")
 ''')
         ipshell.enable_pylab()
-        ipshell.run_code("plot_noise(noises)")
-        ipshell.run_code("plt.title('{}')".format(title))
+        ipshell.run_code("plot_noise(freq, traces, **plot_style)")
+        ipshell.run_code("plt.title('{}')".format(plot_style['title']))
         ipshell()
 
     # standard plotting
     elif args.plot:
-        logging.info("plotting...")
+        logging.info("plotting noises...")
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
-            noises,
+            freq,
+            traces,
             ax=ax,
+            **plot_style
         )
-        ax.set_title(title)
         fig.tight_layout()
         if args.save:
             fig.savefig(

@@ -15,10 +15,10 @@ test:
   - export PYTHONPATH=inspiral_range
   - export MPLBACKEND=agg
   - python3 -m gwinc aLIGO -s aLIGO.png
-  - python3 -m gwinc A+ -s A+.png
+  - python3 -m gwinc Aplus -s Aplus.png
   - python3 -m gwinc Voyager -s Voyager.png
   - python3 -m gwinc.test aLIGO -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" -p -s aLIGO_test.png
-  - python3 -m gwinc.test -t 100e-6 -k Seismic -k "Substrate Thermo-Elastic" A+ -p -s A+_test.png
+  - python3 -m gwinc.test -t 100e-6 -k Seismic -k "Substrate Thermo-Elastic" Aplus -p -s Aplus_test.png
   after_script:
   - rm gitID.txt
   cache:
@@ -29,10 +29,10 @@ test:
     expire_in: 4w
     paths:
     - aLIGO.png
-    - A+.png
+    - Aplus.png
     - Voyager.png
     - aLIGO_test.png
-    - A+_test.png
+    - Aplus_test.png
 
 pages:
   stage: deploy
@@ -41,10 +41,10 @@ pages:
   script:
   - mkdir public
   - mv aLIGO.png public/
-  - mv A+.png public/
+  - mv Aplus.png public/
   - mv Voyager.png public/
   - mv aLIGO_test.png public/ || true
-  - mv A+_test.png public/ || true
+  - mv Aplus_test.png public/ || true
   - apt-get install -y -qq python3-pip python3-dev make
   - pip3 install sphinx sphinx-rtd-theme
   - cd docs

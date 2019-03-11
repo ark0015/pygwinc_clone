@@ -12,7 +12,8 @@ import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .. import load_ifo, gwinc
+from .. import load_ifo
+from ..gwinc import gwinc
 from ..gwinc_matlab import gwinc_matlab
 try:
     import inspiral_range
@@ -57,7 +58,7 @@ def main():
     args = parser.parse_args()
 
     logging.info("loading IFO '{}'...".format(args.IFO))
-    ifo = load_ifo(args.IFO)
+    Budget, ifo, freq, plot_style = load_ifo(args.IFO)
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 

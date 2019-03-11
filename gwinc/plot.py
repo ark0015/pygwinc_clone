@@ -1,91 +1,19 @@
 from numpy import sqrt
 
-PRIORITY_MAP = {
-    'Quantum Vacuum': 0,
-    'Seismic': 1,
-    'Newtonian Gravity': 2,
-    'Suspension Thermal': 3,
-    'Coating Brownian': 4,
-    'Coating Thermo-Optic': 5,
-    'ITM Thermo-Refractive': 6,
-    'ITM Carrier Density': 7,
-    'Substrate Brownian': 8,
-    'Substrate Thermo-Elastic': 9,
-    'Excess Gas': 10,
-}
-
-STYLE_MAP = {
-    'Quantum Vacuum': dict(
-        # color = 'xkcd:vibrant purple',
-        color = '#ad03de',
-    ),
-    'Seismic': dict(
-        # color = 'xkcd:brown',
-        color = '#653700',
-    ),
-    'Newtonian Gravity': dict(
-        # color = 'xkcd:green',
-        color = '#15b01a',
-    ),
-    'Atmospheric Infrasound': dict(
-        # color = 'xkcd:neon green',
-        color = '#0cff0c',
-        ls = '--',
-    ),
-    'Suspension Thermal': dict(
-        # color = 'xkcd:deep sky blue',
-        color = '#0d75f8',
-    ),
-    'Coating Brownian': dict(
-        # color = 'xkcd:fire engine red',
-        color = '#fe0002',
-    ),
-    'Coating Thermo-Optic': dict(
-        # color = 'xkcd:bright sky blue',
-        color = '#02ccfe',
-        ls = '--',
-    ),
-    'ITM Thermo-Refractive': dict(
-        # color = 'xkcd:dark sky blue',
-        color = '#448ee4',
-        ls = '--',
-    ),
-    'ITM Carrier Density': dict(
-        # color = 'xkcd:grey',
-        color = '#929591',
-        ls = '--',
-    ),
-    'Substrate Brownian': dict(
-        # color = 'xkcd:pumpkin orange',
-        color = '#fb7d07',
-        ls = '--',
-    ),
-    'Substrate Thermo-Elastic': dict(
-        # color = 'xkcd:golden',
-        color = '#f5bf03',
-        ls = '--',
-    ),
-    'Excess Gas': dict(
-        # color = 'xkcd:baby shit brown',
-        color = '#ad900d',
-        ls = '--',
-    ),
-}
-
 
 def plot_noise(
-        noises,
+        freq,
+        traces,
         ax=None,
+        **kwargs
 ):
     """Plot a GWINC noise budget from calculated noises
 
     If an axis handle is provided it will be used for the plot.
 
-    Returns the figure handle used.
+    Returns the figure handle.
 
     """
-    f = noises['Freq']
-
     if ax is None:
         import matplotlib.pyplot as plt
         fig = plt.figure()
@@ -93,31 +21,27 @@ def plot_noise(
     else:
         fig = ax.figure
 
-    def plot_dict(noises):
-        #use sorted to force a consistent ordering
-        #The key lambda in sorted gets the (name, noise) pair and so nn[0] returns the name
-        #the return tuple causes sorting by priority, with a fallback to lexical sort on the name
-        for name, noise in sorted(noises.items(), key = lambda nn : (PRIORITY_MAP.get(nn[0], 100), nn[0])):
-            if name in ['Freq', 'Total']:
-                continue
-            if isinstance(noise, dict):
-                plot_dict(noise)
-            else:
-                noise = noises[name]
-                stylekw = dict(
-                    color = (0, 0, 0),
-                    label = name,
-                    lw = 3,
-                )
-                try:
-                    style = STYLE_MAP[name]
-                    stylekw.update(style)
-                except KeyError:
-                    pass
-                ax.loglog(f, sqrt(noise), **stylekw)
-    plot_dict(noises)
-
-    ax.loglog(f, sqrt(noises['Total']), color='#000000', alpha=0.6, label='Total', lw=4)
+    for name, trace in traces.items():
+        if isinstance(trace, dict):
+            data, style = trace['Total']
+        else:
+            data, style = trace
+        # assuming all data is PSD
+        data = sqrt(data)
+        if name == 'Total':
+            style = dict(
+                color='#000000',
+                alpha=0.6,
+                lw=4,
+            )
+            ylim = [min(data)/10, max(data)]
+        if 'label' not in style:
+            style['label'] = name
+        if 'linewidth' in style:
+            style['lw'] = style['linewidth']
+        elif 'lw' not in style:
+            style['lw'] = 3
+        ax.loglog(freq, data, **style)
 
     ax.grid(
         True,
@@ -132,9 +56,17 @@ def plot_noise(
         fontsize='small',
     )
 
+    ax.autoscale(enable=True, axis='y', tight=True)
+    if 'ylim' in kwargs:
+        ax.set_ylim(kwargs['ylim'])
+    else:
+        ax.set_ylim(ylim)
+    ax.set_xlim(freq[0], freq[-1])
+
     ax.set_xlabel('Frequency [Hz]')
-    ax.set_ylabel(u"Strain [1/\u221AHz]")
-    ax.set_xlim([min(f), max(f)])
-    ax.set_ylim([3e-25, 1e-21])
+    if 'ylabel' in kwargs:
+        ax.set_ylabel(kwargs['ylabel'])
+    if 'title' in kwargs:
+        ax.set_title(kwargs['title'])
 
     return fig

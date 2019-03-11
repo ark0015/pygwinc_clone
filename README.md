@@ -16,14 +16,11 @@ description is loaded, the noise budget can be calculated and plotted:
 >>> import gwinc
 >>> import numpy as np
 >>> freq = np.logspace(1, 3, 1000)
->>> ifo = gwinc.load_ifo('aLIGO')
+>>> Budget, ifo, freq_, plot_style = gwinc.load_ifo('aLIGO')
 >>> ifo = gwinc.precompIFO(freq, ifo)
->>> noises = gwinc.noise_calc(freq, ifo)
->>> gwinc.plot_noise(noises)
-```
-Or the `gwinc` convenience function can be used to handle it all:
-```
->>> score, data, ifo = gwinc.gwinc(freq, ifo, plot=True)
+>>> traces = Budget(freq, ifo=ifo).calc_trace()
+>>> fig = gwinc.plot_noise(freq, traces, **plot_style)
+>>> fig.show()
 ```
 
 
@@ -32,39 +29,7 @@ Or the `gwinc` convenience function can be used to handle it all:
 You can make gwinc plots directly from the command line by executing
 the package directly:
 ```shell
-$ python3 -m gwinc -h
-usage: gwinc [-h] [--flo FLO] [--fhi FHI] [--npoints NPOINTS] [--title TITLE]
-             [--matlab] [--fom FOM] [--dump | --save SAVE | --interactive]
-             [IFO]
-
-Plot GWINC noise budget for specified IFO.
-
-If the inspiral_range package is installed, various figures of merit
-can be calculated for the resultant spectrum with the --fom argument,
-e.g.:
-
-  gwinc --fom horizon ...
-  gwinc --fom range:m1=20,m2=20 ...
-
-See documentation for inspiral_range package for details.
-
-positional arguments:
-  IFO                   IFO name or description file path (.yaml or .mat)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --flo FLO, -fl FLO    lower frequency bound in Hz [5]
-  --fhi FHI, --fh FHI   upper frequency bound in Hz [6000]
-  --npoints NPOINTS, -n NPOINTS
-                        number of frequency points [3000]
-  --title TITLE, -t TITLE
-                        plot title
-  --matlab, -m          use MATLAB gwinc engine to calculate noises
-  --fom FOM             calculate inspiral range for resultant spectrum
-                        ('func[:param=val,param=val]')
-  --dump, -d            print IFO parameters to stdout and exit
-  --save SAVE, -s SAVE  save figure to file
-  --interactive, -i     open interactive shell when plotting
+$ python3 -m gwinc aLIGO
 ```
 
 
@@ -78,6 +43,51 @@ various detectors:
 * [aLIGO.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO.yaml)
 * [A+.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/A+.yaml)
 * [Voyager.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager.yaml)
+
+
+
+## noise budgets
+
+
+GWINC provides an `nb` package for defining arbitrary noise budgets:
+
+```python
+import numpy as np
+from gwinc import nb
+from gwinc import noise
+
+class ExcessGas(nb.Noise):
+    """Excess gas"""
+    style = dict(
+        label='Excess Gas',
+        color='#ad900d',
+        linestyle='--',
+    )
+
+    def calc(self):
+        return noise.residualgas.gas(self.freq, self.ifo)
+
+class MeasuredNoise(nb.Noise):
+    """My measured noise"""
+    style = dict(
+        label='Measured Noise,
+        color='#838209,
+        linestyle='-',
+    )
+
+    def load(self):
+        psd, freq = np.loadtxt('/path/to/measured/psd.txt')
+        self.data = self.interpolate(f, psd)
+
+    def calc(self):
+        return self.data
+
+class MyBudget(nb.Budget):
+    noises = [
+        ExcessGas,
+        MeasuredNoise,
+    ]
+```
 
 
 ## comparison with MATLAB gwinc
