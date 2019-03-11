@@ -29,7 +29,7 @@ def noise_calc(f, ifo):
     noises['Coating Thermo-Optic'] = noise.coatingthermal.thermooptic(f, ifo)
     noises['Substrate Thermo-Elastic']  = noise.substratethermal.subtherm(f, ifo)
     noises['Substrate Brownian']  = noise.substratethermal.subbrownian(f, ifo)
-    noises['Seismic'] = noise.seismic.seismic(f, ifo)[0]
+    noises['Seismic'] = noise.seismic.seismic(f, ifo)
     noises['Newtonian Gravity']  = noise.newtonian.gravg(f, ifo)
     noises['Excess Gas']  = noise.residualgas.gas(f, ifo)
 
