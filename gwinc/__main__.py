@@ -64,8 +64,6 @@ parser.add_argument('--title', '-t',
                     help="plot title")
 parser.add_argument('--fom',
                     help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
-parser.add_argument('--no-displacement', '-nd', action='store_false', dest='displacement',
-                   help="suppress displacement sensitivity axis")
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--interactive', '-i', action='store_true',
                    help="interactive plot with interactive shell")
@@ -214,7 +212,7 @@ You may interact with plot using "plt." methods, e.g.:
 >>> plt.savefig("foo.pdf")
 ''')
         ipshell.enable_pylab()
-        ipshell.run_code("plot_noise(ifo, noises)")
+        ipshell.run_code("plot_noise(noises)")
         ipshell.run_code("plt.title('{}')".format(title))
         ipshell()
 
@@ -224,10 +222,8 @@ You may interact with plot using "plt." methods, e.g.:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
-            ifo,
             noises,
             ax=ax,
-            displacement=args.displacement,
         )
         ax.set_title(title)
         fig.tight_layout()

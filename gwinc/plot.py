@@ -74,16 +74,12 @@ STYLE_MAP = {
 
 
 def plot_noise(
-        ifo,
         noises,
         ax=None,
-        displacement=True,
 ):
     """Plot a GWINC noise budget from calculated noises
 
     If an axis handle is provided it will be used for the plot.
-    `displacement` may be set to False to supress the right had
-    displacement axis.
 
     Returns the figure handle used.
 
@@ -140,12 +136,5 @@ def plot_noise(
     ax.set_ylabel(u"Strain [1/\u221AHz]")
     ax.set_xlim([min(f), max(f)])
     ax.set_ylim([3e-25, 1e-21])
-
-    if displacement:
-        ax_d = ax.twinx()
-        ax_d.set_yscale('log')
-        y1, y2 = ax.get_ylim()
-        ax_d.set_ylim(y1*ifo.Infrastructure.Length, y2*ifo.Infrastructure.Length)
-        ax_d.set_ylabel(u"Displacement [m/\u221AHz]")
 
     return fig
