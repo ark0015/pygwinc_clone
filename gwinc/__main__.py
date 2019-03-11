@@ -11,8 +11,7 @@ logging.basicConfig(format='%(message)s',
 
 from .ifo import available_ifos, load_ifo
 from .precomp import precompIFO
-from .gwinc import gwinc as pygwinc
-from . import gwinc_matlab
+from . import gwinc
 from . import plot_noise
 from . import util
 
@@ -63,8 +62,6 @@ parser.add_argument('--npoints', '-n', default=NPOINTS,
                     help="number of frequency points [{}]".format(NPOINTS))
 parser.add_argument('--title', '-t',
                     help="plot title")
-parser.add_argument('--matlab', '-m', action='store_true',
-                    help="use MATLAB gwinc engine to calculate noises")
 parser.add_argument('--fom',
                     help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
 parser.add_argument('--no-displacement', '-nd', action='store_false', dest='displacement',
@@ -139,11 +136,6 @@ def main():
         except RuntimeError:
             logging.warning("no display, plotting disabled.")
             args.plot = False
-
-    if args.matlab:
-        gwinc = gwinc_matlab.gwinc_matlab
-    else:
-        gwinc = pygwinc
 
     if args.fom:
         import inspiral_range
