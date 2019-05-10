@@ -1,4 +1,4 @@
-# GWINC CE interferometer parameters (cryogenic)
+# GWINC CE2 interferometer parameters
 
 # parameters for quad pendulum suspension updated 3rd May 2006, NAR
 # References:
@@ -28,7 +28,7 @@
 # * 14. Braginsky
 
 Infrastructure:
-  Length: 39950 # m; whoa
+  Length: 40000 # m
   Temp: 295 # K; Temperature of the Vacuum
   ResidualGas:
     pressure: 4.0e-7         # Pa
@@ -72,7 +72,7 @@ Seismic:
   LowFrequencyLevel: 1e-9          # m/rtHz; seismic noise level below f_knee
   Gamma: 0.8                       # abruptness of change at f_knee
   Rho: 1.8e3                       # kg/m^3; density of the ground nearby
-  Beta: 0.8                        # quiet times beta = 0.35-0.60; noisy times beta = 0.15-1.4
+  Beta: 0.6                        # quiet times beta = 0.35-0.60; noisy times beta = 0.15-1.4
   Omicron: 10                      # Feedforward cancellation factor
   TestMassHeight: 1.5              # m
   RayleighWaveSpeed: 250           # m/s
@@ -80,19 +80,13 @@ Seismic:
 
 Suspension:
   Type: 'BQuad'
-  # Suspension fiber temperatures [TOP UIM PUM TST]
-  Temp:
-    - 300.0
-    - 300.0
-    - 300.0
-    - 123.0
   VHCoupling:
-    theta: 1e-3 # vertical-horizontal x-coupling
+    theta: 6.2e-3 # 6.2e-3 # vertical-horizontal x-coupling
   FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
-    Thickness: 115e-6 # m
-    Width: 1150e-6    # m
+    Thickness: 325e-6 # 130e-6 # m
+    Width: 3250e-6 # 1300e-6    # m
   Fiber:
     Radius: 205e-6    # m
   BreakStress: 750e6 # Pa; ref. K. Strain
@@ -101,38 +95,38 @@ Suspension:
   Stage:
     # Load saved file with otpimized mass. Masses are optimized for longitudinal isolation assuming the PUM has springs
     #susmat = loadmat('CryogenicLIGO/QuadModel/quad_optimized_masses_for_PUM_with_springs.mat')
-    - Mass: 200.0 # kg; susmat['testmass_mass'][0,0]
-      Length: 0.4105 # m
+    - Mass: 316.8 # kg; susmat['testmass_mass'][0,0]
+      Length: 1.18 # m
+      Temp: 123.0
       Dilution: .nan
-      K: .nan
+      K: 8000 # .nan
       WireRadius: .nan
-      Blade: .nan # blade thickness
+      Blade: 0.0042 # .nan # blade thickness
       NWires: 4
-      Temp: 300
-    - Mass: 65.9 # kg; susmat['PUMmass'][0,0]
-      Length: 0.4105 # m
+    - Mass: 316.8 # kg; susmat['PUMmass'][0,0]
+      Length: 0.682 # m
+      Temp: 123.0
       Dilution: 106.0
-      K: 5200.0 # N/m; vertical spring constant
-      WireRadius: 310e-6
-      Blade: 4200e-6
+      K: 41600 # 17300.0 # N/m; vertical spring constant
+      WireRadius: 877e-6
+      Blade: 0.0119
       NWires: 4
-      Temp: 300
-    - Mass: 87.6 # kg; susmat['UIMmass'][0,0]
-      Length: 0.4105 # m
+    - Mass: 174.4 # kg; susmat['UIMmass'][0,0]
+      Length: 0.554 # m
+      Temp: 300.0
       Dilution: 80.0
-      K: 3900.0 # N/m; vertical spring constant
-      WireRadius: 350e-6
-      Blade: 4600e-6
+      K: 31200 # 13500.0 # N/m; vertical spring constant
+      WireRadius: 990e-6
+      Blade: 0.0130
       NWires: 4
-      Temp: 300
-    - Mass: 116.5 # kg; susmat['topmass_mass'][0,0]
-      Length: 0.4105 # m
+    - Mass: 176.8 # kg; susmat['topmass_mass'][0,0]
+      Length: 0.832 # m
+      Temp: 300.0
       Dilution: 87.0
-      K: 3400.0 # N/m; vertical spring constant
-      WireRadius: 520e-6
-      Blade: 4300e-6
+      K: 27200.0 # N/m; vertical spring constant
+      WireRadius: 1471e-6
+      Blade: 0.0121
       NWires: 2
-      Temp: 123
   Silicon:
     # http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html
     # all properties should be for T ~ 120 K
@@ -148,7 +142,6 @@ Suspension:
     Phi: 2e-9         # Nawrodt (2010)      loss angle  1/Q
     Y: 155.8e9        # Pa       Youngs Modulus
     Dissdepth: 1.5e-3 # 10x smaller surface loss depth (Nawrodt (2010))
-    FiberType: 1      # 0 = round, 1 = ribbons
   Silica:
     Rho: 2200.0       # Kg/m^3
     C: 772.0          # J/Kg/K
@@ -230,12 +223,12 @@ Materials:
     ElectronIndexGamma: -8.8e-28 # m**3; dependence of index of refraction on electron carrier density
     HoleIndexGamma: -1.02e-27 # m**3; dependence of index of refraction on hole carrier density
 
-  MassRadius: 0.225 # m; 45 cm mCZ silicon
-  MassThickness: 0.55
+  MassRadius: 0.4 # m; 80 cm mCZ silicon
+  MassThickness: 0.286
 
 Laser:
   Wavelength: 1550e-9 # m
-  Power: 400     # W zz['x'][0][0]
+  Power: 220     # W zz['x'][0][0]
 
 Optics:
   Type: 'SignalRecycled'
@@ -250,9 +243,9 @@ Optics:
   # zz = loadmat('CryogenicLIGO/Sensitivity/GWINC/optRuns/' + qopt_mat)
   ITM:
     SubstrateAbsorption: 1e-3   # 1/m; 10 ppm/cm for MCZ Si
-    BeamRadius: 0.16            # m; 1/e^2 power radius w1
-    CoatingAbsorption: 1e-6     # absorption of ITM
-    Transmittance: 1.2436875e-3 # zz['x'][0][3]
+    BeamRadius: 0.141            # m; 1/e^2 power radius w1
+    CoatingAbsorption: 0.5e-6     # absorption of ITM
+    Transmittance: 0.014        # zz['x'][0][3]
     #CoatingThicknessLown: 0.308
     #CoatingThicknessCap: 0.5
     #itm = loadmat('CryogenicLIGO/Sensitivity/coating/aSi/Data/ITM_layers_151221_2237.mat')
@@ -271,7 +264,7 @@ Optics:
       - 0.3867382
       - 0.08814237
   ETM:
-    BeamRadius: 0.16                   # m; 1/e^2 power radius w2
+    BeamRadius: 0.141                 # m; 1/e^2 power radius w2
     Transmittance: 5e-6                # Transmittance of ETM
     #CoatingThicknessLown: 0.27
     #CoatingThicknessCap: 0.5
@@ -301,18 +294,18 @@ Optics:
     Transmittance: 0.02        # zz['x'][0][4]
     #ifo.Optics.SRM.Tunephase = 0.23;           % SRM tuning, 795 Hz narrowband
     Tunephase: 0.0             # SRM tuning [radians]
-  PhotoDetectorEfficiency: 0.95 # photo-detector quantum efficiency
-  Loss: 10e-6                  # average per mirror power loss
+  PhotoDetectorEfficiency: 0.96 # photo-detector quantum efficiency
+  Loss: 20e-6                  # average per mirror power loss
   # factor of 4 for 1064 -> 2000
-  BSLoss: 0.5e-3               # power loss near beamsplitter
+  BSLoss: 0.1e-3               # power loss near beamsplitter
   coupling: 1.0                # mismatch btwn arms & SRC modes; used to calculate an effective r_srm
   Curvature:
-    ITM: 30000                 # RoC of ITM
-    ETM: 30000                 # RoC of ETM
-  SubstrateAbsorption: 0.3e-4  # 1/m; 0.3 ppm/cm for Hereaus
+    ITM: 34783                 # RoC of ITM
+    ETM: 34783                 # RoC of ETM
+  SubstrateAbsorption: 0.5e-4  # 1/m; 0.3 ppm/cm for Hereaus
   pcrit: 10                    # W; tolerable heating power (factor 1 ATC)
   Quadrature:
-    dc: 1.556827               # homoDyne phase [radians] zz['x'][0][5]
+    dc: 1.5708               # homoDyne phase [radians] zz['x'][0][5]
 
 Squeezer:
   # Define the squeezing you want:
@@ -322,17 +315,17 @@ Squeezer:
   #   Optimal = find the best squeeze angle, assuming no output filtering
   #   OptimalOptimal = optimal squeeze angle, assuming optimal readout phase
   Type: 'Freq Dependent'
-  AmplitudedB: 10                  # SQZ amplitude [dB]
-  InjectionLoss: 0.05              # power loss to sqz
+  AmplitudedB: 15                  # SQZ amplitude [dB]
+  InjectionLoss: 0.02              # power loss to sqz
   SQZAngle: 0                      # SQZ phase [radians]
 
   # Parameters for frequency dependent squeezing
   FilterCavity:
-    fdetune: -36.44897 # detuning [Hz] zz['x'][0][1]
-    L: 300            # cavity length [m]
-    Ti: 0.00090274    # input mirror trasmission [Power] zz['x'][0][2]
-    Te: 0e-6          # end mirror trasmission
-    Lrt: 10e-6        # round-trip loss in the cavity
+    fdetune: -4.9993  # detuning [Hz] zz['x'][0][1]
+    L: 4000           # cavity length [m]
+    Ti: 0.0016836     # input mirror trasmission [Power] zz['x'][0][2]
+    Te: 5e-6          # end mirror trasmission
+    Lrt: 150e-6       # round-trip loss in the cavity
     Rot: 0            # phase rotation after cavity
 
   ## Variational Output Parameters
