@@ -28,7 +28,7 @@
 # * 14. Braginsky
 
 Infrastructure:
-  Length: 40000 # m
+  Length: 40000 # m; whoa
   Temp: 295 # K; Temperature of the Vacuum
   ResidualGas:
     pressure: 4.0e-7         # Pa
@@ -81,14 +81,14 @@ Seismic:
 Suspension:
   Type: 'BQuad'
   VHCoupling:
-    theta: 6.2e-3 # 6.2e-3 # vertical-horizontal x-coupling
+    theta: 6.2e-3 # vertical-horizontal x-coupling
   FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
-    Thickness: 325e-6 # 130e-6 # m
-    Width: 3250e-6 # 1300e-6    # m
+    Thickness: 325e-6 # m
+    Width: 3250e-6 # m
   Fiber:
-    Radius: 205e-6    # m
+    Radius: 205e-6 # m
   BreakStress: 750e6 # Pa; ref. K. Strain
   # Note stage numbering: mirror is at beginning of stack, not end
   # these mass numbers are from v8 of the Voyager design doc
@@ -99,15 +99,15 @@ Suspension:
       Length: 1.18 # m
       Temp: 123.0
       Dilution: .nan
-      K: 8000 # .nan
+      K: 8000
       WireRadius: .nan
-      Blade: 0.0042 # .nan # blade thickness
+      Blade: 0.0042 # blade thickness
       NWires: 4
     - Mass: 316.8 # kg; susmat['PUMmass'][0,0]
       Length: 0.682 # m
       Temp: 123.0
       Dilution: 106.0
-      K: 41600 # 17300.0 # N/m; vertical spring constant
+      K: 41600 # N/m; vertical spring constant
       WireRadius: 877e-6
       Blade: 0.0119
       NWires: 4
@@ -115,7 +115,7 @@ Suspension:
       Length: 0.554 # m
       Temp: 300.0
       Dilution: 80.0
-      K: 31200 # 13500.0 # N/m; vertical spring constant
+      K: 31200 # N/m; vertical spring constant
       WireRadius: 990e-6
       Blade: 0.0130
       NWires: 4
@@ -242,10 +242,10 @@ Optics:
   # qopt_mat = sorted(os.listdir('CryogenicLIGO/Sensitivity/GWINC/optRuns'))[-1]
   # zz = loadmat('CryogenicLIGO/Sensitivity/GWINC/optRuns/' + qopt_mat)
   ITM:
-    SubstrateAbsorption: 1e-3   # 1/m; 10 ppm/cm for MCZ Si
-    BeamRadius: 0.141            # m; 1/e^2 power radius w1
+    SubstrateAbsorption: 1e-3     # 1/m; 10 ppm/cm for MCZ Si
+    BeamRadius: 0.141             # m; 1/e^2 power radius w1
     CoatingAbsorption: 0.5e-6     # absorption of ITM
-    Transmittance: 0.014        # zz['x'][0][3]
+    Transmittance: 0.014          # zz['x'][0][3]
     #CoatingThicknessLown: 0.308
     #CoatingThicknessCap: 0.5
     #itm = loadmat('CryogenicLIGO/Sensitivity/coating/aSi/Data/ITM_layers_151221_2237.mat')
@@ -264,7 +264,7 @@ Optics:
       - 0.3867382
       - 0.08814237
   ETM:
-    BeamRadius: 0.141                 # m; 1/e^2 power radius w2
+    BeamRadius: 0.141                  # m; 1/e^2 power radius w2
     Transmittance: 5e-6                # Transmittance of ETM
     #CoatingThicknessLown: 0.27
     #CoatingThicknessCap: 0.5
