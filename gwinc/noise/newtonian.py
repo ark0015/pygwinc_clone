@@ -68,3 +68,34 @@ def gravg(f, ifo):
     n /= (omicron**2)
 
     return n * ifo.gwinc.sinc_sqr
+
+def atmois(f, ifo):
+    import scipy.special as scisp
+
+    a_if = ifo.Atmospheric.InfrasoundLevel1Hz
+    e_if = ifo.Atmospheric.InfrasoundExponent
+    p_air = ifo.Atmospheric.AirPressure
+    rho_air = ifo.Atmospheric.AirDensity
+    ai_air = ifo.Atmospheric.AdiabaticIndex
+    c_sound = ifo.Atmospheric.SoundSpeed
+
+    L = ifo.Infrastructure.Length
+    ggcst = scipy.constants.G
+    h = ifo.Seismic.TestMassHeight
+
+    w = 2 * pi * f
+    k = w / c_sound
+
+    # Pressure spectrum
+    psd_if = (a_if * f**e_if)**2
+
+    # Harms LRR (2015), eq. 172
+    # https://doi.org/10.1007/lrr-2015-3
+    # With an extra factor 2 for two arms
+    # And with the Bessel terms ignored... for 4 km this amounts to a 10%
+    # correction at 10 Hz and a 30% correction at 1 Hz
+    coupling_if = 4./3 * (4 * pi / (k * L * w**2) * ggcst * rho_air / (ai_air * p_air))**2
+
+    n_if = coupling_if * psd_if
+
+    return n_if * ifo.gwinc.sinc_sqr

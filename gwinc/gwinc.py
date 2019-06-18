@@ -38,6 +38,10 @@ def noise_calc(f, ifo):
         noises['ITM Thermo-Refractive'] = noise.substratethermal.thermorefractiveITM(f, ifo)
         noises['ITM Carrier Density'] = noise.substratethermal.carrierdensity(f, ifo)
 
+    # calc atmospheric noise sources, if desired
+    if 'Atmospheric' in ifo:
+        noises['Atmospheric Infrasound']  = noise.newtonian.atmois(f, ifo)
+
     # adjust noise curves for multiple bounces - for resonant delay lines
     # Brownian noise scales as Neff (correlation-corrected spot number)
     # Displacement noises scale as N^2
@@ -55,6 +59,8 @@ def noise_calc(f, ifo):
             noises['Newtonian Gravity'] *= N**2
             noises['Seismic'] *= N**2
             noises['Coating Thermo-Optic'] *= N
+            if 'Atmospheric Infrasound' in noises:
+                noises['Atmospheric Infrasound'] *= N**2
         else:
             N = ifo.Infrastructure.NFolded
             sep_w = ifo.Infrastructure.DelayLineSpotSeparation
@@ -68,6 +74,8 @@ def noise_calc(f, ifo):
             noises['Newtonian Gravity'] *= Ndispl**2
             noises['Seismic'] *= Ndispl**2
             noises['Coating Thermo-Optic'] *= N_TO
+            if 'Atmospheric Infrasound' in noises:
+                noises['Atmospheric Infrasound'] *= Ndispl**2
         #noises['Mirror Thermal'] = noises['Substrate Brownian'] + noises['Coating Brownian'] + \
         #                           noises['Substrate Thermo-Elastic'] + noises['Coating Thermo-Optic'] # total mirror thermal
 

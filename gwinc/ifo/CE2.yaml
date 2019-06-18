@@ -78,6 +78,14 @@ Seismic:
   RayleighWaveSpeed: 250           # m/s
   #darmSeiSusFile: 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
+Atmospheric:
+  InfrasoundLevel1Hz: 0.01 # Pa/rtHz
+  InfrasoundExponent: -1
+  AirPressure: 101325 # Pa
+  AirDensity: 1.225 # kg/m**3
+  AdiabaticIndex: 1.4
+  SoundSpeed: 344 # m/s
+
 Suspension:
   Type: 'BQuad'
   VHCoupling:

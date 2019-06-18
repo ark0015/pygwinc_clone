@@ -27,6 +27,11 @@ STYLE_MAP = {
         # color = 'xkcd:green',
         color = '#15b01a',
     ),
+    'Atmospheric Infrasound': dict(
+        # color = 'xkcd:neon green',
+        color = '#0cff0c',
+        ls = '--',
+    ),
     'Suspension Thermal': dict(
         # color = 'xkcd:deep sky blue',
         color = '#0d75f8',
