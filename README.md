@@ -43,7 +43,7 @@ package/module, .yaml YAML file, and MATLAB gwinc .mat or .m files.
 * [aLIGO](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO)
 * [A+](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Aplus)
 * [Voyager](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager)
-* [Cosmic Explorer](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO)
+* [Cosmic Explorer](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/CE)
 
 
 ## noise budgets
