@@ -35,15 +35,15 @@ $ python3 -m gwinc aLIGO
 
 ## detector description files
 
-`pygwinc` can load detector descriptions in different formats: the new
-YAML .yaml format, the original MATLAB gwinc .mat format, or even from
-a MATLAB .m file.  `pygwinc` includes .yaml detector descriptions for
-various detectors:
+`pygwinc` can load budget descriptions in different formats: python
+package/module, .yaml YAML file, and MATLAB gwinc .mat or .m files.
 
-* [aLIGO.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO.yaml)
-* [A+.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/A+.yaml)
-* [Voyager.yaml](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager.yaml)
+`pygwinc` includes budgets for various canonical detectors:
 
+* [aLIGO](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO)
+* [A+](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Aplus)
+* [Voyager](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/Voyager)
+* [Cosmic Explorer](https://git.ligo.org/gwinc/pygwinc/blob/master/gwinc/ifo/aLIGO)
 
 
 ## noise budgets
@@ -56,6 +56,7 @@ import numpy as np
 from gwinc import nb
 from gwinc import noise
 
+
 class ExcessGas(nb.Noise):
     """Excess gas"""
     style = dict(
@@ -66,6 +67,7 @@ class ExcessGas(nb.Noise):
 
     def calc(self):
         return noise.residualgas.gas(self.freq, self.ifo)
+
 
 class MeasuredNoise(nb.Noise):
     """My measured noise"""
@@ -81,6 +83,7 @@ class MeasuredNoise(nb.Noise):
 
     def calc(self):
         return self.data
+
 
 class MyBudget(nb.Budget):
     noises = [
