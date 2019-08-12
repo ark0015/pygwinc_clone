@@ -1,20 +1,17 @@
 from gwinc.ifo.noises import *
 
 
-class CE(nb.Budget):
+class CE1(nb.Budget):
 
-    name = 'Cosmic Explorer'
+    name = 'Cosmic Explorer 1'
 
     noises = [
         QuantumVacuum,
         Seismic,
         Newtonian,
-        AtmosphericInfrasound,
         SuspensionThermal,
         CoatingBrownian,
         CoatingThermoOptic,
-        ITMThermoRefractive,
-        ITMCarrierDensity,
         SubstrateBrownian,
         SubstrateThermoElastic,
         ExcessGas,
