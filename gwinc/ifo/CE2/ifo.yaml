@@ -28,8 +28,8 @@
 # * 14. Braginsky
 
 Infrastructure:
-  Length: 40000 # m; whoa
-  Temp: 295 # K; Temperature of the Vacuum
+  Length: 40000              # m; whoa
+  Temp: 293                  # K; Temperature of the Vacuum
   ResidualGas:
     pressure: 4.0e-7         # Pa
     mass: 3.35e-27           # kg,   Mass of H_2 (ref. 10)
