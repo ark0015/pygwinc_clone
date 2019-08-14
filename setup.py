@@ -28,10 +28,11 @@ setup_args = dict(
     ],
 
     install_requires = [
-        'numpy',
-        'scipy',
         'h5py',
         'matplotlib',
+        'numpy',
+        'pyyaml',
+        'scipy',
     ],
 
     packages = find_packages(
