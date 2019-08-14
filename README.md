@@ -72,8 +72,8 @@ class ExcessGas(nb.Noise):
 class MeasuredNoise(nb.Noise):
     """My measured noise"""
     style = dict(
-        label='Measured Noise,
-        color='#838209,
+        label='Measured Noise',
+        color='#838209',
         linestyle='-',
     )
 
