@@ -21,6 +21,8 @@ def plot_noise(
     else:
         fig = ax.figure
 
+    ylim = kwargs.get('ylim')
+
     for name, trace in traces.items():
         try:
             data, style = trace
@@ -58,9 +60,7 @@ def plot_noise(
     )
 
     ax.autoscale(enable=True, axis='y', tight=True)
-    if 'ylim' in kwargs:
-        ax.set_ylim(kwargs['ylim'])
-    else:
+    if ylim:
         ax.set_ylim(ylim)
     ax.set_xlim(freq[0], freq[-1])
 
