@@ -21,10 +21,8 @@ def carrierdensity_adiabatic(f, ifo):
     diffHole = ifo.Materials.Substrate.HoleDiffusion
     cdDens = ifo.Materials.Substrate.CarrierDensity
     r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
-    T = ifo.Optics.ITM.Transmittance
     L = ifo.Infrastructure.Length
-    Finesse = 2*pi/T
-    gPhase = 2*Finesse/pi
+    gPhase = ifo.gwinc.finesse*2/pi
 
     psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*Omega**2) # units are meters
     psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*Omega**2) # units are meters
@@ -53,12 +51,7 @@ def carrierdensity_exact(f, ifo):
     cdDens = ifo.Materials.Substrate.CarrierDensity
     gammaElec = ifo.Materials.Substrate.ElectronIndexGamma
     gammaHole = ifo.Materials.Substrate.HoleIndexGamma
-
-    T = ifo.Optics.ITM.Transmittance
-    FSR = c/(2*L) # in Hz
-    Finesse = 2*pi/T
-    cavPole = FSR/(2*Finesse) # in Hz
-    gPhase = 2*Finesse/pi
+    gPhase = ifo.gwinc.finesse*2/pi
 
     omega = 2*pi*f
 
@@ -99,9 +92,7 @@ def thermorefractiveITM_adiabatic(f, ifo):
     kBT = scipy.constants.k * Temp
     r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
     L = ifo.Infrastructure.Length
-    T = ifo.Optics.ITM.Transmittance
-    Finesse = 2*pi/T
-    gPhase = 2*Finesse/pi
+    gPhase = ifo.gwinc.finesse*2/pi
 
     psd = 4*H*beta**2*kappa*kBT*Temp/(pi*r0**4*Omega**2*(rho*C)**2) # units are meters
     psdMeters = 2*psd # two ITMs
@@ -127,13 +118,8 @@ def thermorefractiveITM_exact(f, ifo):
     beta = ifo.Materials.Substrate.dndT
     C = ifo.Materials.Substrate.MassCM
     kappa = ifo.Materials.Substrate.MassKappa
-    
-    T = ifo.Optics.ITM.Transmittance
-    FSR = c/(2*L) # in Hz
-    Finesse = 2*pi/T
-    #cavPole = FSR/(2*Finesse) # in Hz
-    #gPhase = 2*Finesse/pi * (1 + (f/cavPole)**2)**(-1/2)
-    gPhase = 2*Finesse/pi
+
+    gPhase = ifo.gwinc.finesse*2/pi
 
     omega = 2*pi*f
     
