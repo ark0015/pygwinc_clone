@@ -22,10 +22,11 @@ def plot_noise(
         fig = ax.figure
 
     for name, trace in traces.items():
-        if isinstance(trace, dict):
-            data, style = trace['Total']
-        else:
+        try:
             data, style = trace
+        except:
+            data = trace
+            style = {}
         # assuming all data is PSD
         data = sqrt(data)
         if name == 'Total':
