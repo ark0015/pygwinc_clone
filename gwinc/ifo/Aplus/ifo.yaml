@@ -57,7 +57,7 @@ TCS:
   # compensating this loss. Thus as a simple Ansatz we define the
   # TCS efficiency TCSeff as the reduction in effective power that produces
   # a phase distortion. E.g. TCSeff=0.99 means that the compensated distortion
-  # of 1 Watt absorbed is eqivalent to the uncompensated distortion of 10mWatt.
+  # of 1 Watt absorbed is equivalent to the uncompensated distortion of 10mWatt.
   # The above formula thus becomes:
   # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2 * (1-TCSeff)^2
   #
@@ -269,8 +269,8 @@ Optics:
 ## Squeezer Parameters------------------------------------------------------
 # Define the squeezing you want:
 #   None: ignore the squeezer settings
-#   Freq Independent: nothing special (no filter cavties)
-#   Freq Dependent = applies the specified filter cavites
+#   Freq Independent: nothing special (no filter cavities)
+#   Freq Dependent = applies the specified filter cavities
 #   Optimal = find the best squeeze angle, assuming no output filtering
 #   OptimalOptimal = optimal squeeze angle, assuming optimal readout phase
 Squeezer:
@@ -283,8 +283,8 @@ Squeezer:
   # Parameters for frequency dependent squeezing
   FilterCavity:
     L: 300                        # cavity length
-    Te: 1e-6                      # end mirror trasmission
+    Te: 1e-6                      # end mirror transmission
     Lrt: 60e-6                    # round-trip loss in the cavity
     Rot: 0                        # phase rotation after cavity
     fdetune: -45.78               # detuning [Hz]
-    Ti: 1.2e-3                    # input mirror trasmission [Power]
+    Ti: 1.2e-3                    # input mirror transmission [Power]

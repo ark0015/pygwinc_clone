@@ -56,7 +56,7 @@ TCS:
   # compensating this loss. Thus as a simple Ansatz we define the
   # TCS efficiency TCSeff as the reduction in effective power that produces
   # a phase distortion. E.g. TCSeff=0.99 means that the compensated distortion
-  # of 1 Watt absorbed is eqivalent to the uncompensated distortion of 10mWatt.
+  # of 1 Watt absorbed is equivalent to the uncompensated distortion of 10mWatt.
   # The above formula thus becomes:
   # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2 * (1-TCSeff)^2
   #
@@ -101,8 +101,8 @@ Suspension:
   # Note stage numbering: mirror is at beginning of stack, not end
   # these mass numbers are from v8 of the Voyager design doc
   Stage:
-    # Load saved file with otpimized mass. Masses are optimized for longitudinal isolation assuming the PUM has springs
     #susmat = loadmat('CryogenicLIGO/QuadModel/quad_optimized_masses_for_PUM_with_springs.mat')
+    # Load saved file with optimized mass. Masses are optimized for longitudinal isolation assuming the PUM has springs
     - Mass: 316.8 # kg; susmat['testmass_mass'][0,0]
       Length: 1.18 # m
       Temp: 123.0
@@ -318,8 +318,8 @@ Optics:
 Squeezer:
   # Define the squeezing you want:
   #   None = ignore the squeezer settings
-  #   Freq Independent = nothing special (no filter cavties)
-  #   Freq Dependent = applies the specified filter cavites
+  #   Freq Independent = nothing special (no filter cavities)
+  #   Freq Dependent = applies the specified filter cavities
   #   Optimal = find the best squeeze angle, assuming no output filtering
   #   OptimalOptimal = optimal squeeze angle, assuming optimal readout phase
   Type: 'Freq Dependent'
@@ -331,8 +331,8 @@ Squeezer:
   FilterCavity:
     fdetune: -4.9993  # detuning [Hz] zz['x'][0][1]
     L: 4000           # cavity length [m]
-    Ti: 0.0016836     # input mirror trasmission [Power] zz['x'][0][2]
-    Te: 5e-6          # end mirror trasmission
+    Ti: 0.0016836     # input mirror transmission [Power] zz['x'][0][2]
+    Te: 5e-6          # end mirror transmission
     Lrt: 150e-6       # round-trip loss in the cavity
     Rot: 0            # phase rotation after cavity
 
@@ -346,10 +346,7 @@ Squeezer:
     FilterCavity:
       fdetune: -30   # detuning [Hz]
       L: 4000        # cavity length
-      Ti: 10e-3      # input mirror trasmission [Power]
-      Te: 0          # end mirror trasmission
+      Ti: 10e-3      # input mirror transmission [Power]
+      Te: 0          # end mirror transmission
       Lrt: 100e-6    # round-trip loss in the cavity
       Rot: 0         # phase rotation after cavity
-
-
-

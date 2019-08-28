@@ -57,7 +57,7 @@ TCS:
   # compensating this loss. Thus as a simple Ansatz we define the
   # TCS efficiency TCSeff as the reduction in effective power that produces
   # a phase distortion. E.g. TCSeff=0.99 means that the compensated distortion
-  # of 1 Watt absorbed is eqivalent to the uncompensated distortion of 10mWatt.
+  # of 1 Watt absorbed is equivalent to the uncompensated distortion of 10mWatt.
   # The above formula thus becomes:
   # S= s_cc P_coat^2 + 2*s_cs*P_coat*P_subst + s_ss*P_subst^2 * (1-TCSeff)^2
   #
