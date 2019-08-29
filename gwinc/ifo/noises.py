@@ -24,7 +24,18 @@ class Seismic(nb.Noise):
     )
 
     def calc(self):
-        return noise.seismic.seismic(self.freq, self.ifo)
+        if 'PlatformMotion' in self.ifo.Seismic:
+            if self.ifo.Seismic.PlatformMotion == 'BSC':
+                nt, nr = noise.seismic.seismic_BSC_ISI(self.freq)
+            elif self.ifo.Seismic.PlatformMotion == '6D':
+                nt, nr = noise.seismic.seismic_BSC_ISI_6D(self.freq)
+            else:
+                nt, nr = noise.seismic.seismic_BSC_ISI(self.freq)
+        else:
+            nt, nr = noise.seismic.seismic_BSC_ISI(self.freq)
+        n, nh, nv = noise.seismic.seismic_suspension_fitered(
+            self.ifo.Suspension, nt)
+        return n * 4 * self.ifo.gwinc.dhdl_sqr
 
 
 class Newtonian(nb.Noise):

@@ -4,7 +4,7 @@ import numpy as np
 import scipy.integrate as scint
 
 from numpy import pi, sqrt, exp
-from .seismic import seisNLNM
+from .seismic import seismic_ground_NLNM
 from .. import const
 
 
@@ -131,7 +131,7 @@ def gravg_pwave(f, ifo):
     kP = (2 * pi * f) / cP
 
     rho_ground = ifo.Seismic.Rho
-    psd_ground_pwave = (levelP * seisNLNM(f))**2
+    psd_ground_pwave = (levelP * seismic_ground_NLNM(f))**2
 
     tmheight = ifo.Seismic.TestMassHeight 
     xP = np.abs(kP * tmheight)
@@ -165,7 +165,7 @@ def gravg_swave(f, ifo):
     kS = (2 * pi * f) / cS
 
     rho_ground = ifo.Seismic.Rho
-    psd_ground_swave = (levelS * seisNLNM(f))**2
+    psd_ground_swave = (levelS * seismic_ground_NLNM(f))**2
 
     tmheight = ifo.Seismic.TestMassHeight 
     xS = np.abs(kS * tmheight)
