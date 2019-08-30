@@ -24,16 +24,6 @@ def shotrad(f, ifo):
     #    from .quantum_2mode import shotrad as shotrad_2mode
     #    return shotrad_2mode(f, ifo)
 
-    # deal with multiple bounces, required for resonant delay lines
-    # Stefan Ballmer 2012
-    if 'NFolded' in ifo.Infrastructure:
-        if ifo.Infrastructure.travellingWave:
-            ifo.Materials.MirrorMass=ifo.Materials.MirrorMass/ifo.Infrastructure.NFolded**2
-        else:
-            NN=ifo.Infrastructure.NFolded
-            Ndispl=2 * NN-1
-            ifo.Materials.MirrorMass=ifo.Materials.MirrorMass/Ndispl**2
-
     #####################################################
     # Call IFO Quantum Model
     #####################################################
