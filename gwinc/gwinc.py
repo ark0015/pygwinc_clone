@@ -4,48 +4,10 @@ from numpy import pi, sqrt
 from collections import OrderedDict
 import logging
 
+from . import load_ifo
 from .precomp import precompIFO
 from . import noise
 from .plot import plot_noise
-
-
-def noise_calc(f, ifo):
-    """Calculate all IFO noises and return as dict
-
-    Assumes ifo has already been run through precompIFO().
-
-    """
-    ##############################
-    # suspension transfer function
-    #
-    # used in seismic and susptherm calculations
-    ##############################
-
-    noises = OrderedDict()
-
-    noises['Quantum Vacuum'] = noise.quantum.shotrad(f, ifo)
-    noises['Suspension Thermal']  = noise.suspensionthermal.susptherm(f, ifo)
-    noises['Coating Brownian']  = noise.coatingthermal.coatbrownian(f, ifo)
-    noises['Coating Thermo-Optic'] = noise.coatingthermal.thermooptic(f, ifo)
-    noises['Substrate Thermo-Elastic']  = noise.substratethermal.subtherm(f, ifo)
-    noises['Substrate Brownian']  = noise.substratethermal.subbrownian(f, ifo)
-    noises['Seismic'] = noise.seismic.seismic(f, ifo)
-    noises['Newtonian Gravity']  = noise.newtonian.gravg(f, ifo)
-    noises['Excess Gas']  = noise.residualgas.gas(f, ifo)
-
-    # calc semiconductor noise sources
-    if 'isSemiConductor' in ifo.Materials.Substrate and ifo.Materials.Substrate.isSemiConductor:
-        noises['ITM Thermo-Refractive'] = noise.substratethermal.thermorefractiveITM(f, ifo)
-        noises['ITM Carrier Density'] = noise.substratethermal.carrierdensity(f, ifo)
-
-    # calc atmospheric noise sources, if desired
-    if 'Atmospheric' in ifo:
-        noises['Atmospheric Infrasound']  = noise.newtonian.atmois(f, ifo)
-
-    noises['Total'] = sum(noises[curve] for curve in noises)
-    noises['Freq'] = f
-
-    return noises
 
 
 def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
@@ -64,9 +26,19 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     Returns tuple of (score, noises, ifo)
 
     """
+    # assume generic aLIGO configuration
+    # FIXME: how do we allow adding arbitrary addtional noise sources
+    # from just ifo description, without having to specify full budget
+    Budget, ifo_, freq_, plot_style = load_ifo('aLIGO')
+
     # add some precomputed info to the ifo struct
     #this implicitly deepcopies and the return value is the copy
     ifo = precompIFO(freq, ifoin, PRfixed)
+
+    traces = Budget(freq, ifo=ifo).calc_trace()
+
+    noises = {n:d[0] for n, d in traces.items()}
+    noises['Freq'] = freq
 
     pbs      = ifo.gwinc.pbs
     parm     = ifo.gwinc.parm
@@ -75,8 +47,6 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     if ifo.Laser.Power * prfactor != pbs:
         pass
         #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
-
-    noises = noise_calc(freq, ifo)
 
     #TODO decide if all this below this should remain, since it is already inside of __main__
 
@@ -144,5 +114,5 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
             logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
             logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
-        plot_noise(ifo, noises)
+        plot_noise(ifo, traces, **plot_style)
     return score, noises, ifo
