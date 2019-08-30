@@ -9,6 +9,7 @@ class CE(nb.Budget):
         QuantumVacuum,
         Seismic,
         Newtonian,
+        AtmosphericInfrasound,
         SuspensionThermal,
         CoatingBrownian,
         CoatingThermoOptic,

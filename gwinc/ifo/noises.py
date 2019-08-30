@@ -41,6 +41,20 @@ class Newtonian(nb.Noise):
         return noise.newtonian.gravg(self.freq, self.ifo)
 
 
+class AtmosphericInfrasound(nb.Noise):
+    """Atmospheric Infrasound
+
+    """
+    style = dict(
+        label='Atmospheric Infrasound',
+        color='#15b01a',
+        linestyle='--',
+    )
+
+    def calc(self):
+        return noise.newtonian.atmois(self.freq, self.ifo)
+
+
 class SuspensionThermal(nb.Noise):
     """Suspension Thermal
 
