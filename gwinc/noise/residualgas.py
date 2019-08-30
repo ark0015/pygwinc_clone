@@ -1,6 +1,7 @@
 from __future__ import division
 from numpy import sqrt, log, pi
-import scipy.constants
+
+from .. import const
 
 
 def gas(f, ifo):
@@ -22,7 +23,7 @@ def gas(f, ifo):
     """
     L      = ifo.Infrastructure.Length
     Lambda = ifo.Laser.Wavelength
-    k      = scipy.constants.k
+    k      = const.kB
     T      = ifo.Infrastructure.Temp
     P      = ifo.Infrastructure.ResidualGas.pressure            # Pressure inside the vacuum
     M      = ifo.Infrastructure.ResidualGas.mass

@@ -1,9 +1,9 @@
 import os
 import copy
 import tempfile
-import scipy.io
-import numpy as np
 import logging
+
+import scipy.io
 
 from . import const
 from . import suspension
@@ -119,7 +119,8 @@ def ifo_matlab_transform(ifo):
 
     """
     # add constants
-    ifo.Constants = Struct.from_dict(const.CONSTANTS)
+    CONSTS = {k:v for k, v in const.__dict__ if not k.startswith('__')}
+    ifo.Constants = Struct.from_dict(CONSTS)
 
     # copy tempurature into Constants
     ifo.Constants.Temp = ifo.Infrastructure.Temp

@@ -1,6 +1,7 @@
 from __future__ import division
-import scipy.constants
 from numpy import pi, sqrt, exp
+
+from .. import const
 
 
 def gravg(f, ifo):
@@ -30,7 +31,7 @@ def gravg(f, ifo):
     a = ifo.Seismic.LowFrequencyLevel
     L = ifo.Infrastructure.Length
     gamma = ifo.Seismic.Gamma
-    ggcst = scipy.constants.G
+    ggcst = const.G
     rho = ifo.Seismic.Rho
     # factor to account for correlation between masses
     # and the height of the mirror above the ground
@@ -80,7 +81,7 @@ def atmois(f, ifo):
     c_sound = ifo.Atmospheric.SoundSpeed
 
     L = ifo.Infrastructure.Length
-    ggcst = scipy.constants.G
+    ggcst = const.G
     h = ifo.Seismic.TestMassHeight
 
     w = 2 * pi * f

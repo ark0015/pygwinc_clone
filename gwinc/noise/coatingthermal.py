@@ -1,9 +1,9 @@
 from __future__ import division, print_function
-import scipy.constants
 import scipy.special
 import numpy as np
 from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, max, min, ceil, log
 
+from .. import const
 from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
@@ -59,7 +59,7 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
     coat = ifo.Materials.Coating
 
     # Constants
-    kBT = scipy.constants.k * sub.Temp
+    kBT = const.kB * sub.Temp
     lambda_ = ifo.Laser.Wavelength
 
     # substrate properties
@@ -326,7 +326,7 @@ def getCoatThermal(f, ifo, wBeam):
     # use substrate temperature
     subTemp = ifo.Materials.Substrate.Temp
 
-    kBT2 = scipy.constants.k * subTemp**2
+    kBT2 = const.kB * subTemp**2
   
     pS = ifo.Materials.Substrate
     C_S = pS.MassCM * pS.MassDensity

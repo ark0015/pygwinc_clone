@@ -3,8 +3,8 @@ from numpy import exp, inf, pi, sqrt
 import numpy as np
 import scipy.special
 import scipy.integrate
-import scipy.constants
 
+from .. import const
 from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
@@ -40,9 +40,9 @@ def carrierdensity_exact(f, ifo):
     w = ifo.Optics.ITM.BeamRadius
     L = ifo.Infrastructure.Length
     H = ifo.Materials.MassThickness
-    kBT = scipy.constants.k * ifo.Materials.Substrate.Temp
-    hbar = scipy.constants.hbar
-    c = scipy.constants.c
+    kBT = const.kB * ifo.Materials.Substrate.Temp
+    hbar = const.hbar
+    c = const.c
     
     diffElec = ifo.Materials.Substrate.ElectronDiffusion
     diffHole = ifo.Materials.Substrate.HoleDiffusion
@@ -89,7 +89,7 @@ def thermorefractiveITM_adiabatic(f, ifo):
     rho = ifo.Materials.Substrate.MassDensity
     C = ifo.Materials.Substrate.MassCM
     Temp = ifo.Materials.Substrate.Temp
-    kBT = scipy.constants.k * Temp
+    kBT = const.kB * Temp
     r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
     L = ifo.Infrastructure.Length
     gPhase = ifo.gwinc.finesse*2/pi
@@ -110,9 +110,9 @@ def thermorefractiveITM_exact(f, ifo):
     w = ifo.Optics.ITM.BeamRadius
     L = ifo.Infrastructure.Length
     H = ifo.Materials.MassThickness
-    kBT = scipy.constants.k * ifo.Materials.Substrate.Temp
+    kBT = const.kB * ifo.Materials.Substrate.Temp
     Temp = ifo.Materials.Substrate.Temp
-    c = scipy.constants.c
+    c = const.c
     
     rho = ifo.Materials.Substrate.MassDensity
     beta = ifo.Materials.Substrate.dndT
@@ -157,7 +157,7 @@ def subbrownian(f, ifo):
     n = ifo.Materials.Substrate.MechanicalLossExponent
     alphas = ifo.Materials.Substrate.Alphas
     L = ifo.Infrastructure.Length
-    kBT = scipy.constants.k * ifo.Materials.Substrate.Temp
+    kBT = const.kB * ifo.Materials.Substrate.Temp
 
     # Bulk substrate contribution
     phibulk = c2 * f**n
@@ -245,7 +245,7 @@ def subtherm(f, ifo):
     sigma = ifo.Materials.Substrate.MirrorSigma
 
     L = ifo.Infrastructure.Length
-    kBT = scipy.constants.k * ifo.Materials.Substrate.Temp
+    kBT = const.kB * ifo.Materials.Substrate.Temp
 
     rho = ifo.Materials.Substrate.MassDensity
     kappa = ifo.Materials.Substrate.MassKappa # thermal conductivity

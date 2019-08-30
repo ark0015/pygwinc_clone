@@ -1,10 +1,11 @@
 from numpy import pi, sqrt
-import scipy.constants
+
+from . import const
 
 
 def sql(ifo):
     """Computer standard quantum limit (SQL) for IFO"""
-    c = scipy.constants.c
+    c = const.c
     Parm = ifo.gwinc.parm
     w0 = 2 * pi * c / ifo.Laser.Wavelength
     m = ifo.Materials.MirrorMass
@@ -21,7 +22,7 @@ def computeFCParams(ifo, fcParams):
 
     """
     # FC parameters
-    c = scipy.constants.c
+    c = const.c
     fsrFC = c / (2 * fcParams.L)
     lossFC = fcParams.Lrt + fcParams.Te
 

@@ -1,8 +1,9 @@
 from __future__ import division
 from numpy import pi, sqrt, arctan, sin, cos, exp, size, ones, zeros, log10, conj, sum
 import numpy as np
-import scipy.constants
 import logging
+
+from .. import const
 from ..struct import Struct
 
 
@@ -299,8 +300,8 @@ def shotradSignalRecycled(f, ifo):
     """
     # f                                          # Signal Freq. [Hz]
     lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
-    hbar    = scipy.constants.hbar               # Plancks Constant [Js]
-    c       = scipy.constants.c                  # SOL [m/s]
+    hbar    = const.hbar                         # Plancks Constant [Js]
+    c       = const.c                            # SOL [m/s]
     omega_0 = 2*pi*c/lambda_                     # Laser angular frequency [rads/s]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -480,8 +481,8 @@ def shotradSignalRecycledBnC(f, ifo):
     """
     # f                                           % Signal Freq. [Hz]
     lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
-    hbar    = scipy.constants.hbar               # Plancks Constant [Js]
-    c       = scipy.constants.c                  # SOL [m/s]
+    hbar    = const.hbar                         # Plancks Constant [Js]
+    c       = const.c                            # SOL [m/s]
     Omega   = 2*pi*f                             # [BnC, table 1] Signal angular frequency [rads/s]
     omega_0 = 2*pi*c/lambda_                     # [BnC, table 1] Laser angular frequency [rads/s]
 
@@ -755,7 +756,7 @@ def sqzFilterCavity(f, Lcav, Ti, Te, Lrt, fdetune, MinR, MinT=1):
     rr = ri * re * sqrt(1 - Lrt)  # include round-trip losses
 
     # Phases for positive and negative audio sidebands
-    c = scipy.constants.c
+    c = const.c
     omega = 2 * pi * f
     wf = 2 * pi * fdetune
     Phi_p = 2 * (omega-wf)* Lcav / c

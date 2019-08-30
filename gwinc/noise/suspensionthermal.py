@@ -1,7 +1,8 @@
 from __future__ import division
 from numpy import pi, imag, zeros
 import numpy as np
-import scipy.constants
+
+from .. import const
 
 
 def susptherm(f, ifo):
@@ -18,7 +19,7 @@ def susptherm(f, ifo):
 
     """
     # Assign Physical Constants
-    kB   = scipy.constants.k
+    kB = const.kB
 
     # and vertical to beamline coupling angle
     theta = ifo.Suspension.VHCoupling.theta

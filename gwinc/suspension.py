@@ -1,9 +1,9 @@
 from __future__ import division
 from numpy import pi, sqrt, sin, cos, tan, real, imag, zeros
 import numpy as np
-import scipy.constants
 import logging
 
+from . import const
 from .struct import Struct
 
 
@@ -99,7 +99,7 @@ def suspQuad(f, ifo, material='Silica'):
     stages by K.Arai.
 
     """
-    g = scipy.constants.g
+    g = const.g
 
     sus = ifo.Suspension
 

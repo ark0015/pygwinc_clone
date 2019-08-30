@@ -1,12 +1,11 @@
 from __future__ import division
 from numpy import pi, sqrt, sin, exp
 from scipy.io import loadmat
-import scipy.special
 import logging
 import copy
 
+from . import const
 from . import suspension
-from .const import CONSTANTS
 from .struct import Struct
 from .noise.coatingthermal import getCoatDopt
 
@@ -40,7 +39,7 @@ def precompIFO(f, ifoin, PRfixed=True):
 
     if 'VHCoupling' not in ifo.Suspension:
         ifo.Suspension.VHCoupling = Struct()
-        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / CONSTANTS['R_earth']
+        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / const.R_earth
 
     ##############################
     # optics values
@@ -151,7 +150,7 @@ def precompPower(ifo, PRfixed=True):
     """Compute power on beamsplitter, finesse, and power recycling factor.
 
     """
-    c       = scipy.constants.c
+    c       = const.c
     pin     = ifo.Laser.Power
     t1      = sqrt(ifo.Optics.ITM.Transmittance)
     r1      = sqrt(1 - ifo.Optics.ITM.Transmittance)
@@ -205,7 +204,7 @@ def dhdl(f, armlen):
     the arm length squared.
 
     """
-    c = scipy.constants.c
+    c = const.c
     nu_small = 15*pi/180
     omega_arm = pi * f * armlen / c
     omega_arm_f = (1 - sin(nu_small)) * pi * f * armlen / c
