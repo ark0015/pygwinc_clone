@@ -216,7 +216,11 @@ class SubstrateThermoElastic(nb.Noise):
     )
 
     def calc(self):
-        return noise.substratethermal.subtherm(self.freq, self.ifo)
+        nITM = noise.substratethermal.substrate_thermoelastic(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+        nETM = noise.substratethermal.substrate_thermoelastic(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ETM.BeamRadius)
+        return (nITM + nETM) * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class ExcessGas(nb.Noise):

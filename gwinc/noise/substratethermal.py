@@ -1,10 +1,9 @@
 '''Functions to calculate substrate thermal noise
 
 '''
-
 from __future__ import division, print_function
-from numpy import exp, inf, pi, sqrt
 import numpy as np
+from numpy import exp, inf, pi, sqrt
 import scipy.special
 import scipy.integrate
 
@@ -188,70 +187,70 @@ def substrate_brownian_FiniteCorr(materials, wBeam):
     return cftm, aftm
 
 
-def subtherm(f, ifo):
-    """Noise from thermoelastic fluctuations in mirror
+def substrate_thermoelastic(f, materials, wBeam):
+    """Substrate thermal displacement noise spectrum from thermoelastic fluctuations
+
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wBeam: beam radius (at 1 / e^2 power)
+
+    :returns: displacement noise power spectrum at :f:, in meters
 
     """
-    wITM = ifo.Optics.ITM.BeamRadius
-    wETM = ifo.Optics.ETM.BeamRadius
-    sigma = ifo.Materials.Substrate.MirrorSigma
+    sigma = materials.Substrate.MirrorSigma
+    rho = materials.Substrate.MassDensity
+    kappa = materials.Substrate.MassKappa # thermal conductivity
+    alpha = materials.Substrate.MassAlpha # thermal expansion
+    CM = materials.Substrate.MassCM # heat capacity @ constant mass
+    Temp = materials.Substrate.Temp # temperature
+    kBT = const.kB * materials.Substrate.Temp
 
-    L = ifo.Infrastructure.Length
-    kBT = const.kB * ifo.Materials.Substrate.Temp
-
-    rho = ifo.Materials.Substrate.MassDensity
-    kappa = ifo.Materials.Substrate.MassKappa # thermal conductivity
-    alpha = ifo.Materials.Substrate.MassAlpha # thermal expansion
-    CM = ifo.Materials.Substrate.MassCM # heat capacity @ constant mass
-    Temp = ifo.Materials.Substrate.Temp # temperature
-
-    S0 = 8*(1+sigma)**2*kappa*alpha**2*Temp*kBT # note kBT has factor Temp
-    S0 = S0/(sqrt(2*pi)*(CM*rho)**2)
-    SITM = S0/(wITM/sqrt(2))**3 # LT 18 less factor 1/omega^2
-    SETM = S0/(wETM/sqrt(2))**3 # LT 18 less factor 1/omega^2
+    S = 8*(1+sigma)**2*kappa*alpha**2*Temp*kBT # note kBT has factor Temp
+    S /= (sqrt(2*pi)*(CM*rho)**2)
+    S /= (wBeam/sqrt(2))**3 # LT 18 less factor 1/omega^2
 
     # Corrections for finite test masses:
-    SITM = SITM * subthermFiniteCorr(ifo, 'ITM')
-    SETM = SETM * subthermFiniteCorr(ifo, 'ETM')
+    S *= substrate_thermoelastic_FiniteCorr(materials, wBeam)
 
-    # 2 mirrors each type, factor omega^2, dimensionless strain
-    n = 2 * (SITM + SETM)/(2*pi*f)**2 * ifo.gwinc.dhdl_sqr
-
-    return n
+    return S/(2*pi*f)**2
 
 
-def subthermFiniteCorr(ifo, opticName):
-    """Finite size test mass correction to noise amplitude coefficient
+def substrate_thermoelastic_FiniteCorr(materials, wBeam):
+    """Substrate thermoelastic noise finite-size test mass correction
+
+    :materials: gwinc optic materials structure
+    :wBeam: beam radius (at 1 / e^2 power)
+
+    :returns: correction factor
 
     (Liu & Thorne gr-qc/0002055 equation 46)
-    
+
     Equation references to Bondu, et al. Physics Letters A 246 (1998)
     227-236 (hereafter BHV) or Liu and Thorne gr-qc/0002055 (hereafter LT)
 
     """
-    # extract some numbers
-    a = ifo.Materials.MassRadius
-    h = ifo.Materials.MassThickness
-    w = ifo.Optics[opticName].BeamRadius
-    sigma = ifo.Materials.Substrate.MirrorSigma
+    a = materials.MassRadius
+    h = materials.MassThickness
+    sigma = materials.Substrate.MirrorSigma
 
-    # do the work
-    r0 = w/sqrt(2) # LT uses power e-folding
+    # LT uses power e-folding
+    r0 = wBeam/sqrt(2)
     km = zeta/a
 
-    Qm = exp(-2*km*h) # LT eq. 35a
+    Qm = exp(-2*km*h) # LT 35a
 
     pm = exp(-(km*r0)**2/4)/(pi*(a*j0m)**2) # LT 37
 
     c0 = 6*(a/h)**2*sum(j0m*pm/zeta**2) # LT 32
     c1 = -2*c0/h # LT 32
     p0 = 1/(pi*a**2) # LT 28
-    c1 = c1 + p0/(2*h) # LT 40
+    c1 += p0/(2*h) # LT 40
 
     coeff = (1-Qm)*((1-Qm)*(1+Qm)+8*h*km*Qm)
-    coeff = coeff + 4*(h*km)**2*Qm*(1+Qm)
-    coeff = coeff*km*(pm*j0m)**2*(1-Qm)
-    coeff = coeff/((1-Qm)**2-4*(h*km)**2*Qm)**2
+    coeff += 4*(h*km)**2*Qm*(1+Qm)
+    coeff *= km*(pm*j0m)**2*(1-Qm)
+    coeff /= ((1-Qm)**2-4*(h*km)**2*Qm)**2
     coeff = sum(coeff) + h*c1**2/(1+sigma)**2
-    coeff = coeff*(sqrt(2*pi)*r0)**3*a**2 # LT 46
+    coeff *= (sqrt(2*pi)*r0)**3*a**2 # LT 46
+
     return coeff
