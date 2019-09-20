@@ -164,7 +164,10 @@ class ITMThermoRefractive(nb.Noise):
     )
 
     def calc(self):
-        return noise.substratethermal.thermorefractiveITM(self.freq, self.ifo)
+        gPhase = self.ifo.gwinc.finesse * 2/np.pi
+        n = noise.substratethermal.substrate_thermorefractive(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+        return n * 2 / (gPhase)**2 * self.ifo.gwinc.dhdl_sqr
 
 
 class ITMCarrierDensity(nb.Noise):

@@ -59,68 +59,46 @@ def substrate_carrierdensity(f, materials, wBeam, exact=False):
     return psdElec + psdHole
 
 
-def thermorefractiveITM_adiabatic(f, ifo):
-    """strain noise psd arising from thermorefractive
-    fluctuations in ITM substrate (for semiconductor substrates)."""
-
-    Omega = 2*pi*f
-    H = ifo.Materials.MassThickness
-    beta = ifo.Materials.Substrate.dndT
-    kappa = ifo.Materials.Substrate.MassKappa
-    rho = ifo.Materials.Substrate.MassDensity
-    C = ifo.Materials.Substrate.MassCM
-    Temp = ifo.Materials.Substrate.Temp
-    kBT = const.kB * Temp
-    r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
-    gPhase = ifo.gwinc.finesse*2/pi
-
-    psd = 4*H*beta**2*kappa*kBT*Temp/(pi*r0**4*Omega**2*(rho*C)**2) # units are meters
-    psdMeters = 2*psd # two ITMs
-    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
-    return n
-
-
-def thermorefractiveITM_exact(f, ifo):
-    """Strain noise from thermorefractive fluctuations in ITM substrate
+def substrate_thermorefractive(f, materials, wBeam, exact=False):
+    """Substrate thermal displacement noise spectrum from thermorefractive fluctuations
 
     For semiconductor substrates.
 
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wBeam: beam radius (at 1 / e^2 power)
+    :exact: whether to use adiabatic approximation or exact calculation (False)
+
+    :returns: displacement noise power spectrum at :f:, in meters
+
     """
-    
-    w = ifo.Optics.ITM.BeamRadius
-    H = ifo.Materials.MassThickness
-    kBT = const.kB * ifo.Materials.Substrate.Temp
-    Temp = ifo.Materials.Substrate.Temp
-    c = const.c
-    
-    rho = ifo.Materials.Substrate.MassDensity
-    beta = ifo.Materials.Substrate.dndT
-    C = ifo.Materials.Substrate.MassCM
-    kappa = ifo.Materials.Substrate.MassKappa
-
-    gPhase = ifo.gwinc.finesse*2/pi
-
+    H = materials.MassThickness
+    kBT = const.kB * materials.Substrate.Temp
+    Temp = materials.Substrate.Temp
+    rho = materials.Substrate.MassDensity
+    beta = materials.Substrate.dndT
+    C = materials.Substrate.MassCM
+    kappa = materials.Substrate.MassKappa
+    r0 = wBeam/np.sqrt(2)
     omega = 2*pi*f
-    
-    def integrand(k,om,D):
-        return D * k**3 * exp(-k**2 * w**2/4) / (D**2 * k**4 + om**2)
-    
-    inte = np.array([scipy.integrate.quad(lambda k: integrand(k, om, kappa/(rho*C)), 0, inf)[0] for om in omega])
-    
-    # From P1400084 Heinert et al. Eq. 15 
-    #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
-    psdTR = lambda int_: 2/pi * H * beta**2 * kBT * Temp / (rho*C) * int_; #units are meters
-    
-    
-    psd = psdTR(inte)
-    
-    psdMeters = 2*psd # two itms
-    
-    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
 
-    return n
+    if exact:
+        def integrand(k, om, D):
+            return D * k**3 * exp(-k**2 * wBeam**2/4) / (D**2 * k**4 + om**2)
 
-thermorefractiveITM = thermorefractiveITM_adiabatic
+        inte = np.array([scipy.integrate.quad(lambda k: integrand(k, om, kappa/(rho*C)), 0, inf)[0] for om in omega])
+
+        # From P1400084 Heinert et al. Eq. 15
+        #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
+        psdTR = lambda int_: 2/pi * H * beta**2 * kBT * Temp / (rho*C) * int_;
+
+        psd = psdTR(inte)
+        psd = 2/pi * H * beta**2 * kBT * Temp / (rho*C) * inte
+
+    else:
+        psd = 4*H*beta**2*kappa*kBT*Temp/(pi*r0**4*omega**2*(rho*C)**2)
+
+    return psd
 
 
 def subbrownian(f, ifo):
