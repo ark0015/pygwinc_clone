@@ -198,7 +198,11 @@ class SubstrateBrownian(nb.Noise):
     )
 
     def calc(self):
-        return noise.substratethermal.subbrownian(self.freq, self.ifo)
+        nITM = noise.substratethermal.substrate_brownian(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+        nETM = noise.substratethermal.substrate_brownian(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ETM.BeamRadius)
+        return (nITM + nETM) * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class SubstrateThermoElastic(nb.Noise):
