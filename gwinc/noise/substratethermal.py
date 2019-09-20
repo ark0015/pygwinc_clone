@@ -1,3 +1,7 @@
+'''Functions to calculate substrate thermal noise
+
+'''
+
 from __future__ import division, print_function
 from numpy import exp, inf, pi, sqrt
 import numpy as np
@@ -9,71 +13,50 @@ from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
 
-def carrierdensity_adiabatic(f, ifo):
-    """strain noise psd arising from charge carrier density
-    fluctuations in ITM substrate (for semiconductor substrates)."""
+def substrate_carrierdensity(f, materials, wBeam, exact=False):
+    """Substrate thermal displacement noise spectrum from charge carrier density fluctuations
 
-    Omega = 2*pi*f
-    H = ifo.Materials.MassThickness
-    gammaElec = ifo.Materials.Substrate.ElectronIndexGamma
-    gammaHole = ifo.Materials.Substrate.HoleIndexGamma
-    diffElec = ifo.Materials.Substrate.ElectronDiffusion
-    diffHole = ifo.Materials.Substrate.HoleDiffusion
-    cdDens = ifo.Materials.Substrate.CarrierDensity
-    r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
-    gPhase = ifo.gwinc.finesse*2/pi
+    For semiconductor substrates.
 
-    psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*Omega**2) # units are meters
-    psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*Omega**2) # units are meters
-    psdMeters = 2 * (psdElec + psdHole) # electrons and holes for two ITMs
-    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
-    return n
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wBeam: beam radius (at 1 / e^2 power)
+    :exact: whether to use adiabatic approximation or exact calculation (False)
 
-
-def carrierdensity_exact(f, ifo):
-    """Strain noise arising from charge carrier density fluctuations in ITM substrate
-
-    For semiconductor substrates
+    :returns: displacement noise power spectrum at :f:, in meters
 
     """
-    w = ifo.Optics.ITM.BeamRadius
-    H = ifo.Materials.MassThickness
-    kBT = const.kB * ifo.Materials.Substrate.Temp
-    hbar = const.hbar
-    c = const.c
-    
-    diffElec = ifo.Materials.Substrate.ElectronDiffusion
-    diffHole = ifo.Materials.Substrate.HoleDiffusion
-    mElec = ifo.Materials.Substrate.ElectronEffMass
-    mHole = ifo.Materials.Substrate.HoleEffMass
-    cdDens = ifo.Materials.Substrate.CarrierDensity
-    gammaElec = ifo.Materials.Substrate.ElectronIndexGamma
-    gammaHole = ifo.Materials.Substrate.HoleIndexGamma
-    gPhase = ifo.gwinc.finesse*2/pi
-
+    H = materials.MassThickness
+    diffElec = materials.Substrate.ElectronDiffusion
+    diffHole = materials.Substrate.HoleDiffusion
+    mElec = materials.Substrate.ElectronEffMass
+    mHole = materials.Substrate.HoleEffMass
+    cdDens = materials.Substrate.CarrierDensity
+    gammaElec = materials.Substrate.ElectronIndexGamma
+    gammaHole = materials.Substrate.HoleIndexGamma
+    r0 = wBeam/np.sqrt(2)
     omega = 2*pi*f
 
-    def integrand(k, om, D):
-        return D * k**3 * exp(-k**2 * w**2/4) / (D**2 * k**4 + om**2)
+    if exact:
+        def integrand(k, om, D):
+            return D * k**3 * exp(-k**2 * wBeam**2/4) / (D**2 * k**4 + om**2)
     
-    integralElec = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffElec), 0, inf)[0] for om in omega])
-    integralHole = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffHole), 0, inf)[0] for om in omega])
+        integralElec = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffElec), 0, inf)[0] for om in omega])
+        integralHole = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffHole), 0, inf)[0] for om in omega])
 
-    # From P1400084 Heinert et al. Eq. 15 
-    #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
-    def psdCD(gamma,m,int_):
-        return 2/pi * H * gamma**2 * cdDens * int_ #units are meters
-    
-    psdElec = psdCD(gammaElec, mElec, integralElec)
-    psdHole = psdCD(gammaHole, mHole, integralHole)
-    
-    psdMeters = 2 * (psdElec + psdHole)
-    
-    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
+        # From P1400084 Heinert et al. Eq. 15
+        #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
+        # FIXME: why the unused argument here?
+        def psdCD(gamma, m, int_):
+            return 2/pi * H * gamma**2 * cdDens * int_
 
-    return n
+        psdElec = psdCD(gammaElec, mElec, integralElec)
+        psdHole = psdCD(gammaHole, mHole, integralHole)
+    else:
+        psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*omega**2)
+        psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*omega**2)
 
-carrierdensity = carrierdensity_adiabatic
+    return psdElec + psdHole
 
 
 def thermorefractiveITM_adiabatic(f, ifo):

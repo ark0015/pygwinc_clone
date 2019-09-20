@@ -1,3 +1,5 @@
+import numpy as np
+
 from .. import nb
 from .. import noise
 
@@ -176,7 +178,10 @@ class ITMCarrierDensity(nb.Noise):
     )
 
     def calc(self):
-        return noise.substratethermal.carrierdensity(self.freq, self.ifo)
+        gPhase = self.ifo.gwinc.finesse * 2/np.pi
+        n = noise.substratethermal.substrate_carrierdensity(
+            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+        return n * 2 / (gPhase)**2 * self.ifo.gwinc.dhdl_sqr
 
 
 class SubstrateBrownian(nb.Noise):
