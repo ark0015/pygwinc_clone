@@ -103,7 +103,8 @@ class SuspensionThermal(nb.Noise):
     )
 
     def calc(self):
-        return noise.suspensionthermal.susptherm(self.freq, self.ifo)
+        n = noise.suspensionthermal.suspension_thermal(self.freq, self.ifo.Suspension)
+        return n * 4 * self.ifo.gwinc.dhdl_sqr
 
 
 class CoatingBrownian(nb.Noise):
