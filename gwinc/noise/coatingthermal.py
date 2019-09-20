@@ -1,66 +1,41 @@
+'''Functions to calculate coating thermal noise
+
+'''
 from __future__ import division, print_function
-import scipy.special
 import numpy as np
-from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, max, min, ceil, log
+from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, min, ceil, log
 
 from .. import const
 from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
 
-def coatbrownian(f, ifo):
-    """Optical coating Brownian thermal noise
+def coating_brownian(f, materials, wavelength, wBeam, dOpt):
+    """Optical coating Brownian thermal displacement noise spectrum
 
-    Returns strain noise power spectrum in 1 / Hz
-    
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :wBeam: beam radius (at 1 / e^2 power)
+    :dOpt: coating layer thickness array (Nlayer x 1)
+
+    The layers are assumed to be alernating low-n high-n layers, with
+    low-n first.
+
+    :returns: displacement noise power spectrum at :f:
+
     Added by G Harry 8/3/02 from work by Nakagawa, Gretarsson, et al.
     Expanded to reduce approximation, GMH 8/03
     Modified to return strain noise, PF 4/07
     Modified to accept coating with non-quater-wave layers, mevans 25 Apr 2008
 
     """
-    Length = ifo.Infrastructure.Length
-    wBeam_ITM = ifo.Optics.ITM.BeamRadius
-    wBeam_ETM = ifo.Optics.ETM.BeamRadius
-    dOpt_ITM = ifo.Optics.ITM.CoatLayerOpticalThickness
-    dOpt_ETM = ifo.Optics.ETM.CoatLayerOpticalThickness
-
-    # compute Brownian noise for specified coating structure
-    SbrITM  = getCoatBrownian(f, ifo, wBeam_ITM, dOpt_ITM)
-    SbrETM  = getCoatBrownian(f, ifo, wBeam_ETM, dOpt_ETM)
-
-    n = 2 * (SbrITM + SbrETM) * ifo.gwinc.dhdl_sqr
-
-    return n
-
-
-def getCoatBrownian(f, ifo, wBeam, dOpt):
-    """Coating brownian noise for a given collection of coating layers
-
-    The layers are assumed to be alernating low-n high-n layers, with
-    low-n first.
-
-    f = frequency vector in Hz
-    ifo = parameter struct from IFOmodel.m
-
-    opticName = name of the Optic struct to use for wBeam and dOpt
-        wBeam = ifoArg.Optics.(opticName).BeamRadius
-         dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
-
-    wBeam = beam radius (at 1 / e^2 power)
-     dOpt = coating layer thickness vector (Nlayer x 1)
-          = the optical thickness, normalized by lambda, of each coating layer.
-
-    SbrZ = Brownian noise spectra for one mirror in m^2 / Hz
-
-    """
     # extract substructures
-    sub = ifo.Materials.Substrate
-    coat = ifo.Materials.Coating
+    sub = materials.Substrate
+    coat = materials.Coating
 
     # Constants
     kBT = const.kB * sub.Temp
-    lambda_ = ifo.Laser.Wavelength
 
     # substrate properties
     Ysub = sub.MirrorY         # Young's Modulous
@@ -101,14 +76,14 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
     phiN[1::2] = phihighn
 
     # geometrical thickness of each layer and total
-    dGeo = lambda_ * np.asarray(dOpt) / nN
-    dCoat = sum(dGeo)
+    dGeo = wavelength * np.asarray(dOpt) / nN
+    #dCoat = sum(dGeo)
 
     ###################################
     # Brownian
     ###################################
     # coating reflectivity
-    dcdp = getCoatRefl(ifo, dOpt)[1]
+    dcdp = getCoatRefl(materials, dOpt)[1]
 
     # Z-dir (1 => away from the substrate, -1 => into the substrate)
     zdir = -1
@@ -132,139 +107,114 @@ def getCoatBrownian(f, ifo, wBeam, dOpt):
     else:
         SbrZ = (4 * kBT / (pi * wBeam**2 * w)) * \
                (1 - pratsub - 2 * pratsub**2) / Ysub
-
-        SbrZ = SbrZ * (sum(dGeo[::2] * brLayer[::2] * phiN[::2]) * (f / 100)**(coat.Philown_slope) +
-                       sum(dGeo[1::2] * brLayer[1::2] * phiN[1::2]) * (f / 100)**(coat.Phihighn_slope))
+        SbrZ *= (sum(dGeo[::2] * brLayer[::2] * phiN[::2]) * (f / 100)**(coat.Philown_slope) +
+                 sum(dGeo[1::2] * brLayer[1::2] * phiN[1::2]) * (f / 100)**(coat.Phihighn_slope))
 
     # for the record: evaluate summation in eq 1 of PhysRevD.91.042002
     # normalized by total coating thickness to make it unitless
-    cCoat = sum(dGeo * brLayer * phiN) / dCoat
+    #cCoat = sum(dGeo * brLayer * phiN) / dCoat
 
     return SbrZ
 
 
-def thermooptic(f, ifo):
-    """Thermoelastic and thermorefractive fluctuations in the mirror dielectric coating
+def coating_thermooptic(f, materials, wavelength, wBeam, dOpt):
+    """Optical coating thermo-optic displacement noise spectrum
 
-    Returns strain noise power spectrum in 1 / Hz.
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :wBeam: beam radius (at 1 / e^2 power)
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
-    Added by G Harry 8/27/03 from work by Fejer, Rowan, Braginsky, et al
-    thermoelastic and thermorefractive effects combined coherently in 2006
-
-    Reduced approximations and combined TE and TR
-    effects with correct sign, mevans 25 Apr 2008
-
-    """
-    Length = ifo.Infrastructure.Length
-    wBeam_ITM = ifo.Optics.ITM.BeamRadius
-    wBeam_ETM = ifo.Optics.ETM.BeamRadius
-    dOpt_ITM = ifo.Optics.ITM.CoatLayerOpticalThickness
-    dOpt_ETM = ifo.Optics.ETM.CoatLayerOpticalThickness
-
-    # compute ThermoOptic noise for specified coating structure
-    StoITM, junk1, junk2, junk3  = getCoatThermoOptic(f, ifo, wBeam_ITM, dOpt_ITM[:])
-    StoETM, junk1, junk2, junk3  = getCoatThermoOptic(f, ifo, wBeam_ETM, dOpt_ETM[:])
-  
-    n = 2 * (StoITM + StoETM) * ifo.gwinc.dhdl_sqr
-
-    return n
-
-
-def getCoatThermoOptic(f, ifo, wBeam, dOpt):
-    """Power spectra of coating thermo-optic noise for a single optic
-    
-    f = frequency vector in Hz
-    ifo = parameter struct from IFOmodel.m
-    opticName = name of the Optic struct to use for wBeam and dOpt
-    wBeam = ifoArg.Optics.(opticName).BeamRadius
-    dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
-
-    wBeam = beam radius (at 1 / e^2 power)
-    dOpt   = optical thickness / lambda of each layer
-           = geometrical thickness * refractive index / lambda
-
-    StoZ = power spectra of apparent mirror position in m^2 / Hz
-    SteZ = thermo-elastic componenet of StoZ
-    StrZ = thermo-refractive componenet of StoZ
-    T = coating power transmission, made available as a cross-check
+    :returns: tuple of:
+    StoZ = displacement noise power spectrum at :f:
+    SteZ = thermo-optic component of StoZ
+    StrZ = thermo-refractive component of StoZ
+    T = coating power transmission
 
     """
     # compute coefficients
-    dTO, dTR, dTE, T, junk = getCoatTOPos(ifo, wBeam, dOpt)
+    dTO, dTR, dTE, T, junk = getCoatTOPos(materials, wavelength, wBeam, dOpt)
 
     # compute correction factors
-    gTO = getCoatThickCorr(f, ifo, dOpt, dTE, dTR)
-    gTE = getCoatThickCorr(f, ifo, dOpt, dTE, 0)
-    gTR = getCoatThickCorr(f, ifo, dOpt, 0, dTR)
+    gTO = getCoatThickCorr(f, materials, wavelength, dOpt, dTE, dTR)
+    gTE = getCoatThickCorr(f, materials, wavelength, dOpt, dTE, 0)
+    gTR = getCoatThickCorr(f, materials, wavelength, dOpt, 0, dTR)
 
     # compute thermal source spectrum
-    SsurfT, junk = getCoatThermal(f, ifo, wBeam)
+    SsurfT, junk = getCoatThermal(f, materials, wBeam)
 
     StoZ = SsurfT * gTO * dTO**2
     SteZ = SsurfT * gTE * dTE**2
     StrZ = SsurfT * gTR * dTR**2
+
     return (StoZ, SteZ, StrZ, T)
 
 
-def getCoatTOPos(ifo, wBeam, dOpt):
+def getCoatTOPos(materials, wavelength, wBeam, dOpt):
     """Mirror position derivative wrt thermal fluctuations
-    
-    ifo  = parameter struct from IFOmodel.m
-    opticName = name of the Optic struct to use for wBeam and dOpt
-    wBeam = ifoArg.Optics.(opticName).BeamRadius
-    dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
 
-    wBeam = beam radius, for finite mirror correction (at 1 / e^2 power)
-    dOpt = optical thickness / lambda of each layer
-         = geometrical thickness * refractive index / lambda
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :wBeam: beam radius (at 1 / e^2 power)
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
+    :returns: tuple of:
     dTO = total thermo-optic dz/dT
     dTR = thermo-refractive dz/dT
     dTE = thermo-elastic dz/dT
+    T = coating power transmission
+    R = coating power reflection
 
-    compute thermal fluctuations with getCoatThermal
-    (see also T080101)
+    Compute thermal fluctuations with getCoatThermal.
+
+    See LIGO-T080101.
 
     """
-      # parameters
-    lambda_ = ifo.Laser.Wavelength
-    nS = ifo.Materials.Substrate.RefractiveIndex
-  
+    # parameters
+    nS = materials.Substrate.RefractiveIndex
+
     # compute refractive index, effective alpha and beta
-    nLayer, aLayer, bLayer, dLayer, sLayer = getCoatLayers(ifo, dOpt)
+    nLayer, aLayer, bLayer, dLayer, sLayer = getCoatLayers(materials, wavelength, dOpt)
 
     # compute coating average parameters
-    dc, Cc, Kc, aSub = getCoatAvg(ifo, dOpt)
-  
+    dc, Cc, Kc, aSub = getCoatAvg(materials, wavelength, dOpt)
+
     # compute reflectivity and parameters
     dphi_dT, dphi_TE, dphi_TR, rCoat = getCoatTOPhase(1, nS, nLayer, dOpt, aLayer, bLayer, sLayer)
     R = abs(rCoat)**2
     T = 1 - R
-  
+
     # for debugging
     #disp(sprintf('R = %.3f, T = %.0f ppm', R, 1e6 * T))
-  
+
     # convert from phase to meters, subtracting substrate
-    dTR = dphi_TR * lambda_ / (4 * pi)
-    dTE = dphi_TE * lambda_ / (4 * pi) - aSub * dc
+    dTR = dphi_TR * wavelength / (4 * pi)
+    dTE = dphi_TE * wavelength / (4 * pi) - aSub * dc
 
     # mirror finite size correction
-    Cfsm = getCoatFiniteCorr(ifo, wBeam, dOpt)
+    Cfsm = getCoatFiniteCorr(materials, wavelength, wBeam, dOpt)
     dTE = dTE * Cfsm
-  
+
     # add TE and TR effects (sign is already included)
     dTO = dTE + dTR
-  
+
     return dTO, dTR, dTE, T, R
 
 
-def getCoatThickCorr(f, ifo, dOpt, dTE, dTR):
+def getCoatThickCorr(f, materials, wavelength, dOpt, dTE, dTR):
     """Finite coating thickness correction
 
-    Uses correction factor from T080101, "Thick Coating Correction"
-    (Evans).
+    :f: frequency array in Hz
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :wBeam: beam radius (at 1 / e^2 power)
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
-    (see getCoatThermoOptic for example usage)
+    Uses correction factor from LIGO-T080101, "Thick Coating
+    Correction" (Evans).
+
+    See getCoatThermoOptic for example usage.
 
     """
     ##############################################
@@ -277,28 +227,28 @@ def getCoatThickCorr(f, ifo, dOpt, dTE, dTR):
     #  gTC = 1 - xi * (R - 1 / (3 * R));
 
     # parameter extraction
-    pS = ifo.Materials.Substrate
+    pS = materials.Substrate
     Cs = pS.MassCM * pS.MassDensity
     Ks = pS.MassKappa
-  
+
     # compute coating average parameters
-    dc, Cc, Kc, junk = getCoatAvg(ifo, dOpt)
-  
+    dc, Cc, Kc, junk = getCoatAvg(materials, wavelength, dOpt)
+
     # R and xi (from T080101, Thick Coating Correction)
     w = 2 * pi * f
     R = sqrt(Cc * Kc / (Cs * Ks))
     xi = dc * sqrt(2 * w * Cc / Kc)
-  
+
     # trig functions of xi
     s = sin(xi)
     c = cos(xi)
     sh = sinh(xi)
     ch = cosh(xi)
-  
+
     # pR and pE (dTR = -\bar{\beta} lambda, dTE = \Delta \bar{\alpha} d)
     pR = dTR / (dTR + dTE)
     pE = dTE / (dTR + dTE)
-  
+
     # various parts of gTC
     g0 = 2 * (sh - s) + 2 * R * (ch - c)
     g1 = 8 * sin(xi / 2) * (R * cosh(xi / 2) + sinh(xi / 2))
@@ -307,51 +257,47 @@ def getCoatThickCorr(f, ifo, dOpt, dTE, dTR):
 
     # and finally, the correction factor
     gTC = (pE**2 * g0 + pE * pR * xi * g1 + pR**2 * xi**2 * g2) / (R * xi**2 * gD)
+
     return gTC
 
 
-def getCoatThermal(f, ifo, wBeam):
+def getCoatThermal(f, materials, wBeam):
     """Thermal noise spectra for a surface layer
 
-    f = frequency vector in Hz
-    ifo = parameter struct from IFOmodel.m
+    :f: frequency array in Hz
+    :materials: gwinc optic material structure
+    :wBeam: beam radius (at 1 / e^2 power)
 
-    wBeam = beam radius (at 1 / e^2 power)
-          = usually ifo.Optics.ITM.BeamRadius or ifo.Optics.ETM.BeamRadius
-
+    :returns: tuple of:
     SsurfT = power spectra of thermal fluctuations in K^2 / Hz
     rdel = thermal diffusion length at each frequency in m
 
     """
-    # use substrate temperature
-    subTemp = ifo.Materials.Substrate.Temp
-
-    kBT2 = const.kB * subTemp**2
-  
-    pS = ifo.Materials.Substrate
+    pS = materials.Substrate
     C_S = pS.MassCM * pS.MassDensity
     K_S = pS.MassKappa
+    kBT2 = const.kB * pS.Temp**2
 
     # omega
     w = 2 * pi * f
-  
+
     # thermal diffusion length
     rdel = sqrt(2 * K_S / (C_S * w))
-  
+
     # noise equation
     SsurfT = 4 * kBT2 / (pi * w * C_S * rdel * wBeam**2)
+
     return SsurfT, rdel
 
 
-def getCoatLayers(ifo, dOpt):
+def getCoatLayers(materials, wavelength, dOpt):
     """Layer vectors for refractive index, effective alpha and beta and geometrical thickness
 
-    (see getCoatTOPos for example usage)
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
-    ifo    = parameter struct from IFOmodel.m
-    dOpt   = optical thickness / lambda of each layer
-           = geometrical thickness * refractive index / lambda
-
+    :returns: tuple of:
     nLayer = refractive index of each layer, ordered input to output (N x 1)
     aLayer = change in geometrical thickness with temperature
            = the effective thermal expansion coeffient of the coating layer
@@ -363,35 +309,32 @@ def getCoatLayers(ifo, dOpt):
 
     """
     # coating parameters
-    lambda_ = ifo.Laser.Wavelength
-    
-    pS = ifo.Materials.Substrate
-    pC = ifo.Materials.Coating
-  
+    pS = materials.Substrate
+    pC = materials.Coating
+
     Y_S = pS.MirrorY
     sigS = pS.MirrorSigma
-  
+
     alphaL = pC.Alphalown
     betaL = pC.Betalown
     Y_L = pC.Ylown
     sigL = pC.Sigmalown
     nL = pC.Indexlown
-  
+
     alphaH = pC.Alphahighn
     betaH = pC.Betahighn
     Y_H = pC.Yhighn
     sigH = pC.Sigmahighn
     nH = pC.Indexhighn
-  
+
     Nlayer = len(dOpt)
-  
+
     # compute effective alpha
     def getExpansionRatio(Y_C, sigC, Y_S, sigS):
         ##############################################
         # Y_C and sigC are for the coating material (can also be substrate)
         # Y_S and sigS are for the substrate material
         #
-  
         ce = ((1 + sigS) / (1 - sigC)) \
              * ( ((1 + sigC) / (1 + sigS)) + (1 - 2 * sigS) * Y_C / Y_S )
         return ce
@@ -399,7 +342,7 @@ def getCoatLayers(ifo, dOpt):
     aLayer = zeros(Nlayer)
     aLayer[::2] = alphaL * getExpansionRatio(Y_L, sigL, Y_S, sigS)
     aLayer[1::2] = alphaH * getExpansionRatio(Y_H, sigH, Y_S, sigS)
-  
+
     # and beta
     bLayer = zeros(Nlayer)
     bLayer[::2] = betaL
@@ -409,9 +352,9 @@ def getCoatLayers(ifo, dOpt):
     nLayer = zeros(Nlayer)
     nLayer[::2] = nL
     nLayer[1::2] = nH
-  
+
     # and geometrical thickness
-    dLayer = lambda_ * np.asarray(dOpt) / nLayer
+    dLayer = wavelength * np.asarray(dOpt) / nLayer
 
     # and sigma correction
     sLayer = zeros(Nlayer)
@@ -421,15 +364,14 @@ def getCoatLayers(ifo, dOpt):
     return nLayer, aLayer, bLayer, dLayer, sLayer
 
 
-def getCoatAvg(ifo, dOpt):
+def getCoatAvg(materials, wavelength, dOpt):
     """Coating average properties
 
-    (see getCoatTOPos for example usage)
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
-    ifo  = parameter struct from IFOmodel.m
-    dOpt = optical thickness / lambda of each layer
-         = geometrical thickness * refractive index / lambda
-
+    :returns: tuple of:
     dc = total thickness (meters)
     Cc = heat capacity
     Kc = thermal diffusivity
@@ -437,33 +379,33 @@ def getCoatAvg(ifo, dOpt):
 
     """
     # coating parameters
-    pS = ifo.Materials.Substrate
-    pC = ifo.Materials.Coating
-  
+    pS = materials.Substrate
+    pC = materials.Coating
+
     alphaS = pS.MassAlpha
     C_S = pS.MassCM * pS.MassDensity
     sigS = pS.MirrorSigma
-  
+
     C_L = pC.CVlown
     K_L = pC.ThermalDiffusivitylown
 
     C_H = pC.CVhighn
     K_H = pC.ThermalDiffusivityhighn
-  
+
     # compute refractive index, effective alpha and beta
-    junk1, junk2, junk3, dLayer, junk4 = getCoatLayers(ifo, dOpt)
-  
+    junk1, junk2, junk3, dLayer, junk4 = getCoatLayers(materials, wavelength, dOpt)
+
     # heat capacity
     dc = sum(dLayer)
     dL = sum(dLayer[::2])
     dH = sum(dLayer[1::2])
     Cc = (C_L * dL + C_H * dH) / dc
-  
+
     # thermal diffusivity
     KinvL = 1 / K_L
     KinvH = 1 / K_H
     Kc = dc / (KinvL * dL + KinvH * dH)
-  
+
     # effective substrate thermal expansion
     aSub = 2 * alphaS * (1 + sigS) * Cc / C_S
 
@@ -473,17 +415,18 @@ def getCoatAvg(ifo, dOpt):
 def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     """Coating reflection phase derivatives w.r.t. temperature
 
-    nIn = refractive index of input medium (e.g., vacuum = 1)
-    nOut = refractive index of output medium (e.g., SiO2 = 1.45231 @ 1064nm)
-    nLayer = refractive index of each layer, ordered input to output (N x 1)
-    dOpt   = optical thickness / lambda of each layer
+    :nIn: refractive index of input medium (e.g., vacuum = 1)
+    :nOut: refractive index of output medium (e.g., SiO2 = 1.45231 @ 1064nm)
+    :nLayer: refractive index of each layer, ordered input to output (N x 1)
+    :dOpt: optical thickness / lambda of each layer
            = geometrical thickness * refractive index / lambda
-    aLayer = change in geometrical thickness with temperature
-           = the effective thermal expansion coeffient of the coating layer
-    bLayer = change in refractive index with temperature
-           = dn/dT 
-           = dd/dT - n * a
+    :aLayer: change in geometrical thickness with temperature
+             = the effective thermal expansion coeffient of the coating layer
+    :bLayer: change in refractive index with temperature
+             = dn/dT 
+             = dd/dT - n * a
 
+    :returns: tuple of:
     dphi_dT = total thermo-optic phase derivative with respect to temperature
             = dphi_TE + dphi_TR
     dphi_TE = thermo-elastic phase derivative (dphi / dT)
@@ -494,8 +437,9 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     a_Ta2O5 ~ 3.5 * alpha_Ta2O5
     a_SiO2 ~ 2.3 * alpha_SiO2
 
-    see getCoatTOPos for more information
-    (see also T080101)
+    See :getCoatTOPos: for more information.
+
+    See LIGO-T080101.
 
     """
     # coating reflectivity calc
@@ -519,22 +463,18 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     return dphi_dT, dphi_TE, dphi_TR, rCoat
 
 
-def getCoatFiniteCorr(ifo, wBeam, dOpt):
+def getCoatFiniteCorr(materials, wavelength, wBeam, dOpt):
     """Finite mirror size correction
+
+    :materials: gwinc optic materials structure
+    :wavelength: laser wavelength
+    :wBeam: beam radius (at 1 / e^2 power)
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
     Uses correction factor from PLA 2003 vol 312 pg 244-255
     "Thermodynamical fluctuations in optical mirror coatings"
     by V. B. Braginsky and S. P. Vyatchanin
     http://arxiv.org/abs/cond-mat/0302617
-
-    ifo = parameter struct from IFOmodel.m
-    opticName = name of the Optic struct to use for wBeam and dOpt
-    wBeam = ifoArg.Optics.(opticName).BeamRadius
-    dOpt = ifoArg.Optics.(opticName).CoatLayerOpticalThickness
-
-    wBeam = beam radius (at 1 / e^2 power)
-    dOpt   = optical thickness / lambda of each layer
-           = geometrical thickness * refractive index / lambda
 
     (see getCoatTOPos for example usage)
 
@@ -542,30 +482,29 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
 
     """
     # parameter extraction
-    R = ifo.Materials.MassRadius      #substrate radius
-    H = ifo.Materials.MassThickness   #substrate thickness
-    lambda_ = ifo.Laser.Wavelength
+    R = materials.MassRadius      #substrate radius
+    H = materials.MassThickness   #substrate thickness
 
-    alphaS = ifo.Materials.Substrate.MassAlpha
-    C_S = ifo.Materials.Substrate.MassCM * ifo.Materials.Substrate.MassDensity
-    Y_S = ifo.Materials.Substrate.MirrorY
-    sigS = ifo.Materials.Substrate.MirrorSigma
+    alphaS = materials.Substrate.MassAlpha
+    C_S = materials.Substrate.MassCM * materials.Substrate.MassDensity
+    Y_S = materials.Substrate.MirrorY
+    sigS = materials.Substrate.MirrorSigma
 
-    alphaL = ifo.Materials.Coating.Alphalown
-    C_L = ifo.Materials.Coating.CVlown
-    Y_L = ifo.Materials.Coating.Ylown
-    sigL = ifo.Materials.Coating.Sigmalown
-    nL = ifo.Materials.Coating.Indexlown
+    alphaL = materials.Coating.Alphalown
+    C_L = materials.Coating.CVlown
+    Y_L = materials.Coating.Ylown
+    sigL = materials.Coating.Sigmalown
+    nL = materials.Coating.Indexlown
 
-    alphaH = ifo.Materials.Coating.Alphahighn
-    C_H = ifo.Materials.Coating.CVhighn
-    Y_H = ifo.Materials.Coating.Yhighn
-    sigH = ifo.Materials.Coating.Sigmahighn
-    nH = ifo.Materials.Coating.Indexhighn
+    alphaH = materials.Coating.Alphahighn
+    C_H = materials.Coating.CVhighn
+    Y_H = materials.Coating.Yhighn
+    sigH = materials.Coating.Sigmahighn
+    nH = materials.Coating.Indexhighn
 
     # coating sums
-    dL = lambda_ * sum(dOpt[::2]) / nL
-    dH = lambda_ * sum(dOpt[1::2]) / nH
+    dL = wavelength * sum(dOpt[::2]) / nL
+    dH = wavelength * sum(dOpt[1::2]) / nH
     dc = dH + dL
 
     # AVERAGE SPECIFIC HEAT (simple volume average for coating)
@@ -597,7 +536,7 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
     # between eq 77 and 78
     km = zeta / R
     Qm = exp(-2 * km * H)
-    pm = exp(-km**2 * r0**2 / 4) / j0m;  # left out factor of pi * R^2 in denominator
+    pm = exp(-km**2 * r0**2 / 4) / j0m # left out factor of pi * R^2 in denominator
 
     # eq 88
     Lm = Xr - Zf * (1 + sigS) + (Yr * (1 - 2 * sigS) + Zf - 2 * Cr) * \
@@ -613,26 +552,23 @@ def getCoatFiniteCorr(ifo, wBeam, dOpt):
 
     # eq 92
     Cfsm = sqrt((r0**2 * P) / (2 * R**2 * (1 + sigS)**2 * LAMBDA**2))
+
     return Cfsm
 
 
-def getCoatDopt(ifo, T, dL, dCap=0.5):
+def getCoatDopt(materials, T, dL, dCap=0.5):
     """Coating layer optical thicknesses to match desired transmission
 
-    ifo = gwinc IFO model, or vector of 3 refractive indexes [nS, nL, nH]
-    nS, nL, nH = refractive index of substrate, low and high-n materials
-                 nL is used for the even layers, nH for odd layers
-                 this algorithm may fail if nS > nL
-    opticName = name of the Optic struct to use for T, dL and dCap
-    T = power transmission of coating
-    dL = optical thickness of low-n layers
-         high-n layers have dH = 0.5 - dL
-    dCap = first layer (low-n) thickness (default 0.5)
-    dOpt = optical thickness vector Nlayer x 1
-    
+    :materials: gwinc optic materials structure
+    :T: power transmission of coating
+    :dL: optical thickness of low-n layers (high-n layers have dH = 0.5 - dL)
+    :dCap: first layer (low-n) thickness (default 0.5)
+
+    :returns: optical thickness array Nlayer x 1 (dOpt)
+
     """
     ##############################################
-    def getTrans(ifo, Ndblt, dL, dH, dCap, dTweak):
+    def getTrans(materials, Ndblt, dL, dH, dCap, dTweak):
 
         # the optical thickness vector
         dOpt = zeros(2 * Ndblt)
@@ -644,16 +580,16 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
         T = zeros(N)
         for n in range(N):
             dOpt[-1] = dTweak[n]
-            r = getCoatRefl(ifo, dOpt)[0]
+            r = getCoatRefl(materials, dOpt)[0]
             T[n] = 1 - abs(r**2)
 
         return T
 
     ##############################################
-    def getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, Nfit):
+    def getTweak(materials, T, Ndblt, dL, dH, dCap, dScan, Nfit):
 
         # tweak bottom layer
-        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, dScan)
+        Tn = getTrans(materials, Ndblt, dL, dH, dCap, dScan)
         pf = polyfit(dScan, Tn - T, Nfit)
         rts = roots(pf)
         if not any((imag(rts) == 0) & (rts > 0)):
@@ -663,7 +599,7 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
         dTweak = real(min(rts[(imag(rts) == 0) & (rts > 0)]))
 
         # compute T for this dTweak
-        Td = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dTweak]))
+        Td = getTrans(materials, Ndblt, dL, dH, dCap, np.array([dTweak]))
 
         return dTweak, Td
 
@@ -675,13 +611,13 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
         #   pause(1)
 
     # get IFO model stuff (or create it for other functions)
-    pS = ifo.Materials.Substrate
-    pC = ifo.Materials.Coating
+    pS = materials.Substrate
+    pC = materials.Coating
 
     nS = pS.RefractiveIndex
     nL = pC.Indexlown
     nH = pC.Indexhighn
-  
+
     ########################
     # find number of quarter-wave layers required, as first guess
     nR = nH / nL
@@ -691,37 +627,37 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
     # search through number of doublets to find Ndblt
     # which gives T lower than required
     dH = 0.5 - dL
-    Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+    Tn = getTrans(materials, Ndblt, dL, dH, dCap, np.array([dH]))
     while Tn < T and Ndblt > 1:
         # strange, but T is too low... remove doublets
         Ndblt = Ndblt - 1
-        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+        Tn = getTrans(materials, Ndblt, dL, dH, dCap, np.array([dH]))
     while Tn > T and Ndblt < 1e3:
         # add doublets until T > tN
         Ndblt = Ndblt + 1
-        Tn = getTrans(ifo, Ndblt, dL, dH, dCap, np.array([dH]))
+        Tn = getTrans(materials, Ndblt, dL, dH, dCap, np.array([dH]))
 
     ########################
     # tweak bottom layer
     delta = 0.01
     dScan = np.arange(0, 0.25+delta, delta)
-    dTweak = getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, 5)[0]
+    dTweak = getTweak(materials, T, Ndblt, dL, dH, dCap, dScan, 5)[0]
 
     if not dTweak:
         if nS > nL:
             raise Exception('Coating tweak layer not sufficient since nS > nL.')
         else:
             raise Exception('Coating tweak layer not found... very strange.')
-  
+
     # now that we are close, get a better result with a linear fit
     delta = 0.001
     dScan = np.linspace(dTweak - 3*delta, dTweak + 3*delta, 7)
-    dTweak, Td = getTweak(ifo, T, Ndblt, dL, dH, dCap, dScan, 3)
+    dTweak, Td = getTweak(materials, T, Ndblt, dL, dH, dCap, dScan, 3)
 
     # negative values are bad
     if dTweak < 0.01:
         dTweak = 0.01
-  
+
     # check the result
     if abs(log(Td / T)) > 1e-3:
         print('Exact coating tweak layer not found... %g%% error.' % abs(log(Td / T)))
@@ -737,23 +673,17 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
     return dOpt
 
 
-def getCoatRefl(ifo, dOpt):
+def getCoatRefl(materials, dOpt):
     """Amplitude reflectivity, with phase, of a coating
 
-    ifo = parameter struct from IFOmodel.m
-    dOpt   = optical thickness / lambda of each layer
-           = geometrical thickness * refractive index / lambda
+    :materials: gwinc optic materials sturcutre
+    :dOpt: coating layer thickness array (Nlayer x 1)
 
-    rCoat = amplitude reflectivity of coating (complex) = rbar(0)
-    dcdp = d reflection phase / d round-trip layer phase
-    rbar = amplitude reflectivity of coating from this layer down
-    r = amplitude reflectivity of this interface (r(1) is nIn to nLayer(1))
-
-    cf ewa/multidiel1.m
+    :returns: see return value of :geteCoatRefl2:
 
     """
-    pS = ifo.Materials.Substrate
-    pC = ifo.Materials.Coating
+    pS = materials.Substrate
+    pC = materials.Coating
 
     nS = pS.RefractiveIndex
     nL = pC.Indexlown
@@ -775,22 +705,21 @@ def getCoatRefl(ifo, dOpt):
 def getCoatRefl2(nIn, nOut, nLayer, dOpt):
     """Coating reflection and phase derivatives
 
-    nIn = refractive index of input medium (e.g., vacuum = 1)
-    nOut = refractive index of output medium (e.g., SiO2 = 1.45231 @ 1064nm)
-    nLayer = refractive index of each layer, ordered input to output (N x 1)
-    dOpt   = optical thickness / lambda of each layer
-           = geometrical thickness * refractive index / lambda
+    :nIn: refractive index of input medium (e.g., vacuum = 1)
+    :nOut: refractive index of output medium (e.g., SiO2 = 1.45231 @ 1064nm)
+    :nLayer: refractive index of each layer, ordered input to output (N x 1)
+    :dOpt: optical thickness / lambda of each layer,
+           geometrical thickness * refractive index / lambda
 
+    :returns: tuple of:
     rCoat = amplitude reflectivity of coating (complex) = rbar(0)
     dcdp = d reflection phase / d round-trip layer phase
     rbar = amplitude reflectivity of coating from this layer down
     r = amplitude reflectivity of this interface (r(1) is nIn to nLayer(1))
 
-    see GWINC getCoatRefl and getCoatTOPhase for more information
-    (see also T080101)
+    See LIGO-T080101.
 
     """
-
     # Z-dir (1 => away from the substrate, -1 => into the substrate)
     zdir = 1
 

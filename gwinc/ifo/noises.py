@@ -114,7 +114,17 @@ class CoatingBrownian(nb.Noise):
     )
 
     def calc(self):
-        return noise.coatingthermal.coatbrownian(self.freq, self.ifo)
+        wavelength = self.ifo.Laser.Wavelength
+        materials = self.ifo.Materials
+        wBeam_ITM = self.ifo.Optics.ITM.BeamRadius
+        wBeam_ETM = self.ifo.Optics.ETM.BeamRadius
+        dOpt_ITM = self.ifo.Optics.ITM.CoatLayerOpticalThickness
+        dOpt_ETM = self.ifo.Optics.ETM.CoatLayerOpticalThickness
+        nITM = noise.coatingthermal.coating_brownian(
+            self.freq, materials, wavelength, wBeam_ITM, dOpt_ITM)
+        nETM = noise.coatingthermal.coating_brownian(
+            self.freq, materials, wavelength, wBeam_ETM, dOpt_ETM)
+        return (nITM + nETM) * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class CoatingThermoOptic(nb.Noise):
@@ -128,7 +138,17 @@ class CoatingThermoOptic(nb.Noise):
     )
 
     def calc(self):
-        return noise.coatingthermal.thermooptic(self.freq, self.ifo)
+        wavelength = self.ifo.Laser.Wavelength
+        materials = self.ifo.Materials
+        wBeam_ITM = self.ifo.Optics.ITM.BeamRadius
+        wBeam_ETM = self.ifo.Optics.ETM.BeamRadius
+        dOpt_ITM = self.ifo.Optics.ITM.CoatLayerOpticalThickness
+        dOpt_ETM = self.ifo.Optics.ETM.CoatLayerOpticalThickness
+        nITM, junk1, junk2, junk3 = noise.coatingthermal.coating_thermooptic(
+            self.freq, materials, wavelength, wBeam_ITM, dOpt_ITM[:])
+        nETM, junk1, junk2, junk3 = noise.coatingthermal.coating_thermooptic(
+            self.freq, materials, wavelength, wBeam_ETM, dOpt_ETM[:])
+        return (nITM + nETM) * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class ITMThermoRefractive(nb.Noise):

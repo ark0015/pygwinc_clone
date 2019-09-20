@@ -56,11 +56,11 @@ def precompIFO(f, ifoin, PRfixed=True):
         T = ifo.Optics.ITM.Transmittance
         dL = ifo.Optics.ITM.CoatingThicknessLown
         dCap = ifo.Optics.ITM.CoatingThicknessCap
-        ifo.Optics.ITM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
+        ifo.Optics.ITM.CoatLayerOpticalThickness = getCoatDopt(ifo.Materials, T, dL, dCap=dCap)
         T = ifo.Optics.ETM.Transmittance
         dL = ifo.Optics.ETM.CoatingThicknessLown
         dCap = ifo.Optics.ETM.CoatingThicknessCap
-        ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo, T, dL, dCap=dCap)
+        ifo.Optics.ETM.CoatLayerOpticalThickness = getCoatDopt(ifo.Materials, T, dL, dCap=dCap)
 
     ##############################
     # beam parameters
