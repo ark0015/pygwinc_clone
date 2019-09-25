@@ -3,6 +3,7 @@ import numpy as np
 from .. import nb
 from .. import noise
 
+
 class QuantumVacuum(nb.Noise):
     """Quantum Vacuum
 
@@ -50,7 +51,8 @@ class Newtonian(nb.Noise):
     )
 
     def calc(self):
-        return noise.newtonian.gravg(self.freq, self.ifo)
+        n = noise.newtonian.gravg(self.freq, self.ifo.Seismic)
+        return n * 4 * self.ifo.gwinc.dhdl_sqr
 
 
 class NewtonianRayleigh(nb.Noise):
@@ -63,7 +65,8 @@ class NewtonianRayleigh(nb.Noise):
     )
 
     def calc(self):
-        return noise.newtonian.gravg_rayleigh(self.freq, self.ifo)
+        n = noise.newtonian.gravg_rayleigh(self.freq, self.ifo.Seismic)
+        return n * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class NewtonianBody(nb.Noise):
@@ -76,8 +79,9 @@ class NewtonianBody(nb.Noise):
     )
 
     def calc(self):
-        return (noise.newtonian.gravg_pwave(self.freq, self.ifo)
-               + noise.newtonian.gravg_swave(self.freq, self.ifo))
+        np = noise.newtonian.gravg_pwave(self.freq, self.ifo.Seismic)
+        ns = noise.newtonian.gravg_swave(self.freq, self.ifo.Seismic)
+        return (np + ns) * 4 * self.ifo.gwinc.dhdl_sqr
 
 
 class NewtonianInfrasound(nb.Noise):
@@ -90,7 +94,8 @@ class NewtonianInfrasound(nb.Noise):
     )
 
     def calc(self):
-        return noise.newtonian.atmois(self.freq, self.ifo)
+        n = noise.newtonian.atmois(self.freq, self.ifo.Atmospheric, self.ifo.Seismic)
+        return n * 2 * self.ifo.gwinc.dhdl_sqr
 
 
 class SuspensionThermal(nb.Noise):
