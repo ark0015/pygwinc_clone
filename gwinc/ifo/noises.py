@@ -240,4 +240,5 @@ class ExcessGas(nb.Noise):
     )
 
     def calc(self):
-        return noise.residualgas.gas(self.freq, self.ifo)
+        n = noise.residualgas.residual_gas_cavity(self.freq, self.ifo)
+        return n * 2 / self.ifo.Infrastructure.Length**2

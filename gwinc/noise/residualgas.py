@@ -1,15 +1,22 @@
+'''Functions to calculate residual gas noise
+
+'''
 from __future__ import division
 from numpy import sqrt, log, pi
 
 from .. import const
 
 
-def gas(f, ifo):
-    """Residual gas noise in arm cavities
+def residual_gas_cavity(f, ifo):
+    """Residual gas noise strain spectrum in an evacuated cavity.
 
-    The following function models the noise spectrum caused by the
-    passage of residual gas molecules through the laser beams in the
-    arms of the interferometer.
+    Noise caused by the passage of residual gas molecules through the
+    laser beams in a cavity.
+
+    :f: frequency array in Hz
+    :ifo: gwinc IFO structure
+
+    :returns: arm displacement noise power spectrum at :f:
 
     The method used here is presented by Rainer Weiss, Micheal
     E. Zucker, and Stanley E. Whitcomb in their paper Optical
@@ -21,21 +28,20 @@ def gas(f, ifo):
     expansion of exp, to speed it up.
 
     """
-    L      = ifo.Infrastructure.Length
     Lambda = ifo.Laser.Wavelength
-    k      = const.kB
-    T      = ifo.Infrastructure.Temp
-    P      = ifo.Infrastructure.ResidualGas.pressure            # Pressure inside the vacuum
-    M      = ifo.Infrastructure.ResidualGas.mass
-    R1     = ifo.Optics.Curvature.ITM                           # Radius of curvature of ITM
-    R2     = ifo.Optics.Curvature.ETM                           # Radius of curvature of ETM
-    alpha  = ifo.Infrastructure.ResidualGas.polarizability      #
+    L = ifo.Infrastructure.Length
+    kT = ifo.Infrastructure.Temp * const.kB
+    P = ifo.Infrastructure.ResidualGas.pressure
+    M = ifo.Infrastructure.ResidualGas.mass
+    alpha = ifo.Infrastructure.ResidualGas.polarizability
+    R1 = ifo.Optics.Curvature.ITM
+    R2 = ifo.Optics.Curvature.ETM
 
-    rho = P /(k*T)                                           # number density of Gas
-    v0  = sqrt(2*k*T / M)                                    # Mean speed of Gas
+    rho = P /(kT)                                   # number density of Gas
+    v0 = sqrt(2*kT / M)                             # mean speed of Gas
 
-    g1 = 1 - L/R1                                 #  first resonator g-parameter of the ITM
-    g2 = 1 - L/R2                                 # second resonator g-parameter of the ETM
+    g1 = 1 - L/R1                                   # first resonator g-parameter of the ITM
+    g2 = 1 - L/R2                                   # second resonator g-parameter of the ETM
     waist = L * Lambda / pi
     waist = waist * sqrt(((g1*g2)*(1-g1*g2))/((g1+g2-2*g1*g2)**2))
     waist = sqrt(waist)                             # Gaussian beam waist size
@@ -52,6 +58,5 @@ def gas(f, ifo):
     zint = zint*((4*rho*(2*pi*alpha)**2)/v0)
     # eliminate any negative values due to first order approx.
     zint[zint < 0] = 0
-    # account for both arms & turn into strain noise power
-    n = 2 * zint / L**2
-    return n
+
+    return zint
