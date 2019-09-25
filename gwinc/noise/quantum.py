@@ -1,6 +1,9 @@
+'''Functions to calculate quantum noise
+
+'''
 from __future__ import division
-from numpy import pi, sqrt, arctan, sin, cos, exp, size, ones, zeros, log10, conj, sum
 import numpy as np
+from numpy import pi, sqrt, arctan, sin, cos, exp, size, ones, zeros, log10, conj, sum
 import logging
 
 from .. import const
@@ -8,13 +11,17 @@ from ..struct import Struct
 
 
 def shotrad(f, ifo):
-    """Quantum noise
+    """Quantum noise noise strain spectrum
+
+    :f: frequency array in Hz
+    :ifo: gwinc IFO structure
+
+    :returns: strain noise power spectrum at :f:
 
     corresponding author: mevans
     modifications for resonant delay lines: Stefan Ballmer
 
     """
-
     try:
         sqzType = ifo.Squeezer.Type
     except AttributeError:
@@ -107,7 +114,7 @@ def shotrad(f, ifo):
     else:
         SQZ_DB = ifo.Squeezer.AmplitudedB        # Squeeing in dB
         lambda_in = ifo.Squeezer.InjectionLoss   # Loss to squeezing before injection [Power]
-        alpha = ifo.Squeezer.SQZAngle        # Freq Indep Squeeze angle
+        alpha = ifo.Squeezer.SQZAngle            # Freq Indep Squeeze angle
         ANTISQZ_DB = ifo.Squeezer.get('AntiAmplitudedB', SQZ_DB)  # Anti squeezing in db
         etaRMS = ifo.Squeezer.get('LOAngleRMS', 0)  # quadrature noise
 
@@ -170,8 +177,8 @@ def shotrad(f, ifo):
     # IFO Transfer and Output Filter Cavities
     #####################################################
 
-    # apply the IFO dependent squeezing matrix to get
-    #   the total noise due to quantum fluctuations coming in from the AS port
+    # apply the IFO dependent squeezing matrix to get the total noise
+    # due to quantum fluctuations coming in from the AS port
     Msqz = getProdTF(Mifo, Msqz)
 
     # add this to the other noises Mn
@@ -288,32 +295,31 @@ def shotradSignalRecycled(f, ifo):
     Mnoise = noise fields produced by losses in the IFO at the AS port
 
     """
-    # f                                          # Signal Freq. [Hz]
     lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
-    hbar    = const.hbar                         # Plancks Constant [Js]
-    c       = const.c                            # SOL [m/s]
+    hbar = const.hbar                            # Plancks Constant [Js]
+    c = const.c                                  # SOL [m/s]
     omega_0 = 2*pi*c/lambda_                     # Laser angular frequency [rads/s]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    L       = ifo.Infrastructure.Length          # Length of arm cavities [m]
-    l       = ifo.Optics.SRM.CavityLength        # SRC Length [m]
-    T       = ifo.Optics.ITM.Transmittance       # ITM Transmittance [Power]
-    m       = ifo.Materials.MirrorMass           # Mirror mass [kg]
+    L = ifo.Infrastructure.Length                # Length of arm cavities [m]
+    l = ifo.Optics.SRM.CavityLength              # SRC Length [m]
+    T = ifo.Optics.ITM.Transmittance             # ITM Transmittance [Power]
+    m = ifo.Materials.MirrorMass                 # Mirror mass [kg]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    bsloss  = ifo.Optics.BSLoss                  # BS Loss [Power]
+    bsloss = ifo.Optics.BSLoss                   # BS Loss [Power]
     mismatch = 1 - ifo.Optics.coupling           # Mismatch
     mismatch = mismatch + ifo.TCS.SRCloss        # Mismatch
 
     # BSloss + mismatch has been incorporated into a SRC Loss
-    lambda_SR = 1 - (1 - mismatch) * (1 - bsloss)  # SR cavity loss [Power]
+    lambda_SR = 1 - (1 - mismatch) * (1 - bsloss) # SR cavity loss [Power]
 
-    tau     = sqrt(ifo.Optics.SRM.Transmittance)  # SRM Transmittance [amplitude]
-    rho     = sqrt(1 - tau**2)                   # SRM Reflectivity [amplitude]
+    tau = sqrt(ifo.Optics.SRM.Transmittance)     # SRM Transmittance [amplitude]
+    rho = sqrt(1 - tau**2)                       # SRM Reflectivity [amplitude]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ds      = ifo.Optics.SRM.Tunephase           # SRC Detunning
-    phi     = ds/2
+    ds = ifo.Optics.SRM.Tunephase                # SRC Detunning
+    phi = ds/2
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     lambda_arm = 1 - (1 - ifo.Optics.Loss)**2 * (1 - ifo.Optics.ETM.Transmittance)
@@ -352,8 +358,8 @@ def shotradSignalRecycled(f, ifo):
     lossArm = sqrt(lambda_arm)
     lossSR = sqrt(lambda_SR)
 
-    Omega   = 2*pi*f             # Signal angular frequency [rad/s]
-    h_SQL   = sqrt(8 * hbar / (m * (Omega * L)**2))     # SQL Strain
+    Omega = 2*pi*f                               # Signal angular frequency [rad/s]
+    h_SQL = sqrt(8 * hbar / (m * (Omega * L)**2)) # SQL Strain
     K = 16 * P * omega_0 / (m * c**2 * Omega**2)
 
     # arm cavity
@@ -469,45 +475,44 @@ def shotradSignalRecycledBnC(f, ifo):
     Mnoise = noise fields produced by losses in the IFO at the AS port
 
     """
-    # f                                           % Signal Freq. [Hz]
     lambda_ = ifo.Laser.Wavelength               # Laser Wavelength [m]
-    hbar    = const.hbar                         # Plancks Constant [Js]
-    c       = const.c                            # SOL [m/s]
-    Omega   = 2*pi*f                             # [BnC, table 1] Signal angular frequency [rads/s]
+    hbar = const.hbar                            # Plancks Constant [Js]
+    c = const.c                                  # SOL [m/s]
+    Omega = 2*pi*f                               # [BnC, table 1] Signal angular frequency [rads/s]
     omega_0 = 2*pi*c/lambda_                     # [BnC, table 1] Laser angular frequency [rads/s]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    L       = ifo.Infrastructure.Length          # Length of arm cavities [m]
-    l       = ifo.Optics.SRM.CavityLength        # SRC Length [m]
-    T       = ifo.Optics.ITM.Transmittance       # ITM Transmittance [Power]
-    m       = ifo.Materials.MirrorMass           # Mirror mass [kg]
+    L = ifo.Infrastructure.Length                # Length of arm cavities [m]
+    l = ifo.Optics.SRM.CavityLength              # SRC Length [m]
+    T = ifo.Optics.ITM.Transmittance             # ITM Transmittance [Power]
+    m = ifo.Materials.MirrorMass                 # Mirror mass [kg]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    bsloss  = ifo.Optics.BSLoss                  # BS Loss [Power]
+    bsloss = ifo.Optics.BSLoss                   # BS Loss [Power]
     mismatch = 1 - ifo.Optics.coupling           # Mismatch
     mismatch = mismatch + ifo.TCS.SRCloss        # Mismatch
 
     # BSloss + mismatch has been incorporated into a SRC Loss
     lambda_SR = mismatch + bsloss                # SR cavity loss [Power]
 
-    tau     = sqrt(ifo.Optics.SRM.Transmittance) # SRM Transmittance [amplitude]
-    rho     = sqrt(1 - tau**2 - lambda_SR)       # SRM Reflectivity [amplitude]
+    tau = sqrt(ifo.Optics.SRM.Transmittance)     # SRM Transmittance [amplitude]
+    rho = sqrt(1 - tau**2 - lambda_SR)           # SRM Reflectivity [amplitude]
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ds      = ifo.Optics.SRM.Tunephase           # SRC Detunning
-    phi     = (pi-ds)/2                          # [BnC, between 2.14 & 2.15] SR Detuning
+    ds = ifo.Optics.SRM.Tunephase                # SRC Detunning
+    phi = (pi-ds)/2                              # [BnC, between 2.14 & 2.15] SR Detuning
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     lambda_arm = ifo.Optics.Loss*2               # [BnC, after 5.2] Round Trip loss in arm [Power]
     gamma_ac = T*c/(4*L)                         # [KLMTV-PRD2001] Arm cavity half bandwidth [1/s]
     epsilon = lambda_arm/(2*gamma_ac*L/c)        # [BnC, after 5.2] Loss coefficent for arm cavity
 
-    I_0     = ifo.gwinc.pbs                      # [BnC, Table 1] Power at BS (Power*prfactor) [W]
-    I_SQL   = (m*L**2*gamma_ac**4)/(4*omega_0)   # [BnC, 2.14] Power to reach free mass SQL
-    Kappa   = 2*((I_0/I_SQL)*gamma_ac**4)/ \
+    I_0 = ifo.gwinc.pbs                          # [BnC, Table 1] Power at BS (Power*prfactor) [W]
+    I_SQL = (m*L**2*gamma_ac**4)/(4*omega_0)     # [BnC, 2.14] Power to reach free mass SQL
+    Kappa = 2*((I_0/I_SQL)*gamma_ac**4)/ \
               (Omega**2*(gamma_ac**2+Omega**2))  # [BnC 2.13] Effective Radiation Pressure Coupling
-    beta    = arctan(Omega/gamma_ac)             # [BnC, after 2.11] Phase shift of GW SB in arm
-    h_SQL   = sqrt(8*hbar/(m*(Omega*L)**2))      # [BnC, 2.12] SQL Strain
+    beta = arctan(Omega/gamma_ac)                # [BnC, after 2.11] Phase shift of GW SB in arm
+    h_SQL = sqrt(8*hbar/(m*(Omega*L)**2))        # [BnC, 2.12] SQL Strain
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -522,60 +527,60 @@ def shotradSignalRecycledBnC(f, ifo):
     cos_2beta = exp_2jbeta.real
     invexp_2jbeta = 1/exp_2jbeta
     exp_4jbeta = exp_2jbeta**2
-    C11_L   = ( (1+rho**2) * ( cos(2*phi) + Kappa/2 * sin(2*phi) ) -
-                2*rho*cos_2beta - 1/4*epsilon * ( -2 * (1+exp_2jbeta)**2 * rho + 4 * (1+rho**2) *
-                                                    cos_beta**2*cos(2*phi) + ( 3+exp_2jbeta ) *
-                                                    Kappa * (1+rho**2) * sin(2*phi) ) +
-                lambda_SR * ( exp_2jbeta*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
+    C11_L = ( (1+rho**2) * ( cos(2*phi) + Kappa/2 * sin(2*phi) ) -
+              2*rho*cos_2beta - 1/4*epsilon * ( -2 * (1+exp_2jbeta)**2 * rho + 4 * (1+rho**2) *
+                                                cos_beta**2*cos(2*phi) + ( 3+exp_2jbeta ) *
+                                                Kappa * (1+rho**2) * sin(2*phi) ) +
+              lambda_SR * ( exp_2jbeta*rho-1/2 * (1+rho**2) * ( cos(2*phi)+Kappa/2 * sin(2*phi) ) ) )
 
-    C22_L   = C11_L
+    C22_L = C11_L
 
-    C12_L   = tau**2 * ( - ( sin(2*phi) + Kappa*sin(phi)**2 )+
-                         1/2*epsilon*sin(phi) * ( (3+exp_2jbeta) * Kappa * sin(phi) + 4*cos_beta**2 * cos(phi)) +
-                         1/2*lambda_SR * ( sin(2*phi)+Kappa*sin(phi)**2) )
+    C12_L = tau**2 * ( - ( sin(2*phi) + Kappa*sin(phi)**2 )+
+                       1/2*epsilon*sin(phi) * ( (3+exp_2jbeta) * Kappa * sin(phi) + 4*cos_beta**2 * cos(phi)) +
+                       1/2*lambda_SR * ( sin(2*phi)+Kappa*sin(phi)**2) )
 
-    C21_L   = tau**2 * ( (sin(2*phi)-Kappa*cos(phi)**2 ) +
-                         1/2*epsilon*cos(phi) * ( (3+exp_2jbeta )*Kappa*cos(phi) - 4*cos_beta**2*sin(phi) ) +
-                         1/2*lambda_SR * ( -sin(2*phi) + Kappa*cos(phi)**2) )
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    D1_L    = ( - (1+rho*exp_2jbeta ) * sin(phi) +
-                1/4*epsilon * ( 3+rho+2*rho*exp_4jbeta + exp_2jbeta*(1+5*rho) ) * sin(phi)+
-                1/2*lambda_SR * exp_2jbeta * rho * sin(phi) )
-
-    D2_L    = ( - (-1+rho*exp_2jbeta ) * cos(phi) +
-                1/4*epsilon * ( -3+rho+2*rho*exp_4jbeta + exp_2jbeta * (-1+5*rho) ) * cos(phi)+
-                1/2*lambda_SR * exp_2jbeta * rho * cos(phi) )
+    C21_L = tau**2 * ( (sin(2*phi)-Kappa*cos(phi)**2 ) +
+                       1/2*epsilon*cos(phi) * ( (3+exp_2jbeta )*Kappa*cos(phi) - 4*cos_beta**2*sin(phi) ) +
+                       1/2*lambda_SR * ( -sin(2*phi) + Kappa*cos(phi)**2) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    P11     = 0.5 * sqrt(lambda_SR) * tau * \
-              ( -2*rho*exp_2jbeta+2*cos(2*phi)+Kappa*sin(2*phi) )
-    P22     = P11
-    P12     = -sqrt(lambda_SR)*tau*sin(phi)*(2*cos(phi)+Kappa*sin(phi) )
-    P21     =  sqrt(lambda_SR)*tau*cos(phi)*(2*sin(phi)-Kappa*cos(phi) )
+    D1_L = ( - (1+rho*exp_2jbeta ) * sin(phi) +
+             1/4*epsilon * ( 3+rho+2*rho*exp_4jbeta + exp_2jbeta*(1+5*rho) ) * sin(phi)+
+             1/2*lambda_SR * exp_2jbeta * rho * sin(phi) )
+
+    D2_L = ( - (-1+rho*exp_2jbeta ) * cos(phi) +
+             1/4*epsilon * ( -3+rho+2*rho*exp_4jbeta + exp_2jbeta * (-1+5*rho) ) * cos(phi)+
+             1/2*lambda_SR * exp_2jbeta * rho * cos(phi) )
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    P11 = 0.5 * sqrt(lambda_SR) * tau * \
+          ( -2*rho*exp_2jbeta+2*cos(2*phi)+Kappa*sin(2*phi) )
+    P22 = P11
+    P12 = -sqrt(lambda_SR)*tau*sin(phi)*(2*cos(phi)+Kappa*sin(phi) )
+    P21 =  sqrt(lambda_SR)*tau*cos(phi)*(2*sin(phi)-Kappa*cos(phi) )
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # this was the PD noise source, but that belongs outside of this function
     #   I have used the equation for Q11 to properly normalize the other noises
     #   as well as the input-output relation Mc and the signal matrix Md
 
-    Q11     = 1 / \
-              ( invexp_2jbeta+rho**2*exp_2jbeta-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
-                1/2*epsilon*rho * (invexp_2jbeta*cos(2*phi)+exp_2jbeta*
-                                   ( -2*rho-2*rho*cos_2beta+cos(2*phi)+Kappa*sin(2*phi) ) +
-                                   2*cos(2*phi)+3*Kappa*sin(2*phi))-1/2*lambda_SR*rho *
-                ( 2*rho*exp_2jbeta-2*cos(2*phi)-Kappa*sin(2*phi) ) )
-    Q22     = Q11
-    Q12     = 0
-    Q21     = 0
+    Q11 = 1 / \
+        ( invexp_2jbeta+rho**2*exp_2jbeta-rho*(2*cos(2*phi)+Kappa*sin(2*phi)) +
+          1/2*epsilon*rho * (invexp_2jbeta*cos(2*phi)+exp_2jbeta*
+                             ( -2*rho-2*rho*cos_2beta+cos(2*phi)+Kappa*sin(2*phi) ) +
+                             2*cos(2*phi)+3*Kappa*sin(2*phi))-1/2*lambda_SR*rho *
+          ( 2*rho*exp_2jbeta-2*cos(2*phi)-Kappa*sin(2*phi) ) )
+    Q22 = Q11
+    Q12 = 0
+    Q21 = 0
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    N11     = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp_2jbeta)*sin(phi)+
-                                    2*cos_beta*(invexp_1jbeta*cos(phi)-rho*exp_1jbeta*(cos(phi)+Kappa*sin(phi))))
-    N22     = -sqrt(2*epsilon)*tau*(-invexp_1jbeta+rho*exp_1jbeta)*cos_beta*cos(phi)
-    N12     = -sqrt(2*epsilon)*tau*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi);
-    N21     = sqrt(epsilon/2)*tau*(-Kappa*(1+rho)*cos(phi)+
-                                   2*cos_beta*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi))
+    N11 = sqrt(epsilon/2)*tau *(Kappa*(1+rho*exp_2jbeta)*sin(phi)+
+                                2*cos_beta*(invexp_1jbeta*cos(phi)-rho*exp_1jbeta*(cos(phi)+Kappa*sin(phi))))
+    N22 = -sqrt(2*epsilon)*tau*(-invexp_1jbeta+rho*exp_1jbeta)*cos_beta*cos(phi)
+    N12 = -sqrt(2*epsilon)*tau*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi);
+    N21 = sqrt(epsilon/2)*tau*(-Kappa*(1+rho)*cos(phi)+
+                               2*cos_beta*(invexp_1jbeta+rho*exp_1jbeta)*cos_beta*sin(phi))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # overall coefficient
@@ -597,10 +602,9 @@ def shotradSignalRecycledBnC(f, ifo):
 
 
 def make2x2TF(A11, A12, A21, A22):
+    """Create transfer matrix with 2x2xnF.
+
     """
-    Create transfer matrix with 2x2xnF.
-    """
-    #now using numpy with broadcasting
     A11, A12, A21, A22 = np.broadcast_arrays(A11, A12, A21, A22)
     M3 = np.array([[A11, A12], [A21, A22]])
     return M3.reshape(2, 2, -1)
