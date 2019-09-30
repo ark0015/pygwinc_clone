@@ -206,7 +206,7 @@ def atmois(f, ifo):
         a_if = ifo.Atmospheric.InfrasoundLevel1Hz
         e_if = ifo.Atmospheric.InfrasoundExponent
         psd_if = (a_if * f**e_if)**2
-    except:
+    except AttributeError:
         psd_if = atmoBowman(f)**2
 
     # Harms LRR (2015), eq. 172
