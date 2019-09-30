@@ -193,8 +193,6 @@ def gravg_swave(f, ifo):
 def atmois(f, ifo):
     import scipy.special as scisp
 
-    a_if = ifo.Atmospheric.InfrasoundLevel1Hz
-    e_if = ifo.Atmospheric.InfrasoundExponent
     p_air = ifo.Atmospheric.AirPressure
     rho_air = ifo.Atmospheric.AirDensity
     ai_air = ifo.Atmospheric.AdiabaticIndex
@@ -208,7 +206,12 @@ def atmois(f, ifo):
     k = w / c_sound
 
     # Pressure spectrum
-    psd_if = (a_if * f**e_if)**2
+    try:
+        a_if = ifo.Atmospheric.InfrasoundLevel1Hz
+        e_if = ifo.Atmospheric.InfrasoundExponent
+        psd_if = (a_if * f**e_if)**2
+    except:
+        psd_if = atmoBowman(f)**2
 
     # Harms LRR (2015), eq. 172
     # https://doi.org/10.1007/lrr-2015-3
