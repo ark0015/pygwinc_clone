@@ -31,7 +31,7 @@
 
 Infrastructure:
   Length: 40000                   # m; whoa
-  Temp: 290                       # K
+  Temp: 293                       # K
   ResidualGas:
     pressure: 4.0e-7              # Pa
     mass: 3.35e-27                # kg; Mass of H_2 (ref. 10)
@@ -67,16 +67,23 @@ TCS:
   SRCloss: 0.00
 
 Seismic:
-  Site: 'LHO'                     # LHO or LLO (only used for Newtonian noise)
-  KneeFrequency: 10               # Hz; freq where 'flat' noise rolls off
-  LowFrequencyLevel: 1e-9         # m/rtHz; seismic noise level below f_knee
-  Gamma: 0.8                      # abruptness of change at f_knee
-  Rho: 1.8e3                      # kg/m^3; density of the ground nearby
-  Beta: 0.8                       # quiet times beta: 0.35-0.60
-                                  # noisy times beta: 0.15-1.4
-  Omicron: 10                     # Feedforward cancellation factor
-  TestMassHeight: 1.5             # m
-  RayleighWaveSpeed: 250          # m/s
+  Site: 'LHO'                       # LHO or LLO (only used for Newtonian noise)
+  KneeFrequency: 5                  # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevel: 1e-9           # m/rtHz; seismic noise level below f_knee
+  KneeFrequencyHorizontal: 4        # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevelHorizontal: 1e-9 # m/rtHz; seismic noise level below f_knee
+  Gamma: 0.8                        # abruptness of change at f_knee
+  Rho: 1.8e3                        # kg/m^3; density of the ground nearby
+  Beta: 0.8                         # quiet times beta: 0.35-0.60
+                                    # noisy times beta: 0.15-1.4
+  Omicron: 10                       # Feedforward cancellation factor
+  TestMassHeight: 1.5               # m
+  pWaveSpeed: 600                   # m/s
+  sWaveSpeed: 300                   # m/s
+  RayleighWaveSpeed: 250            # m/s
+  pWaveLevel: 10                    # Multiple of the Peterson NLNM amplitude
+  sWaveLevel: 10                    # Multiple of the Peterson NLNM amplitude
+  PlatformMotion: 'BSC'
 
 Suspension:
   Type: 'Quad'
