@@ -22,7 +22,15 @@ def seismicAll(f, ifo):
     theta = ifo.Suspension.VHCoupling.theta
 
     # noise input, horizontal and vertical
-    nt, nr = seisBSC(f)
+    if 'PlatformMotion' in ifo.Seismic:
+        if ifo.Seismic.PlatformMotion == 'BSC':
+            nt, nr = seisBSC(f)
+        elif ifo.Seismic.PlatformMotion == '6D':
+            nt, nr = seis6D(f)
+        else:
+            nt, nr = seisBSC(f)
+    else:
+        nt, nr = seisBSC(f)
 
     # horizontal noise total
     nh = (abs(hTable)**2) * nt**2
