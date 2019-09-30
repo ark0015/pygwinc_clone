@@ -87,7 +87,7 @@ def seis6D(f):
     nr_self = 10**(interp1d(SEI_F, log10(SEI_R_self))(f))
     nr_gnd = np.abs(1e-7/(1+1j*f/0.001))
     blend_r = np.abs(100/(1+1j*f/0.01)**4)
-    nr = np.sqrt(nr_self**2 + (blend_t * nr_gnd)**2)
+    nr = np.sqrt(nr_self**2 + (blend_r * nr_gnd)**2)
 
     return nt, nr
 
