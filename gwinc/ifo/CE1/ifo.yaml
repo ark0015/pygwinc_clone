@@ -85,6 +85,12 @@ Seismic:
   sWaveLevel: 10                    # Multiple of the Peterson NLNM amplitude
   PlatformMotion: 'BSC'
 
+Atmospheric:
+  AirPressure: 101325 # Pa
+  AirDensity: 1.225 # kg/m**3
+  AdiabaticIndex: 1.4
+  SoundSpeed: 344 # m/s
+
 Suspension:
   Type: 'Quad'
   FiberType: 'Tapered'
