@@ -158,6 +158,38 @@ def gravg_pwave(f, ifo):
     return psd_gravg_pwave * ifo.gwinc.sinc_sqr
 
 
+def gravg_swave(f, ifo):
+    """Gravity gradient noise for seismic s-waves
+    Following Harms LRR: https://doi.org/10.1007/lrr-2015-3
+
+    """
+    import scipy.integrate as scint
+    import scipy.special as scisp
+
+    from gwinc.noise.seismic import seisNLNM
+
+    ggcst = const.G
+    cS = ifo.Seismic.sWaveSpeed
+    levelS = ifo.Seismic.sWaveLevel
+    kS = (2 * np.pi * f) / cS
+
+    rho_ground = ifo.Seismic.Rho
+    psd_ground_swave = (levelS * seisNLNM(f))**2
+
+    tmheight = ifo.Seismic.TestMassHeight 
+    xS = np.abs(kS * tmheight)
+
+    # For both surface and underground facilities
+    height_supp_power = (3 / 2) * np.array([scint.quad(lambda th, x: np.sin(th)**3
+            * np.exp(-2 * x * np.sin(th)), 0, np.pi / 2, args=(x,))[0]
+            for x in xS])
+    psd_gravg_swave = ((2 * np.pi * ggcst * rho_ground)**2
+            * psd_ground_swave * height_supp_power)
+    psd_gravg_swave *= 4 / ((2 * np.pi * f)**2 * ifo.Infrastructure.Length)**2
+
+    return psd_gravg_swave * ifo.gwinc.sinc_sqr
+
+
 def atmois(f, ifo):
     import scipy.special as scisp
 
