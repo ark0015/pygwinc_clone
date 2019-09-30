@@ -116,11 +116,11 @@ def gravg_rayleigh(f, ifo):
 
     gnu = k * (1 - zeta) / (qzP - k * zeta)
 
-    n = 2 * (2 * pi * ggcst * rho * exp(-h * k) * gnu)**2 * ground**2 / (w**2 * L)**2
+    n = 2 * (2 * pi * ggcst * rho * exp(-h * k) * gnu)**2 * ground**2 / w**4
 
     n /= omicron**2
 
-    return n * ifo.gwinc.sinc_sqr
+    return n * ifo.gwinc.dhdl_sqr
 
 
 def gravg_pwave(f, ifo):
@@ -153,8 +153,8 @@ def gravg_pwave(f, ifo):
                 for x in xP])
     psd_gravg_pwave = ((2 * np.pi * ggcst * rho_ground)**2
             * psd_ground_pwave * height_supp_power)
-    psd_gravg_pwave *= 4 / ((2 * np.pi * f)**2 * ifo.Infrastructure.Length)**2
-    return psd_gravg_pwave * ifo.gwinc.sinc_sqr
+    psd_gravg_pwave *= 4 / (2 * np.pi * f)**4
+    return psd_gravg_pwave * ifo.gwinc.dhdl_sqr
 
 
 def gravg_swave(f, ifo):
@@ -179,9 +179,9 @@ def gravg_swave(f, ifo):
             for x in xS])
     psd_gravg_swave = ((2 * np.pi * ggcst * rho_ground)**2
             * psd_ground_swave * height_supp_power)
-    psd_gravg_swave *= 4 / ((2 * np.pi * f)**2 * ifo.Infrastructure.Length)**2
+    psd_gravg_swave *= 4 / (2 * np.pi * f)**4
 
-    return psd_gravg_swave * ifo.gwinc.sinc_sqr
+    return psd_gravg_swave * ifo.gwinc.dhdl_sqr
 
 
 def atmois(f, ifo):
