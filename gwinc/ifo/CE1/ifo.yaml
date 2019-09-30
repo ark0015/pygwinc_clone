@@ -200,8 +200,8 @@ Suspension:
 
 ## Optic Material -------------------------------------------------------
 Materials:
-  MassRadius: 0.17                # m; 
-  MassThickness: 0.200            # m; Peter F 8/11/2005
+  MassRadius: 0.4                 # m
+  MassThickness: 0.286            # m
 
   ## Dielectric coating material parameters----------------------------------
   Coating:
