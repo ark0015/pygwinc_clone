@@ -72,6 +72,10 @@ def gravg(f, ifo):
 
 
 def gravg_rayleigh(f, ifo):
+    """Gravity gradient noise for seismic Rayleigh waves
+    Following Harms LRR: https://doi.org/10.1007/lrr-2015-3
+
+    """
     fk = ifo.Seismic.KneeFrequency
     a = ifo.Seismic.LowFrequencyLevel
     L = ifo.Infrastructure.Length
