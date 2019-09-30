@@ -276,8 +276,8 @@ Optics:
     Tunephase: 0.0                # SEC tuning
 
   Curvature:                      # ROC
-    ITM: 34783
-    ETM: 34783
+    ITM: 34000
+    ETM: 36000
 
 ## Squeezer Parameters------------------------------------------------------
 # Define the squeezing you want:
@@ -295,9 +295,9 @@ Squeezer:
 
   # Parameters for frequency dependent squeezing
   FilterCavity:
-    L: 4000                       # cavity length
-    Te: 5e-6                      # end mirror trasmission
-    Lrt: 150e-6                   # round-trip loss in the cavity
-    Rot: 0                        # phase rotation after cavity
-    fdetune: -4.98                # detuning [Hz]
-    Ti: 1.67e-3                   # input mirror trasmission [Power]
+    fdetune: -4.99    # detuning [Hz] zz['x'][0][1]
+    L: 4000           # cavity length [m]
+    Ti: 0.00167       # input mirror transmission [Power] zz['x'][0][2]
+    Te: 5e-6          # end mirror transmission
+    Lrt: 150e-6       # round-trip loss in the cavity
+    Rot: 0            # phase rotation after cavity
