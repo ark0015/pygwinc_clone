@@ -1,6 +1,10 @@
 from __future__ import division
-from numpy import pi, sqrt, exp
 
+import scipy.integrate as scint
+import scipy.special as scisp
+
+from numpy import pi, sqrt, exp
+from .seismic import seisNLNM
 from .. import const
 
 
@@ -124,11 +128,6 @@ def gravg_pwave(f, ifo):
     Following Harms LRR: https://doi.org/10.1007/lrr-2015-3
 
     """
-    import scipy.integrate as scint
-    import scipy.special as scisp
-
-    from gwinc.noise.seismic import seisNLNM
-
     ggcst = const.G
     cP = ifo.Seismic.pWaveSpeed
     levelP = ifo.Seismic.pWaveLevel
@@ -163,11 +162,6 @@ def gravg_swave(f, ifo):
     Following Harms LRR: https://doi.org/10.1007/lrr-2015-3
 
     """
-    import scipy.integrate as scint
-    import scipy.special as scisp
-
-    from gwinc.noise.seismic import seisNLNM
-
     ggcst = const.G
     cS = ifo.Seismic.sWaveSpeed
     levelS = ifo.Seismic.sWaveLevel
@@ -191,8 +185,10 @@ def gravg_swave(f, ifo):
 
 
 def atmois(f, ifo):
-    import scipy.special as scisp
+    """
+    Atmospheric infrasound calculation following Harms LRR.
 
+    """
     p_air = ifo.Atmospheric.AirPressure
     rho_air = ifo.Atmospheric.AirDensity
     ai_air = ifo.Atmospheric.AdiabaticIndex
