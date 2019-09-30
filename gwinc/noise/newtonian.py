@@ -1,7 +1,6 @@
 from __future__ import division
 
 import scipy.integrate as scint
-import scipy.special as scisp
 
 from numpy import pi, sqrt, exp
 from .seismic import seisNLNM
