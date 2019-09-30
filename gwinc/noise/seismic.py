@@ -60,6 +60,30 @@ def seisBSC(f):
     return nt, nr
 
 
+def seis6D(f):
+    """ISI noise source spectra with a 6D seismometer.
+
+    This largely follows Mow-Lowry and Martynov, arXiv:1801.01468.
+
+    """
+
+    SEI_F = np.array([0.01, 0.03, 0.1, 0.2, 0.5, 1, 10, 100, 300])
+
+    SEI_T_self = np.array([1e-7, 1e-9, 3e-11, 6e-12, 3e-13, 1e-13, 3e-14, 1e-14, 1e-14])
+    nt_self = 10**(interp1d(SEI_F, log10(SEI_T_self))(f))
+    nt_gnd = 10*seisNLNM(f)
+    blend_t = np.abs(100/(1+1j*f/0.01)**4)
+    nt = np.sqrt(nt_self**2 + (blend_t * nt_gnd)**2)
+
+    SEI_R_self = np.array([2e-11, 5e-12, 1e-12, 6e-13, 3e-13, 2e-13, 6e-14, 2e-14, 2e-14])
+    nr_self = 10**(interp1d(SEI_F, log10(SEI_R_self))(f))
+    nr_gnd = np.abs(1e-7/(1+1j*f/0.001))
+    blend_r = np.abs(100/(1+1j*f/0.01)**4)
+    nr = np.sqrt(nr_self**2 + (blend_t * nr_gnd)**2)
+
+    return nt, nr
+
+
 def seisNLNM(f):
     """The Peterson New Low-Noise Model.
 
