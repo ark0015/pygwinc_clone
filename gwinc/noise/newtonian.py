@@ -70,6 +70,51 @@ def gravg(f, ifo):
 
     return n * ifo.gwinc.sinc_sqr
 
+
+def gravg_rayleigh(f, ifo):
+    fk = ifo.Seismic.KneeFrequency
+    a = ifo.Seismic.LowFrequencyLevel
+    L = ifo.Infrastructure.Length
+    gamma = ifo.Seismic.Gamma
+    ggcst = const.G
+    rho = ifo.Seismic.Rho
+    # factor to account for correlation between masses
+    # and the height of the mirror above the ground
+    beta = ifo.Seismic.Beta
+    h = ifo.Seismic.TestMassHeight
+    c_rayleigh = ifo.Seismic.RayleighWaveSpeed
+
+    if 'Omicron' in ifo.Seismic:
+        omicron = ifo.Seismic.Omicron
+    else:
+        omicron = 1
+
+    # a sort of theta function (Fermi distr.)
+    coeff = 3**(-gamma*f)/(3**(-gamma*f) + 3**(-gamma*fk))
+
+    # modelization of seismic noise (vertical)
+    ground = a*coeff + a*(1-coeff)*(fk/f)**2
+    if 'Site' in ifo.Seismic and ifo.Seismic.Site == 'LLO':
+        ground = a*coeff*(fk/f) + a*(1-coeff)*(fk/f)**2
+
+    # Harms LRR eqs. 35, 96, and 98
+    w = 2 * pi * f
+    k = w / c_rayleigh
+    kP = w / ifo.Seismic.pWaveSpeed
+    kS = w / ifo.Seismic.sWaveSpeed
+    qzP = sqrt(k**2 - kP**2)
+    qzS = sqrt(k**2 - kS**2)
+    zeta = sqrt(qzP / qzS)
+
+    gnu = k * (1 - zeta) / (qzP - k * zeta)
+
+    n = 2 * (2 * pi * ggcst * rho * exp(-h * k) * gnu)**2 * ground**2 / (w**2 * L)**2
+
+    n /= omicron**2
+
+    return n * ifo.gwinc.sinc_sqr
+
+
 def atmois(f, ifo):
     import scipy.special as scisp
 
