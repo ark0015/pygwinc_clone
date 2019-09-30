@@ -119,6 +119,45 @@ def gravg_rayleigh(f, ifo):
     return n * ifo.gwinc.sinc_sqr
 
 
+def gravg_pwave(f, ifo):
+    """Gravity gradient noise for seismic p-waves
+    Following Harms LRR: https://doi.org/10.1007/lrr-2015-3
+
+    """
+    import scipy.integrate as scint
+    import scipy.special as scisp
+
+    from gwinc.noise.seismic import seisNLNM
+
+    ggcst = const.G
+    cP = ifo.Seismic.pWaveSpeed
+    levelP = ifo.Seismic.pWaveLevel
+    kP = (2 * np.pi * f) / cP
+
+    rho_ground = ifo.Seismic.Rho
+    psd_ground_pwave = (levelP * seisNLNM(f))**2
+
+    tmheight = ifo.Seismic.TestMassHeight 
+    xP = np.abs(kP * tmheight)
+
+    if tmheight >= 0:
+        # Surface facility
+        # The P-S conversion at the surface is not implemented
+        height_supp_power = (3 / 2) * np.array([scint.quad(lambda th, x: np.sin(th)**3
+                * np.exp(-2 * x * np.sin(th)), 0, np.pi / 2, args=(x,))[0]
+                for x in xP])
+    else:
+        # Underground facility
+        # The cavity effect is not included
+        height_supp_power = (3 / 4) * np.array([scint.quad(lambda th, x: np.sin(th)**3
+                * (2 - np.exp(-x * np.sin(th)))**2, 0, np.pi, args=(x,))[0]
+                for x in xP])
+    psd_gravg_pwave = ((2 * np.pi * ggcst * rho_ground)**2
+            * psd_ground_pwave * height_supp_power)
+    psd_gravg_pwave *= 4 / ((2 * np.pi * f)**2 * ifo.Infrastructure.Length)**2
+    return psd_gravg_pwave * ifo.gwinc.sinc_sqr
+
+
 def atmois(f, ifo):
     import scipy.special as scisp
 
