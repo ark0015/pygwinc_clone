@@ -214,11 +214,11 @@ def atmois(f, ifo):
     # With an extra factor 2 for two arms
     # And with the Bessel terms ignored... for 4 km this amounts to a 10%
     # correction at 10 Hz and a 30% correction at 1 Hz
-    coupling_if = 4./3 * (4 * pi / (k * L * w**2) * ggcst * rho_air / (ai_air * p_air))**2
+    coupling_if = 4./3 * (4 * pi / (k * w**2) * ggcst * rho_air / (ai_air * p_air))**2
 
     n_if = coupling_if * psd_if
 
-    return n_if * ifo.gwinc.sinc_sqr
+    return n_if * ifo.gwinc.dhdl_sqr
 
 
 def atmoBowman(f):
