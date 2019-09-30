@@ -83,3 +83,29 @@ def seisNLNM(f):
          48.75])
     nlnm = 10**(np.interp(1/f, Pl, Al+Bl*np.log10(Pl))/20) / (2 * np.pi * f)**2
     return nlnm
+
+
+def seisNHNM(f):
+    """The Peterson New High-Noise Model.
+
+    Returns a displacement ASD.
+
+    """
+
+    Pl = np.array([
+        1.00e-01, 2.20e-01, 3.20e-01, 8.00e-01, 3.80e+00,
+        4.60e+00, 6.30e+00, 7.90e+00, 1.54e+01, 2.00e+01,
+        3.54e+02,
+        ])  
+    Al = np.array([
+        -108.73, -150.34, -122.31, -116.85, -108.48,
+         -74.66,    0.66,  -93.37,   73.54, -151.52,
+        -206.66,
+        ])
+    Bl = np.array([
+         -17.23,  -80.50,  -23.87,   32.51,   18.08,
+         -32.95, -127.18,  -22.42, -162.98,   10.01,
+          31.63,
+        ])
+    nhnm = 10**(np.interp(1/f, Pl, Al+Bl*np.log10(Pl))/20) / (2 * np.pi * f)**2
+    return nhnm
