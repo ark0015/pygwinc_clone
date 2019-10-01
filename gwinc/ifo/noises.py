@@ -1,8 +1,6 @@
 from .. import nb
 from .. import noise
 
-import numpy as np
-
 class QuantumVacuum(nb.Noise):
     """Quantum Vacuum
 
