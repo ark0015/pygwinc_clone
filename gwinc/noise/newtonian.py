@@ -85,9 +85,6 @@ def gravg_rayleigh(f, ifo):
     gamma = ifo.Seismic.Gamma
     ggcst = const.G
     rho = ifo.Seismic.Rho
-    # factor to account for correlation between masses
-    # and the height of the mirror above the ground
-    beta = ifo.Seismic.Beta
     h = ifo.Seismic.TestMassHeight
     c_rayleigh = ifo.Seismic.RayleighWaveSpeed
 
