@@ -1,6 +1,7 @@
 from .. import nb
 from .. import noise
 
+import numpy as np
 
 class QuantumVacuum(nb.Noise):
     """Quantum Vacuum
@@ -21,25 +22,49 @@ class Seismic(nb.Noise):
     """
     style = dict(
         label='Seismic',
-        color='#653700',
+        color='#855700',
     )
 
     def calc(self):
         return noise.seismic.seismic(self.freq, self.ifo)
 
 
-class Newtonian(nb.Noise):
+class NewtonianRayleigh(nb.Noise):
     """Newtonian Gravity
 
     """
     style = dict(
-        label='Newtonian Gravity',
-        color='#15b01a',
+        label='Newtonian (Rayleigh waves)',
+        color='#1b2431'
     )
 
     def calc(self):
-        return noise.newtonian.gravg(self.freq, self.ifo)
+        return noise.newtonian.gravg_rayleigh(self.freq, self.ifo)
 
+class NewtonianBody(nb.Noise):
+    """Newtonian Gravity
+
+    """
+    style = dict(
+        label='Newtonian (body waves)',
+        color='#85a3b2',
+    )
+
+    def calc(self):
+        return (noise.newtonian.gravg_pwave(self.freq, self.ifo)
+               + noise.newtonian.gravg_swave(self.freq, self.ifo))
+
+class NewtonianInfrasound(nb.Noise):
+    """Newtonian Gravity infrasound
+
+    """
+    style = dict(
+        label='Newtonian (infrasound)',
+        color='#ffa62b',
+    )
+
+    def calc(self):
+        return noise.newtonian.atmois(self.freq, self.ifo)
 
 class AtmosphericInfrasound(nb.Noise):
     """Atmospheric Infrasound
@@ -67,6 +92,17 @@ class SuspensionThermal(nb.Noise):
     def calc(self):
         return noise.suspensionthermal.susptherm(self.freq, self.ifo)
 
+class SuspensionThermal_matgwinc_CE2(nb.Noise):
+    """Suspension Thermal
+
+    """
+    style = dict(
+        label='Suspension Thermal',
+        color='#0d75f8',
+    )
+
+    def calc(self):
+        return noise.suspensionthermal.susptherm_CE2(self.freq)
 
 class CoatingBrownian(nb.Noise):
     """Coating Brownian
@@ -157,7 +193,7 @@ class ExcessGas(nb.Noise):
     """
     style = dict(
         label='Excess Gas',
-        color='#ad900d',
+        color='#add00d',
         linestyle='--',
     )
 
