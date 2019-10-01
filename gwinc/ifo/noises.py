@@ -29,8 +29,21 @@ class Seismic(nb.Noise):
         return noise.seismic.seismic(self.freq, self.ifo)
 
 
-class NewtonianRayleigh(nb.Noise):
+class Newtonian(nb.Noise):
     """Newtonian Gravity
+
+    """
+    style = dict(
+        label='Newtonian',
+        color='#15b01a'
+    )
+
+    def calc(self):
+        return noise.newtonian.gravg(self.freq, self.ifo)
+
+
+class NewtonianRayleigh(nb.Noise):
+    """Newtonian Gravity, Rayleigh waves
 
     """
     style = dict(
@@ -41,8 +54,9 @@ class NewtonianRayleigh(nb.Noise):
     def calc(self):
         return noise.newtonian.gravg_rayleigh(self.freq, self.ifo)
 
+
 class NewtonianBody(nb.Noise):
-    """Newtonian Gravity
+    """Newtonian Gravity, body waves
 
     """
     style = dict(
@@ -54,26 +68,14 @@ class NewtonianBody(nb.Noise):
         return (noise.newtonian.gravg_pwave(self.freq, self.ifo)
                + noise.newtonian.gravg_swave(self.freq, self.ifo))
 
+
 class NewtonianInfrasound(nb.Noise):
-    """Newtonian Gravity infrasound
+    """Newtonian Gravity, infrasound
 
     """
     style = dict(
         label='Newtonian (infrasound)',
         color='#ffa62b',
-    )
-
-    def calc(self):
-        return noise.newtonian.atmois(self.freq, self.ifo)
-
-class AtmosphericInfrasound(nb.Noise):
-    """Atmospheric Infrasound
-
-    """
-    style = dict(
-        label='Atmospheric Infrasound',
-        color='#15b01a',
-        linestyle='--',
     )
 
     def calc(self):
@@ -92,17 +94,6 @@ class SuspensionThermal(nb.Noise):
     def calc(self):
         return noise.suspensionthermal.susptherm(self.freq, self.ifo)
 
-class SuspensionThermal_matgwinc_CE2(nb.Noise):
-    """Suspension Thermal
-
-    """
-    style = dict(
-        label='Suspension Thermal',
-        color='#0d75f8',
-    )
-
-    def calc(self):
-        return noise.suspensionthermal.susptherm_CE2(self.freq)
 
 class CoatingBrownian(nb.Noise):
     """Coating Brownian
