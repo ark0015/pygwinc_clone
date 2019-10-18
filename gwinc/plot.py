@@ -1,5 +1,5 @@
 from numpy import sqrt
-
+from collections import OrderedDict
 
 def plot_noise(
         freq,
@@ -24,6 +24,8 @@ def plot_noise(
     ylim = kwargs.get('ylim')
 
     for name, trace in traces.items():
+        if isinstance(trace, OrderedDict):
+            trace = trace['Total']
         try:
             data, style = trace
         except:
