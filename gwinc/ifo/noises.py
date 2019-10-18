@@ -33,7 +33,7 @@ class Newtonian(nb.Noise):
     """
     style = dict(
         label='Newtonian',
-        color='#15b01a'
+        color='#15b01a',
     )
 
     def calc(self):
@@ -46,7 +46,7 @@ class NewtonianRayleigh(nb.Noise):
     """
     style = dict(
         label='Newtonian (Rayleigh waves)',
-        color='#1b2431'
+        color='#1b2431',
     )
 
     def calc(self):
