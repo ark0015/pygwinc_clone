@@ -1,5 +1,6 @@
 from __future__ import division
 
+import numpy as np
 import scipy.integrate as scint
 
 from numpy import pi, sqrt, exp
@@ -127,7 +128,7 @@ def gravg_pwave(f, ifo):
     ggcst = const.G
     cP = ifo.Seismic.pWaveSpeed
     levelP = ifo.Seismic.pWaveLevel
-    kP = (2 * np.pi * f) / cP
+    kP = (2 * pi * f) / cP
 
     rho_ground = ifo.Seismic.Rho
     psd_ground_pwave = (levelP * seisNLNM(f))**2
@@ -139,17 +140,17 @@ def gravg_pwave(f, ifo):
         # Surface facility
         # The P-S conversion at the surface is not implemented
         height_supp_power = (3 / 2) * np.array([scint.quad(lambda th, x: np.sin(th)**3
-                * np.exp(-2 * x * np.sin(th)), 0, np.pi / 2, args=(x,))[0]
+                * np.exp(-2 * x * np.sin(th)), 0, pi / 2, args=(x,))[0]
                 for x in xP])
     else:
         # Underground facility
         # The cavity effect is not included
         height_supp_power = (3 / 4) * np.array([scint.quad(lambda th, x: np.sin(th)**3
-                * (2 - np.exp(-x * np.sin(th)))**2, 0, np.pi, args=(x,))[0]
+                * (2 - np.exp(-x * np.sin(th)))**2, 0, pi, args=(x,))[0]
                 for x in xP])
-    psd_gravg_pwave = ((2 * np.pi * ggcst * rho_ground)**2
+    psd_gravg_pwave = ((2 * pi * ggcst * rho_ground)**2
             * psd_ground_pwave * height_supp_power)
-    psd_gravg_pwave *= 4 / (2 * np.pi * f)**4
+    psd_gravg_pwave *= 4 / (2 * pi * f)**4
     return psd_gravg_pwave * ifo.gwinc.dhdl_sqr
 
 
@@ -161,7 +162,7 @@ def gravg_swave(f, ifo):
     ggcst = const.G
     cS = ifo.Seismic.sWaveSpeed
     levelS = ifo.Seismic.sWaveLevel
-    kS = (2 * np.pi * f) / cS
+    kS = (2 * pi * f) / cS
 
     rho_ground = ifo.Seismic.Rho
     psd_ground_swave = (levelS * seisNLNM(f))**2
@@ -171,11 +172,11 @@ def gravg_swave(f, ifo):
 
     # For both surface and underground facilities
     height_supp_power = (3 / 2) * np.array([scint.quad(lambda th, x: np.sin(th)**3
-            * np.exp(-2 * x * np.sin(th)), 0, np.pi / 2, args=(x,))[0]
+            * np.exp(-2 * x * np.sin(th)), 0, pi / 2, args=(x,))[0]
             for x in xS])
-    psd_gravg_swave = ((2 * np.pi * ggcst * rho_ground)**2
+    psd_gravg_swave = ((2 * pi * ggcst * rho_ground)**2
             * psd_ground_swave * height_supp_power)
-    psd_gravg_swave *= 4 / (2 * np.pi * f)**4
+    psd_gravg_swave *= 4 / (2 * pi * f)**4
 
     return psd_gravg_swave * ifo.gwinc.dhdl_sqr
 
