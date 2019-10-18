@@ -76,13 +76,13 @@ Seismic:
   Rho: 1.8e3                        # kg/m^3; density of the ground nearby
   Beta: 0.8                         # quiet times beta: 0.35-0.60
                                     # noisy times beta: 0.15-1.4
-  Omicron: 10                       # Feedforward cancellation factor
+  Omicron: 1                        # Feedforward cancellation factor
   TestMassHeight: 1.5               # m
   pWaveSpeed: 600                   # m/s
   sWaveSpeed: 300                   # m/s
   RayleighWaveSpeed: 250            # m/s
-  pWaveLevel: 10                    # Multiple of the Peterson NLNM amplitude
-  sWaveLevel: 10                    # Multiple of the Peterson NLNM amplitude
+  pWaveLevel: 50                    # Multiple of the Peterson NLNM amplitude
+  sWaveLevel: 40                    # Multiple of the Peterson NLNM amplitude
   PlatformMotion: 'BSC'
 
 Atmospheric:
