@@ -34,6 +34,7 @@ Infrastructure:
     pressure: 4.0e-7         # Pa
     mass: 3.35e-27           # kg,   Mass of H_2 (ref. 10)
     polarizability: 0.81e-30 # m^3  (H_2, DOI: 10.1116/1.1479360)
+  BuildingRadius: 10         # m
 
 TCS:
   ## Parameter describing thermal lensing
@@ -66,21 +67,25 @@ TCS:
   SRCloss: 0.00
 
 Seismic:
-  ## Seismic and Gravity Gradient Parameters
-  Site: 'LHO'                      # LHO or LLO (only used for Newtonian noise)
-  KneeFrequency: 10                # Hz; freq where 'flat' noise rolls off
-  LowFrequencyLevel: 1e-9          # m/rtHz; seismic noise level below f_knee
-  Gamma: 0.8                       # abruptness of change at f_knee
-  Rho: 1.8e3                       # kg/m^3; density of the ground nearby
-  Beta: 0.6                        # quiet times beta = 0.35-0.60; noisy times beta = 0.15-1.4
-  Omicron: 10                      # Feedforward cancellation factor
-  TestMassHeight: 1.5              # m
-  RayleighWaveSpeed: 250           # m/s
-  #darmSeiSusFile: 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
+  Site: 'LHO'                       # LHO or LLO (only used for Newtonian noise)
+  KneeFrequency: 5                  # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevel: 1e-9           # m/rtHz; seismic noise level below f_knee
+  KneeFrequencyHorizontal: 4        # Hz; freq where 'flat' noise rolls off
+  LowFrequencyLevelHorizontal: 1e-9 # m/rtHz; seismic noise level below f_knee
+  Gamma: 0.8                        # abruptness of change at f_knee
+  Rho: 1.8e3                        # kg/m^3; density of the ground nearby
+  Beta: 0.8                         # quiet times beta: 0.35-0.60
+                                    # noisy times beta: 0.15-1.4
+  Omicron: 10                       # Feedforward cancellation factor
+  TestMassHeight: 1.5               # m
+  pWaveSpeed: 600                   # m/s
+  sWaveSpeed: 300                   # m/s
+  RayleighWaveSpeed: 250            # m/s
+  pWaveLevel: 15                    # Multiple of the Peterson NLNM amplitude
+  sWaveLevel: 15                    # Multiple of the Peterson NLNM amplitude
+  PlatformMotion: '6D'
 
 Atmospheric:
-  InfrasoundLevel1Hz: 0.01 # Pa/rtHz
-  InfrasoundExponent: -1
   AirPressure: 101325 # Pa
   AirDensity: 1.225 # kg/m**3
   AdiabaticIndex: 1.4
@@ -93,8 +98,8 @@ Suspension:
   FiberType: 'Ribbon'
   # For Ribbon suspension
   Ribbon:
-    Thickness: 325e-6 # m
-    Width: 3250e-6 # m
+    Thickness: 115e-6 # m
+    Width: 1150e-6 # m
   Fiber:
     Radius: 205e-6 # m
   BreakStress: 750e6 # Pa; ref. K. Strain
@@ -110,6 +115,7 @@ Suspension:
       K: 8000
       WireRadius: .nan
       Blade: 0.0042 # blade thickness
+      BladeMaterial: 'Silicon'
       NWires: 4
     - Mass: 316.8 # kg; susmat['PUMmass'][0,0]
       Length: 0.682 # m
@@ -209,18 +215,18 @@ Materials:
   # Silicon @ 120K (http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html)
   Substrate:
     #  phi_sub = c2 * f^(MechLossExp)
-    c2: 3e-13            # Coeff of freq dep. term for bulk loss (Lam & Douglass, 1981)
+    c2: 3e-13                 # Coeff of freq dep. term for bulk loss (Lam & Douglass, 1981)
     MechanicalLossExponent: 1 # Exponent for freq dependence of silicon loss
-    Alphas: 5.2e-12      # Surface loss limit ???
-    MirrorY: 155.8e9     # N/m^2; Youngs modulus (ioffe) -- what about anisotropy??
-    MirrorSigma: 0.27    # kg/m^3; Poisson ratio (ioffe) -- what about anisotropy??
-    MassDensity: 2329    # kg/m^3; (ioffe)
-    MassAlpha: 1e-9      # 1/K; CTE = 0 @ 120 K
-    MassCM: 300          # J/kg/K; specific heat (ioffe @ 120K)
-    MassKappa: 700       # W/(m*K); thermal conductivity (ioffe @ 120)
-    RefractiveIndex: 3.5 # 3.38 * (1 + 4e-5 * T)   (ioffe)
-    dndT: 1e-4           # ~123K & 1900 nm : http://arxiv.org/abs/physics/0606168
-    Temp: 123            # mirror temperature [K]
+    Alphas: 5.2e-12           # Surface loss limit ???
+    MirrorY: 155.8e9          # N/m^2; Youngs modulus (ioffe) -- what about anisotropy??
+    MirrorSigma: 0.27         # kg/m^3; Poisson ratio (ioffe) -- what about anisotropy??
+    MassDensity: 2329         # kg/m^3; (ioffe)
+    MassAlpha: 1e-9           # 1/K; CTE = 0 @ 120 K
+    MassCM: 300               # J/kg/K; specific heat (ioffe @ 120K)
+    MassKappa: 700            # W/(m*K); thermal conductivity (ioffe @ 120)
+    RefractiveIndex: 3.5      # 3.38 * (1 + 4e-5 * T)   (ioffe)
+    dndT: 1e-4                # ~123K & 1900 nm : http://arxiv.org/abs/physics/0606168
+    Temp: 123                 # mirror temperature [K]
     ## parameters for semiconductor optics
     isSemiConductor: True     # we are doing semiconductor optics
     CarrierDensity: 1e19      # 1/m^3; carrier density for phosphorous-doped silicon
@@ -235,8 +241,8 @@ Materials:
   MassThickness: 0.286
 
 Laser:
-  Wavelength: 1550e-9 # m
-  Power: 220     # W zz['x'][0][0]
+  Wavelength: 2000e-9 # m
+  Power: 250     # W zz['x'][0][0]
 
 Optics:
   Type: 'SignalRecycled'
@@ -308,8 +314,8 @@ Optics:
   BSLoss: 0.1e-3               # power loss near beamsplitter
   coupling: 1.0                # mismatch btwn arms & SRC modes; used to calculate an effective r_srm
   Curvature:
-    ITM: 34783                 # RoC of ITM
-    ETM: 34783                 # RoC of ETM
+    ITM: 34000                 # RoC of ITM
+    ETM: 36000                 # RoC of ETM
   SubstrateAbsorption: 0.5e-4  # 1/m; 0.3 ppm/cm for Hereaus
   pcrit: 10                    # W; tolerable heating power (factor 1 ATC)
   Quadrature:
