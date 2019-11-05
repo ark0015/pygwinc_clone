@@ -1,13 +1,23 @@
 import os
-import logging
-
-from ..struct import Struct
-from ..util import load_module
 
 
 PLOT_STYLE = dict(
     ylabel=u"Strain [1/\u221AHz]",
 )
+
+
+def lpath(file0, file1):
+    """Return path of file1 when expressed relative to file0.
+
+    For instance, if file0 is "/path/to/file0" and file1 is
+    "../for/file1" then what is returned is "/path/for/file1".
+
+    This is useful for resolving paths within packages with e.g.:
+
+      rpath = lpath(__file__, '../resource.yaml')
+
+    """
+    return os.path.abspath(os.path.join(os.path.dirname(file0), file1))
 
 
 def available_ifos():
@@ -20,57 +30,3 @@ def available_ifos():
         if os.path.isdir(os.path.join(root, f)) and f[0] != '_':
             ifos.append(f)
     return sorted(ifos)
-
-
-def load_ifo(name_or_path):
-    """Load GWINC IFO Budget by name or from file.
-
-    Named IFOs should correspond to one of the IFOs available in the
-    gwinc package (see gwinc.available_ifos()).  If a path is provided
-    it should either be a budget package (directory) or module (ending
-    in .py), or an IFO struct (see gwinc.Struct).  In the latter case
-    the base aLIGO budget definition will be used.
-
-    Returns primary Budget class, ifo structure, frequency array, and
-    plot style dictionary, with the last three being None if they are
-    not defined in the budget.
-
-    """
-    ifo = None
-
-    if os.path.exists(name_or_path):
-        path = name_or_path.rstrip('/')
-        bname, ext = os.path.splitext(os.path.basename(path))
-
-        if ext in Struct.STRUCT_EXT:
-            logging.info("loading struct {}...".format(path))
-            ifo = Struct.from_file(path)
-            bname = 'aLIGO'
-            modname = 'gwinc.ifo.aLIGO'
-            logging.info("loading budget {}...".format(modname))
-
-        else:
-            modname = path
-            logging.info("loading module path {}...".format(modname))
-
-    else:
-        if name_or_path not in available_ifos():
-            raise RuntimeError("Unknonw IFO '{}' (available IFOs: {}).".format(
-                name_or_path,
-                available_ifos(),
-            ))
-        bname = name_or_path
-        modname = 'gwinc.ifo.'+name_or_path
-        logging.info("loading module {}...".format(modname))
-
-    mod, modpath = load_module(modname)
-
-    Budget = getattr(mod, bname)
-    ifo = getattr(mod, 'IFO', ifo)
-    ifopath = os.path.join(modpath, 'ifo.yaml')
-    if not ifo and ifopath:
-        ifo = Struct.from_file(ifopath)
-    freq = getattr(mod, 'FREQ', None)
-    plot_style = getattr(mod, 'PLOT_STYLE', PLOT_STYLE)
-
-    return Budget, ifo, freq, plot_style

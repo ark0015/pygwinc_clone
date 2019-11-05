@@ -1,13 +1,10 @@
 from __future__ import division
 import numpy as np
 from numpy import pi, sqrt
-from collections import OrderedDict
 import logging
 
-from . import load_ifo
+from . import load_budget, plot_noise
 from .precomp import precompIFO
-from . import noise
-from .plot import plot_noise
 
 
 def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
@@ -29,13 +26,14 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     # assume generic aLIGO configuration
     # FIXME: how do we allow adding arbitrary addtional noise sources
     # from just ifo description, without having to specify full budget
-    Budget, ifo_, freq_, plot_style = load_ifo('aLIGO')
+    Budget = load_budget('aLIGO')
 
     # add some precomputed info to the ifo struct
     # this implicitly deepcopies and the return value is the copy
     ifo = precompIFO(freq, ifoin, PRfixed)
 
     traces = Budget(freq, ifo=ifo).calc_trace()
+    plot_style = getattr(Budget, 'plot_style', {})
 
     # construct matgwinc-compatible noises structure
     noises = {}

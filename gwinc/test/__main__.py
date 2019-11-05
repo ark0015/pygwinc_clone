@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .. import load_ifo
+from .. import load_budget
 from ..gwinc import gwinc
 from ..gwinc_matlab import gwinc_matlab
 try:
@@ -58,7 +58,8 @@ def main():
     args = parser.parse_args()
 
     logging.info("loading IFO '{}'...".format(args.IFO))
-    Budget, ifo, freq, plot_style = load_ifo(args.IFO)
+    Budget = load_budget(args.IFO)
+    ifo = Budget.ifo
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 

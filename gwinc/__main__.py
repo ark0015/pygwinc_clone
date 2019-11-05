@@ -9,9 +9,8 @@ import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .ifo import available_ifos, load_ifo
+from . import available_ifos, load_budget, plot_noise
 from .precomp import precompIFO
-from . import plot_noise
 from . import io
 
 ##################################################
@@ -97,10 +96,12 @@ def main():
         plot_style = attrs
 
     else:
-        Budget, ifo, freq, plot_style = load_ifo(args.IFO)
+        Budget = load_budget(args.IFO)
+        ifo = Budget.ifo
         # FIXME: this should be done only if specified, to allow for
-        # using any FREQ specified in budget module by default
+        # using any FREQ specified in the Budget
         freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
+        plot_style = getattr(Budget, 'plot_style', {})
         traces = None
 
     if args.yaml:
@@ -117,7 +118,7 @@ def main():
         if not ifo:
             parser.exit(2, "no IFO structure available.")
         fmt = '{:30} {:>20} {:>20}'
-        Budget, ifoo, freq, plot_style = load_ifo(args.diff)
+        Budget = load_ifo(args.diff)
         diffs = ifo.diff(ifoo)
         if diffs:
             print(fmt.format('', args.IFO, args.diff))
