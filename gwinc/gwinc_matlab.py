@@ -120,7 +120,7 @@ def ifo_matlab_transform(ifo):
     """
     # add constants
     CONSTS = {k:v for k, v in const.__dict__ if not k.startswith('__')}
-    ifo.Constants = Struct.from_dict(CONSTS)
+    ifo.Constants = Struct(CONSTS)
 
     # copy tempurature into Constants
     ifo.Constants.Temp = ifo.Infrastructure.Temp

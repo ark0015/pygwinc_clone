@@ -75,11 +75,15 @@ class Struct(object):
 
     ##########
 
-    def __init__(self, **kwargs):
-        """Arguments can pre-fill the structure
+    def __init__(self, *args, **kwargs):
+        """Initialize Struct object
+
+        Initializes similar to dict(), taking a single dict or mapping
+        argument, or keyword arguments to initially populate the
+        Struct.
 
         """
-        self.__dict__.update(kwargs)
+        self.update(dict(*args, **kwargs))
 
     def __getitem__(self, key):
         """Get a (possibly nested) value from the struct.
@@ -114,6 +118,34 @@ class Struct(object):
 
     def setdefault(self, key, default):
         return self.__dict__.setdefault(key, default)
+
+    def update(self, other):
+        """Update Struct from other Struct or dict.
+
+        """
+        if isinstance(other, Struct):
+            d = other.__dict__
+        else:
+            d = dict(other)
+        for k, v in d.items():
+            if k in self:
+                if isinstance(self[k], Struct) \
+                   and isinstance(v, (dict, Struct)):
+                    self[k].update(v)
+                    continue
+                try:
+                    delattr(self, k)
+                except AttributeError:
+                    delattr(self.__class__, k)
+            if isinstance(v, dict):
+                self[k] = Struct(v)
+            elif isinstance(v, (list, tuple)):
+                try:
+                    self[k] = list(map(Struct, v))
+                except TypeError:
+                    self[k] = v
+            else:
+                self[k] = v
 
     def items(self):
         return self.__dict__.items()
@@ -255,29 +287,12 @@ class Struct(object):
 
 
     @classmethod
-    def from_dict(cls, d):
-        """Create Struct from nested dict.
-
-        """
-        c = cls()
-        for k,v in d.items():
-            if type(v) == dict:
-                c.__dict__[k] = Struct.from_dict(v)
-            else:
-                try:
-                    c.__dict__[k] = list(map(Struct.from_dict, v))
-                except (AttributeError, TypeError):
-                    c.__dict__[k] = v
-        return c
-
-
-    @classmethod
     def from_yaml(cls, y):
         """Create Struct from YAML string.
 
         """
         d = yaml.load(y, Loader=yaml_loader)
-        return cls.from_dict(d)
+        return cls(d)
 
 
     @classmethod
