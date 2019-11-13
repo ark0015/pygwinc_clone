@@ -57,7 +57,7 @@ class Struct(object):
 
     """
 
-    # FIXME: This would be a way to allow setting nested struct
+    # FIXME: There should be a way to allow setting nested struct
     # attributes, e.g.:
     #
     # >>> s = Struct()
