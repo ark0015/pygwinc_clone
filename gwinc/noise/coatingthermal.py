@@ -656,7 +656,7 @@ def getCoatDopt(ifo, T, dL, dCap=0.5):
         Tn = getTrans(ifo, Ndblt, dL, dH, dCap, dScan)
         pf = polyfit(dScan, Tn - T, Nfit)
         rts = roots(pf)
-        if not any(imag(rts) == 0 & (rts > 0)):
+        if not any((imag(rts) == 0) & (rts > 0)):
             dTweak = None
             Td = 0
             return dTweak, Td
