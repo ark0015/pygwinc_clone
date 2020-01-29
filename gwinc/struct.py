@@ -215,6 +215,9 @@ class Struct(object):
                 diffs.append((k, v, ov))
         return diffs
 
+    def __eq__(self, other):
+        """True if structs have all equal values"""
+        return not bool(self.diff(other))
 
     def to_txt(self, path=None, fmt='0.6e', delimiter=': ', end=''):
         """Return text represenation of Struct, one element per line.
