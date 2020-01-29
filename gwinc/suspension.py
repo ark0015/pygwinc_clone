@@ -1,9 +1,9 @@
 from __future__ import division
-from numpy import pi, sqrt, sin, cos, tan, real, imag, zeros
+from numpy import pi, sqrt, sin, cos, tan, real, imag
 import numpy as np
+import logging
 
-from . import const
-from .struct import Struct
+from .const import g
 
 
 # supported fiber geometries
@@ -46,7 +46,7 @@ def generate_symbolic_tfs(stages=4):
 
 def tst_force_to_tst_displ(k, m, f):
     """transfer function for quad pendulum
-    
+
     """
     k0, k1, k2, k3 = k
     m0, m1, m2, m3 = m
@@ -57,7 +57,7 @@ def tst_force_to_tst_displ(k, m, f):
 
 def top_displ_to_tst_displ(k, m, f):
     """transfer function for quad pendulum
-    
+
     """
     k0, k1, k2, k3 = k
     m0, m1, m2, m3 = m
@@ -66,17 +66,293 @@ def top_displ_to_tst_displ(k, m, f):
     return X0 * k0
 
 
-def suspQuad(f, sus, material='Silica'):
+def getJointParams(sus, n):
+    """Return relevant material properties from SUS struct
+
+    Parameters are returned as a pair of tuples,
+    (isLower, Temperature, WireMaterialStruct, BladeMaterialStruct),
+    corresponding to the upper and lower joints of stage n.
+
+    """
+    # Here the suspension stage list is reversed so that the last stage
+    # in the list is the test mass
+    stages = sus.Stage[::-1]
+    last_stage = len(stages) - 1
+    stage = stages[n]
+    if 'Temp' in stage:
+        Temp = stage.Temp
+    else:
+        Temp = sus.Temp
+
+    TempLower = Temp
+    if n == 0:
+        # For the top stage: if sus.Temp exists, interpret it as the
+        # upper joint temperature.  Otherwise, assume upper and lower
+        # joints of the top stage have the same temperature.
+        if 'Temp' in sus:
+            TempUpper = sus.Temp
+        else:
+            TempUpper = Temp
+    else:
+        # Below the top stage: assume that the upper joint has the same
+        # temperature as the nearby lower joint of the preceding stage.
+        if 'Temp' in stages[n-1]:
+            TempUpper = stages[n-1].Temp
+        else:
+            TempUpper = sus.Temp
+    TempUpper = Temp  # FIXME: reproduces the old calculation
+
+    ##############################
+    # material parameters
+
+    # support wire
+    # upper and lower joint material properties may be different
+    # due to temperature gradient
+    if 'WireMaterialUpper' in stage and 'WireMaterialLower' in stage:
+        wireMatUpper = stage.WireMaterialUpper
+        wireMatLower = stage.WireMaterialLower
+    elif 'WireMaterial' in stage:
+        wireMatUpper = stage.WireMaterial
+        wireMatLower = stage.WireMaterial
+    # FIXME: reproduces the old calculation
+    elif n == last_stage and sus.Type == 'BQuad':
+        wireMatUpper = 'Silicon'
+        wireMatLower = 'Silicon'
+    elif n == last_stage:
+        wireMatUpper = 'Silica'
+        wireMatLower = 'Silica'
+    else:
+        wireMatUpper = 'C70Steel'
+        wireMatLower = 'C70Steel'
+
+    WireMaterialUpper = sus[wireMatUpper]
+    WireMaterialLower = sus[wireMatLower]
+    logging.debug('stage {} wires: {}, {}'.format(n, wireMatUpper, wireMatLower))
+
+    # support blade (upper joint only)
+    if 'BladeMaterial' in stage:
+        bladeMat = stage.BladeMaterial
+    # FIXME: reproduces the old calculation
+    elif n == last_stage and sus.Type == 'BQuad':
+        bladeMat = 'Silicon'
+    else:
+        bladeMat = 'MaragingSteel'
+
+    BladeMaterial = sus[bladeMat]
+
+    logging.debug('stage {} blades: {}'.format(n, bladeMat))
+
+    ULparams = ((0, TempUpper, WireMaterialUpper, BladeMaterial),
+                (1, TempLower, WireMaterialLower, None))
+    return ULparams
+
+
+def wireGeometry(r, N, RibbonThickness=None, TaperedEndRadius=None, **kwargs):
+    """Compute wire geometry-dependent factors
+
+    r is the wire radius, or ribbon width.
+    RibbonThickness must be set when ribbons are used, or
+    TaperedEndRadius when tapered fibers are used.
+
+    Returns the cross-sectional area and moment of inertia,
+    and the modified surface to volume ratios (vertical and horizontal).
+
+    """
+    # Usual case: round wire/fiber
+    xsect = pi * r**2  # cross-sectional area
+    xsectEnd = xsect   # only differs for tapered fiber
+    # cross-sectional moment of inertia
+    # Ref: Gretarsson et al, Phys. Lett. A 270 (2000) 108-114 Eq.(2)
+    xII = r**4 * pi / 4  # x-sectional moment of inertia
+    # surface to volume ratio, vertical
+    # Surface = 2*pi*r*h
+    # Volume  = pi*r^2*h
+    # Geometrical factor \mu is unity (corresponding to uniform strain energy)
+    mu_v = 2 / r
+    # surface to volume ratio, horizontal
+    # Ref: Gretarsson and Harry, Rev. Sci. Inst. 70 (1999) 4081-4087
+    # Appendix (A8)
+    # There is a geometrical factor \mu to calculate the ratio of the
+    # energies between the ones stored in surface and the bulk.
+    # For a transversely oscillating fiber of circular cross section, this
+    # factor is \mu = 2 as shown in (A11)
+    mu_h = mu_v * 2
+
+    # Special case: ribbon
+    if RibbonThickness is not None:
+        W = r
+        t = RibbonThickness
+        xsect = W * t        # cross-sectional area
+        xsectEnd = xsect     # only differs for tapered fiber
+        xII = (W * t**3)/12  # x-sectional moment of inertia
+        # surface to volume ratio, vertical
+        # Surface = 2*(W+t)*h
+        # Volume  = W*t*h
+        mu_v = 2 * (W + t) / (W * t)
+        # surface to volume ratio, horizontal
+        # Ref: Gretarsson et al, Phys. Lett. A 270 (2000) 108-114
+        # There is a geometrical factor \mu (same as above).
+        # This factor is shown in Eq.(6)
+        mu_h = mu_v * (3 * N * W + t) / (N * W + t)
+
+    # Special case: tapered
+    elif TaperedEndRadius is not None:
+        r_end = TaperedEndRadius
+        xsectEnd = pi * r_end**2  # cross-sectional area (for delta_h)
+        xII = pi * r_end**4 / 4   # x-sectional moment of inertia
+        mu_h = 4 / r_end          # surface to volume ratio, horizontal
+        # mu_v is unchanged (assumes the middle part of the fiber dominates)
+
+    return (xsect, xsectEnd, xII, mu_v, mu_h)
+
+
+def wireTELoss(w, tension, xsectEnd, xII, Temp, alpha, beta, rho, C, K, Y, xsect,
+               RibbonThickness=None, **kwargs):
+    """Thermoelastic calculations for wires
+
+    Repeated for upper and lower joint of each stage.
+    alpha = coeff of thermal expansion
+    beta = temp dependence of Young's modulus
+    rho = mass density
+    C = heat capacity
+    K = thermal conductivity W/(m K)
+    Y = Young's modulus
+
+    """
+    # horizontal TE time constant, wires
+    # The constant 7.37e-2 is 1/(4*q0^2) from eq 12, C. Zener 10.1103/PhysRev.53.90 (1938)
+    tau = 7.37e-2 * 4 * (rho * C * xsectEnd) / (pi * K)
+    # FIXME: reproduces the old calculation
+    # then xsect can be dropped from the argument list
+    tau = 7.37e-2 * 4 * (rho * C * xsect) / (pi * K)
+
+    # deal with ribbon geometry
+    if RibbonThickness is not None:
+        t = RibbonThickness
+        tau = (rho * C * t**2) / (K * pi**2)
+
+    # delta: TE factor
+    # The first term expresses the cancellation of the CTE and dY/dT
+    # beta = (dY/dT)/Y
+    # Refs:
+    # Cagnoli G and Willems P 2002 Phys. Rev. B 65 174111
+    # Cumming A V et al 2009 Class. Quantum Grav. 26 215012
+    # horizontal delta, wires
+    delta = (alpha - tension * beta / (xsectEnd * Y))**2 * Y * Temp / (rho * C)
+
+    phi_TE = delta * tau * w / (1 + w**2 * tau**2)
+    return phi_TE
+
+
+def bladeTELoss(w, t, Temp, alpha, beta, rho, C, K, Y):
+    """Thermoelastic calculations for blades
+
+    Invoked for upper joint only (there is no lower blade)
+    alpha = coeff of thermal expansion
+    beta = temp dependence of Young's modulus
+    rho = mass density
+    C = heat capacity
+    K = thermal conductivity W/(m K)
+    Y = Young's modulus
+
+    """
+    # vertical TE time constant, blades
+    tau = (rho * C * t**2) / (K * pi**2)
+
+    # vertical delta, blades
+    # Here the TE cancellation is ignored
+    delta = Y * alpha**2 * Temp / (rho * C)
+
+    phi_TE = delta * tau * w / (1 + w**2 * tau**2)
+    return phi_TE
+
+
+##############################
+# Ref "GG"
+#   Suspensions thermal noise in the LIGO gravitational wave detector
+#   Gabriela Gonzalez, https://doi.org/10.1088/0264-9381/17/21/305
+# Ref "GS"
+#   Brownian motion of a mass suspended by an anelastic wire
+#   Gonzalez & Saulson, https://doi.org/10.1121/1.410467
+#
+# Note:
+#  I in GG = xII
+#  rho in GG = rho * xsect
+#  delta in GG = d_bend
+#  T in GG = tension
+##############################
+
+def continuumWireKh(w, N, length, tension, xsect, xII, rho, Y, phi):
+    """Horizontal spring constant, including violin modes
+
+    """
+    Y = Y * (1 + 1j * phi)  # complex Young's modulus
+
+    # simplification factors for later calculations
+    # Note: a previous version of this suspension thermal noise
+    # calculation used a factor "simp3" which was an incorrect
+    # approximation for k_e (see GS eq 10).  Here we approximate k_e
+    # as 1/delta.  This is equivalent to assuming delta << 1/k,
+    # i.e. the bending length of the fiber is much shorter than the
+    # 'ideal string' wavelength.
+    k = sqrt(rho * xsect / tension) * w
+    d_bend = sqrt(Y * xII / tension)  # complex d_bend
+    dk = k * d_bend                   # dk << 1 was assumed
+    coskl = cos(k * length)
+    sinkl = sin(k * length)
+
+    # numerator, horiz spring constant
+    #   numerator of K_xx in eq 9 of GG
+    #     = T k (cos(k L) + k delta sin(k L))
+    #   for w -> 0, this reduces to N_w * T * k
+    khnum = N * tension * k * (coskl + dk * sinkl)
+    # FIXME: reproduces the old calculation
+    khnum = N * tension * k * (1 + dk**2) * (coskl + dk * sinkl)
+
+    # denominator, horiz spring constant
+    #   D after equation 8 in GG
+    #   D = sin(k L) - 2 k delta cos(k L)
+    #   for w -> 0, this reduces to k (L - 2 delta)
+    khden = sinkl - 2 * dk * coskl
+    # FIXME: reproduces the old calculation
+    khden = (1 - dk**2) * sinkl - 2 * dk * coskl
+
+    return khnum/khden
+
+
+def continuumWireKv(w, N, length, xsect, xsectEnd, rho, Y, phi,
+                    TaperedEndLength=None, **kwargs):
+    """Vertical spring constant, including bounce mode.
+
+    """
+    Y = Y * (1 + 1j * phi)  # complex Young's modulus
+    k = sqrt(rho / Y) * w
+
+    kv = N * xsect * Y * k / tan(k * length)
+    # deal with tapered geometry
+    if TaperedEndLength is not None:
+        l_end = TaperedEndLength
+        l_mid = length - 2*l_end
+        kv_mid = N * xsect * Y * k / tan(k * l_mid)
+        kv_end = N * xsectEnd * Y * k / tan(k * l_end)
+        kv = 1/(2/kv_end + 1/kv_mid)
+        # FIXME: reproduces the old calculation
+        kv_end = N * xsectEnd * Y * k / tan(k * 2*l_end)
+        kv = 1/(1/kv_end + 1/kv_mid)
+
+    return kv
+
+
+def suspQuad(f, sus):
     """Suspension for quadruple pendulum
 
-    `f` is frequency vector, `sus` is suspension model.  `material`
-    specifies material used for test mass suspension stage.  steel
-    used for all other stages.  Violin modes are included.
+    `f` is frequency vector, `sus` is suspension model.
+    Violin modes are included for the bottom stage.
 
       sus.FiberType should be: 0=round, 1=ribbons.
 
     hForce, vForce = transfer functions from the force on the TM to TM
-    motion these should have the correct losses for the mechanical
+    motion.  These should have the correct losses for the mechanical
     system such that the thermal noise is:
 
     dxdF = force on TM along beam line to position of TM along beam line
@@ -87,335 +363,217 @@ def suspQuad(f, sus, material='Silica'):
 
     Since this is just suspension thermal noise, the TM internal modes
     and coating properties should not be included.
-    
+
     hTable, vTable = TFs from support motion to TM motion
-    
+
     Ah = horizontal equations of motion
     Av = vertical equations of motion
-    
+
     Adapted from code by Morag Casey (Matlab) and Geppo Cagnoli
     (Maple).  Modification for the different temperatures between the
     stages by K.Arai.
 
     """
-    g = const.g
+    w = 2 * pi * f
 
-    # bottom stage fiber Type
+    # NOTE: For historical reasons, the IFO struct numbers stages from the
+    # bottom up (0 is the TM), while this code numbers them from the top down
+    # (3 is the TM).  Here the suspension stage list is reversed so that the
+    # last stage in the list is the test mass
+    stages = sus.Stage[::-1]
+    last_stage = len(stages) - 1
+
+    # bottom stage fiber type
     FiberType = sus.FiberType
     assert FiberType in FIBER_TYPES
 
     ##############################
-    # Parameter Assignment
+    # Compute cumulative weight of suspension
+    masses = np.array([stage.Mass for stage in stages])
+    # weight support by lower stages
+    Mgs = g * np.flipud(np.cumsum(np.flipud(masses)))
 
-    def scarray():
-        return np.zeros(len(sus.Stage))
+    ##############################
+    # Complex spring constants
+    khr = np.zeros([len(stages), len(w)])
+    khi = np.zeros([len(stages), 2, len(w)])
+    kh  = np.zeros([len(stages), len(w)], dtype=np.complex_)
+    kvr = np.zeros([len(stages), len(w)])
+    kvi = np.zeros([len(stages), 2, len(w)])
+    kv  = np.zeros([len(stages), len(w)], dtype=np.complex_)
 
-    ds_w  = scarray()
-    dil0 = scarray()
-    mass = scarray()
-    length = scarray()
-    kv0 = scarray()
-    r_w = scarray()
-    t_b = scarray()
-    N_w = scarray()
-    Temp = scarray()
-    # wire material properties
-    alpha_w = scarray()
-    beta_w = scarray()
-    rho_w = scarray()
-    C_w = scarray()
-    K_w = scarray()
-    Y_w = scarray()
-    phi_w = scarray()
-    # blade material properties
-    alpha_b = scarray()
-    beta_b = scarray()
-    rho_b = scarray()
-    C_b = scarray()
-    K_b = scarray()
-    Y_b = scarray()
-    phi_b = scarray()
+    for n, stage in enumerate(stages):
 
-    # NOTE: reverse suspension list so that the last stage in the list
-    # is the test mass
-    last_stage = len(sus.Stage) - 1
-    for n, stage in enumerate(reversed(sus.Stage)):
         ##############################
         # main suspension parameters
+        Mg = Mgs[n]
+        length = stage.Length
 
-        mass[n] = stage.Mass
-        length[n] = stage.Length
-        dil0[n] = stage.Dilution
-        kv0[n] = stage.K
+        # Correction for the pendulum restoring force
+        kh0 = Mg / length   # N/m, horiz. spring constant, stage n
 
-        if np.isnan(stage.WireRadius):
-            if 'FiberRadius' in stage:
-                r_w[n] = stage.FiberRadius
-            elif FiberType == 'Ribbon':
-                r_w[n] = sus.Ribbon.Width
-            else:
-                r_w[n] = sus.Fiber.Radius
+        kv0_blade = stage.K    # N/m, vert. spring constant (from blade)
+
+        if not np.isnan(stage.WireRadius):
+            r_w = stage.WireRadius
+        elif FiberType == 'Ribbon':
+            r_w = sus.Ribbon.Width
         else:
-            r_w[n] = stage.WireRadius
+            r_w = sus.Fiber.Radius
 
         # blade thickness
-        t_b[n] = stage.Blade
+        t_b = stage.Blade
         # number of support wires
-        N_w[n] = stage.NWires
+        N_w = stage.NWires
+        tension = Mg / N_w
 
-        if 'Temp' in stage:
-            Temp[n] = stage.Temp
-        else:
-            Temp[n] = sus.Temp
+        # wire geometry
+        wireShape = {}
+        if n == last_stage and FiberType == 'Ribbon':
+            wireShape['RibbonThickness'] = sus.Ribbon.Thickness
+        elif n == last_stage and FiberType == 'Tapered':
+            wireShape['TaperedEndRadius'] = sus.Fiber.EndRadius
+            wireShape['TaperedEndLength'] = sus.Fiber.EndLength
+        xsect, xsectEnd, xII, mu_v, mu_h = wireGeometry(r_w, N_w, **wireShape)
 
-        ##############################
-        # support wire material parameters
+        jointParams = getJointParams(sus, n)
+        for (isLower, Temp, wireMat, bladeMat) in jointParams:
+            # wire parameters
+            alpha_w = wireMat.Alpha  # coeff of thermal expansion
+            beta_w = wireMat.dlnEdT  # temp dependence of Young's modulus
+            rho_w = wireMat.Rho      # mass density
+            C_w = wireMat.C          # heat capacity
+            K_w = wireMat.K          # thermal conductivity W/(m K)
+            Y_w = wireMat.Y          # Young's modulus
+            phi_w = wireMat.Phi      # loss angle
 
-        if 'WireMaterial' in stage:
-            WireMaterial = stage.WireMaterial
-        elif n == last_stage:
-            WireMaterial = material
-        else:
-            WireMaterial = 'C70Steel'
+            # surface loss dissipation depth
+            # About the surface loss depth see Ref:
+            # A. M. Gretarsson and G. M. Harry
+            # Rev. Sci. Instrum. 70 (1999) P.4081-4087
+            if 'Dissdepth' in wireMat:
+                ds_w = wireMat.Dissdepth
+            else:
+                ds_w = 0             # ignore surface effects
 
-        wireMat = sus[WireMaterial]
+            if not isLower:  # blade parameters (there is no lower blade)
+                alpha_b = bladeMat.Alpha # coeff of thermal expansion
+                beta_b = bladeMat.dlnEdT # temp dependence of Young's modulus
+                rho_b = bladeMat.Rho     # mass density
+                C_b = bladeMat.C         # heat capacity
+                K_b = bladeMat.K         # thermal conductivity W/(m K)
+                Y_b = bladeMat.Y         # Young's modulus
+                phi_b = bladeMat.Phi     # loss angle
 
-        alpha_w[n] = wireMat.Alpha  # coeff. thermal expansion
-        beta_w[n] = wireMat.dlnEdT  # temp. dependence Youngs modulus
-        rho_w[n] = wireMat.Rho      # mass density
-        C_w[n] = wireMat.C          # heat capacity
-        K_w[n] = wireMat.K          # W/(m kg)
-        Y_w[n] = wireMat.Y          # Young's modulus
-        phi_w[n] = wireMat.Phi      # loss angle
+            # bending length, and dilution factors
+            if 'Dilution' in stage and not np.isnan(stage.Dilution):
+                # if a specific dilution factor is given, use it
+                dil = stage.Dilution
+            else:
+                # if not, calculate
+                # This formula is for the effective dilution in the GW band
+                # (as discussed in ref GG section 2.5)
+                d_bend = sqrt(Y_w * xII / tension)
+                dil = length / d_bend
 
-        # surface loss dissipation depth
-        if 'Dissdepth' in wireMat:
-            ds_w[n] = wireMat.Dissdepth
-        else:
-            # otherwise ignore surface effects
-            ds_w[n] = 0
+            ##############################
+            # Loss Calculations for wires and blades
+            # Track losses from the upper and lower wire joints separately
+            # The factor of 2 comes from that the loss was calculated
+            # for both upper and lower joints
+            # Blades are always attached at the top, there is no "lower" blade
+            # The final stage is handled specially and the spring constant
+            # calculation below is not used
 
-        ##############################
-        # support blade material parameters
+            # horizontal loss factor for round wires
+            # phi_w: bulk loss (brownian motion)
+            # (mu_h*ds_w): surface loss (brownian motion)
+            # nominally this term becomes zero for steel wires as ds_w is zero
+            # The last term is for TE loss
+            phih_TE = wireTELoss(w, tension, xsectEnd, xII, Temp,
+                                 alpha_w, beta_w, rho_w, C_w, K_w, Y_w, xsect,
+                                 **wireShape)
+            phih = phi_w * (1 + mu_h * ds_w) + phih_TE
 
-        if 'BladeMaterial' in stage:
-            BladeMaterial = stage.BladeMaterial
-        else:
-            BladeMaterial = 'MaragingSteel'
+            # complex spring constant, horizontal
+            khr[n, :] = kh0
+            khi[n, isLower, :] = kh0 * phih / dil / 2
 
-        bladeMat = sus[BladeMaterial]
+            if not isLower:
+                # vertical loss factor, blades
+                # The bulk loss term and the TE loss term
+                # wire loss and stiffness are neglected here
+                phiv_TE = bladeTELoss(w, t_b, Temp,
+                                      alpha_b, beta_b, rho_b, C_b, K_b, Y_b)
+                phiv_blade = phi_b + phiv_TE
 
-        alpha_b[n] = bladeMat.Alpha   # coeff. thermal expansion
-        beta_b[n] = bladeMat.dlnEdT   # temp. dependence Youngs modulus
-        rho_b[n] = bladeMat.Rho       # mass density
-        C_b[n] = bladeMat.C           # heat capacity
-        K_b[n] = bladeMat.K           # W/(m kg)
-        Y_b[n] = bladeMat.Y           # Young's modulus
-        phi_b[n] = bladeMat.Phi       # loss angle
+                # complex spring constant, vertical
+                kvr[n, :] = kv0_blade
+                kvi[n, 0, :] = kv0_blade * phiv_blade
 
-    # weight support by lower stages
-    Mg = g * np.flipud(np.cumsum(np.flipud(mass)))
 
-    # Correction for the pendulum restoring force
-    kh0 = Mg / length              # N/m, horiz. spring constant, stage n
+        if n == last_stage:
+            # loss factor, vertical (no blades)
+            # wire vertical thermoelastic loss is negligible (Saulson 1990)
+            phiv = phi_w * (1 + mu_v * ds_w)
 
-    ##############################
-    # Thermoelastic Calculations for wires and blades
+            kv4 = continuumWireKv(w, N_w, length, xsect, xsectEnd,
+                                  rho_w, Y_w, phiv, **wireShape)
+            kh4 = continuumWireKh(w, N_w, length, tension, xsect, xII,
+                                  rho_w, Y_w, phih)
 
-    # wire geometry
-    tension = Mg / N_w           # Tension
-    xsect = pi * r_w**2          # cross-sectional area
-    xII = r_w**4 * pi / 4        # x-sectional moment of inertia
-    mu_h = 4 / r_w               # surface to volume ratio, horizontal
-    mu_v = 2 / r_w               # surface to volume ratio, vertical (wire)
+            # if blades present, combine two vertical springs
+            if not np.isnan(kv0_blade):
+                kv4wire = kv4
+                kv4blade = kvr[n, :] + 1j*kvi[n, 0, :]
+                kv4 = 1/(1/kv4wire + 1/kv4blade)
 
-    # horizontal TE time constant, wires
-    # The constant 7.37e-2 is 1/(4*q0^2) from eq 12, C. Zener 10.1103/PhysRev.53.90 (1938)
-    tau_h = 7.37e-2 * 4 * (rho_w * C_w * xsect) / (pi * K_w)
+            kvr[n, :] = real(kv4)
+            kvi[n, 0, :] = imag(kv4)
+            kvi[n, 1, :] = 0
+            khr[n, :] = real(kh4)
+            khi[n, 0, :] = imag(kh4)
+            khi[n, 1, :] = 0
 
-    # vertical TE time constant, blades
-    tau_v = (rho_b * C_b * t_b**2) / (K_b * pi**2)
-
-    # vertical delta, blades
-    delta_v = Y_b * alpha_b**2 * Temp / (rho_b * C_b)
-
-    # deal with ribbon geometry for last stage
-    if FiberType == 'Ribbon':
-        W = sus.Ribbon.Width
-        t = sus.Ribbon.Thickness
-        xsect[-1] = W * t                   # cross-sectional area
-        xII[-1] = (W * t**3)/12             # x-sectional moment of inertia
-        mu_v[-1] = 2 * (W + t) / (W * t)
-        mu_h[-1] = mu_v[-1] * (3 * N_w[-1] * W + t) / (N_w[-1] * W + t)
-        tau_h[-1] = (rho_w[-1] * C_w[-1] * t**2) / (K_w[-1] * pi**2)
-
-    # horizontal delta, wires
-    delta_h = (alpha_w - tension * beta_w / (xsect * Y_w))**2 * Y_w * Temp / (rho_w * C_w)
-
-    # deal with tapered geometry for last stage
-    if FiberType == 'Tapered':
-        r_end = sus.Fiber.EndRadius
-
-        # recompute these for
-        xsectEnd = pi * r_end**2      # cross-sectional area (for delta_h)
-        xII[-1] = pi * r_end**4 / 4    # x-sectional moment of inertia
-        mu_h[-1] = 4 / r_end           # surface to volume ratio, horizontal
-
-        # use this xsect for thermo-elastic noise
-        delta_h[-1] = (alpha_w[-1] - tension[-1] * beta_w[-1] / (xsectEnd * Y_w[-1]))**2 * Y_w[-1] * Temp[-1] / (rho_w[-1] * C_w[-1])
-
-    # bending length, and dilution factors
-    d_bend = sqrt(Y_w * xII / tension)
-    dil = length / d_bend
-    # dil(~isnan(dil0)) = dil0(~isnan(dil0))
-    dil = np.where(~np.isnan(dil0), dil0, dil)
-
-    ##############################
-    # Loss Calculations for wires and blades
-
-    # these calculations use the frequency vector
-    w = 2 * pi * f
-
-    phih = np.zeros([len(sus.Stage), len(w)], dtype=complex)
-    kh = np.zeros([len(sus.Stage), len(w)], dtype=complex)
-    phiv = np.zeros([len(sus.Stage), len(w)], dtype=complex)
-    kv = np.zeros([len(sus.Stage), len(w)], dtype=complex)
-
-    for n, stage in enumerate(sus.Stage):
-        # horizontal loss factor, wires
-        phih[n, :] = phi_w[n] * (1 + mu_h[n] * ds_w[n]) + delta_h[n] * tau_h[n] * w / (1 + w**2 * tau_h[n]**2)
-
-        # complex spring constant, horizontal
-        kh[n, :] = kh0[n] * (1 + 1j * phih[n, :] / dil[n])
-
-        # vertical loss factor, blades
-        phiv[n, :] = phi_b[n] + delta_v[n] * tau_v[n] * w / (1 + w**2 * tau_v[n]**2)
-
-        # complex spring constant, vertical
-        kv[n, :] = kv0[n] * (1 + 1j * phiv[n, :])
-
-    ##############################
-    # last suspension stage
-    # Equations from "GG" (maybe?)
-    #   Suspensions thermal noise in the LIGO gravitational wave detector
-    #   Gabriela Gonzalez, Class. Quantum Grav. 17 (2000) 4409?4435
-    #
-    # Note:
-    #  I in GG = xII
-    #  rho in GG = rho_w * xsect
-    #  delta in GG = d_bend
-    ##############################
-
-    ### Vertical (bounce) ###
-    # loss factor, last stage suspension, vertical (no blades)
-    phiv[-1, :] = phi_w[-1] * (1 + mu_v[-1] * ds_w[-1])
-
-    # vertical Young's modulus
-    Y_v = Y_w[-1] * (1 + 1j * phiv[-1, :])
-
-    # vertical spring constant, last stage
-    k_z = sqrt(rho_w[-1] / Y_v) * w
-    kv4 = N_w[-1] * xsect[-1] * Y_v * k_z / (tan(k_z * length[-1]))
-
-    # deal with tapered geometry for last stage
-    if FiberType == 'Tapered' and 'EndLength' in sus.Fiber:
-        l_end = 2 * sus.Fiber.EndLength
-        l_mid = length[-1] - l_end
-
-        kv_mid = N_w[-1] * xsect[-1] * Y_v * k_z / (tan(k_z * l_mid))
-        kv_end = N_w[-1] * xsectEnd * Y_v * k_z / (tan(k_z * l_end))
-        kv4 = kv_mid * kv_end / (kv_mid + kv_end)
-
-    if np.isnan(kv0[-1]):
-        kv[-1, :] = kv4 # no blades
-    else:
-        kv[-1, :] = kv[-1, :] * kv4 / (kv[-1, :] + kv4) # with blades
-
-    ### Horizontal (pendulum and violins) ###
-    # horizontal Young's modulus
-    Y_h  = Y_w[-1] * (1 + 1j * phih[-1, :])
-
-    # simplification factors for later calculations
-    ten4 = tension[-1]                          # T in GG
-    k4 = sqrt(rho_w[-1] * xsect[-1] / ten4) * w	# k in GG
-    d_bend4 = sqrt(Y_h * xII[-1] / ten4)        # complex d_bend(4)
-    dk4 = k4 * d_bend4
-
-    # simp3a is inherited from the previous version of this suspension
-    # thermal noise calculation (part of simp3).
-    #
-    # I'm not sure where this comes from, but it differs from
-    # 1 by less than 1e-6 for frequencies below 100Hz (and less than
-    # 1e-3 up to 10kHz).  What's more, the units appear to be wrong.
-    # (Missing factor of rho * length?)
-    # [mevans June 2015]
-    #
-    # simp3a = sqrt(1 + d_bend4 .* xsect(4) .* w.^2 / ten4)
-    simp3a = 1
-
-    coskl = simp3a * cos(k4 * length[-1])
-    sinkl = sin(k4 * length[-1])
-
-    # numerator, horiz spring constant, last stage
-    #   numerator of K_xx in eq 9 of GG
-    #     = T k (cos(k L) + k delta sin(k L))
-    #   for w -> 0, this reduces to N_w * T * k
-    kh4num  = N_w[-1] * ten4 * k4 * simp3a * (simp3a**2 + dk4**2) * (coskl + dk4 * sinkl)
-
-    # denominator, horiz spring constant, last stage
-    #   D after equation 8 in GG
-    #   D = sin(k L) - 2 k delta cos(k L)
-    #   for w -> 0, this reduces to k (L - 2 delta)
-    kh4den = ((simp3a**2 - dk4**2) * sinkl - 2 * dk4 * coskl)
-
-    # horizontal spring constant, last stage
-    #   K_xx in eq 9 of GG
-    kh[-1, :] = kh4num / kh4den
 
     ###############################################################
     # Equations of motion for the system
     ###############################################################
 
-    # Calculate TFs turning on the loss of each stage one by one
-    hForce = Struct()
-    vForce = Struct()
-    hForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
-    vForce.singlylossy = np.zeros([len(sus.Stage), len(w)], dtype=complex)
+    # Calculate horizontal/vertical TFs turning on the loss of each
+    # joint one by one, for the thermal noise calculation
+    hForce = np.zeros([2*len(stages), len(w)], dtype=complex)
+    vForce = np.zeros([2*len(stages), len(w)], dtype=complex)
 
-    for n in range(len(mass)):
+    for m in range(2*len(stages)):
+        # turn on only the loss of the current joint
+        lossy_region_lower = np.zeros((len(stages), 1))
+        lossy_region_upper = np.zeros((len(stages), 1))
+        n = int(m/2)  # stage number
+        if m % 2:
+            lossy_region_upper[n] = 1
+        else:
+            lossy_region_lower[n] = 1
+
         # horizontal
-        # only the imaginary part of the specified stage is used.
-        k = real(kh) + 1j*imag([kh[0,:]*(n==0),
-                                kh[1,:]*(n==1),
-                                kh[2,:]*(n==2),
-                                kh[3,:]*(n==3)])
+        # only the imaginary part due to the specified region is used.
+        k = khr + 1j*(khi[:,0,:]*lossy_region_upper +
+                      khi[:,1,:]*lossy_region_lower)
         # calculate TFs
-        hForce.singlylossy[n,:] = tst_force_to_tst_displ(k, mass, f)
+        hForce[m,:] = tst_force_to_tst_displ(k, masses, f)
 
         # vertical
-        # only the imaginary part of the specified stage is used
-        k = real(kv) + 1j*imag([kv[0,:]*(n==0),
-                                kv[1,:]*(n==1),
-                                kv[2,:]*(n==2),
-                                kv[3,:]*(n==3)])
+        # only the imaginary part due to the specified stage is used
+        k = kvr + 1j*(kvi[:,0,:]*lossy_region_upper +
+                      kvi[:,1,:]*lossy_region_lower)
         # calculate TFs
-        vForce.singlylossy[n,:] = tst_force_to_tst_displ(k, mass, f)
+        vForce[m,:] = tst_force_to_tst_displ(k, masses, f)
 
-    # calculate horizontal TFs with all losses on
-    hForce.fullylossy = tst_force_to_tst_displ(kh, mass, f)
-    hTable = top_displ_to_tst_displ(kh, mass, f)
-
-    # calculate vertical TFs with all losses on
-    vForce.fullylossy = tst_force_to_tst_displ(kv, mass, f)
-    vTable = top_displ_to_tst_displ(kv, mass, f)
+    # Calculate horizontal/vertical TFs with all losses on,
+    # for the vibration isolation calculation
+    k = khr + 1j*(khi[:,0,:] + khi[:,1,:])
+    hTable = top_displ_to_tst_displ(k, masses, f)
+    k = kvr + 1j*(kvi[:,0,:] + kvi[:,1,:])
+    vTable = top_displ_to_tst_displ(k, masses, f)
 
     return hForce, vForce, hTable, vTable
-
-
-def suspBQuad(f, sus):
-    """Wrapper of suspQuad to use Silicon for final stage
-
-    FIXME: material should be specified in sus.Stage
-
-    """
-    return suspQuad(f, sus, material='Silicon')

@@ -141,21 +141,9 @@ def precomp_suspension(f, ifo):
         ifo.Suspension.VHCoupling = Struct()
         ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / const.R_earth
 
-    if ifo.Suspension.Type == 'BQuad':
-        material = 'Silicon'
-    else:
-        material = 'Silica'
-    hForce, vForce, hTable, vTable = suspension.suspQuad(f, ifo.Suspension, material)
-    try:
-        # full TF (conventional)
-        ifo.Suspension.hForce = hForce.fullylossy
-        ifo.Suspension.vForce = vForce.fullylossy
-        # TFs with each stage lossy
-        ifo.Suspension.hForce_singlylossy = hForce.singlylossy
-        ifo.Suspension.vForce_singlylossy = vForce.singlylossy
-    except:
-        ifo.Suspension.hForce = hForce
-        ifo.Suspension.vForce = vForce
+    hForce, vForce, hTable, vTable = suspension.suspQuad(f, ifo.Suspension)
+    ifo.Suspension.hForce = hForce
+    ifo.Suspension.vForce = vForce
     ifo.Suspension.hTable = hTable
     ifo.Suspension.vTable = vTable
 
