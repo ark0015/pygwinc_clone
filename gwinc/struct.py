@@ -96,7 +96,7 @@ class Struct(object):
         else:
             return self.__dict__[key]
 
-    def get(self, key, default):
+    def get(self, key, default=None):
         """Get a (possibly nested) value from the struct, or default.
 
         """
