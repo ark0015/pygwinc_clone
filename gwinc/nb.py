@@ -52,15 +52,21 @@ class BudgetItem:
 
     ##########
 
-    def __init__(self, freq, **kwargs):
+    def __init__(self, freq=None, **kwargs):
         """Initialize budget item.
 
-        Primary argument is the evaluation frequency array.  Any
-        keyword arguments provided are simple written as attribute
-        variables in the initialized object.
+        The primary argument should be the evaluation frequency array.
+        If it is not provided, then it is assumed to be a pre-defined
+        attribute of the BudgetItem class.  Any keyword arguments
+        provided are simple written as attribute variables in the
+        initialized object.
 
         """
-        self.__freq = freq
+        if freq is not None:
+            assert isinstance(freq, np.ndarray)
+            self.freq = freq
+        elif not hasattr(self, 'freq'):
+            raise AttributeError("Frequency array not provided or defined.")
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -75,11 +81,6 @@ class BudgetItem:
             ' '.join([c.__name__ for c in self.__class__.__bases__]),
             self.name,
         )
-
-    @property
-    def freq(self):
-        """Evaluation frequency array supplied at initialization."""
-        return self.__freq
 
     def interpolate(self, freq, data):
         """Interpolate data to the evaluation frequencies.
