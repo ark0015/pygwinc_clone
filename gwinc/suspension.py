@@ -67,14 +67,14 @@ def top_displ_to_tst_displ(k, m, f):
     return X0 * k0
 
 
-def suspQuad(f, ifo, material='Silica'):
+def suspQuad(f, sus, material='Silica'):
     """Suspension for quadruple pendulum
 
-    `f` is frequency vector, `ifo` is IFO model.  `material` specifies
-    material used for test mass suspension stage.  steel used for all
-    other stages.  Violin modes are included.
+    `f` is frequency vector, `sus` is suspension model.  `material`
+    specifies material used for test mass suspension stage.  steel
+    used for all other stages.  Violin modes are included.
 
-    ifo.Suspension.FiberType should be: 0=round, 1=ribbons.
+      sus.FiberType should be: 0=round, 1=ribbons.
 
     hForce, vForce = transfer functions from the force on the TM to TM
     motion these should have the correct losses for the mechanical
@@ -84,7 +84,7 @@ def suspQuad(f, ifo, material='Silica'):
          = hForce + theta^2 * vForce
          = admittance / (i * w)
 
-    where theta = ifo.Suspension.VHCoupling.theta.
+    where theta = sus.VHCoupling.theta.
 
     Since this is just suspension thermal noise, the TM internal modes
     and coating properties should not be included.
@@ -100,8 +100,6 @@ def suspQuad(f, ifo, material='Silica'):
 
     """
     g = const.g
-
-    sus = ifo.Suspension
 
     # bottom stage fiber Type
     FiberType = sus.FiberType
@@ -417,10 +415,10 @@ def suspQuad(f, ifo, material='Silica'):
     return hForce, vForce, hTable, vTable
 
 
-def suspBQuad(f, ifo):
+def suspBQuad(f, sus):
     """Wrapper of suspQuad to use Silicon for final stage
 
-    FIXME: material should be specified in ifo.Suspension.Stage
+    FIXME: material should be specified in sus.Stage
 
     """
-    return suspQuad(f, ifo, material='Silicon')
+    return suspQuad(f, sus, material='Silicon')

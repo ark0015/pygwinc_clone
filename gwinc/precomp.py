@@ -120,7 +120,7 @@ def precompIFO(f, ifoin, PRfixed=True):
     # Suspension
     # if the suspension code supports different temps for the stages
     fname = eval('suspension.susp{}'.format(ifo.Suspension.Type))
-    hForce, vForce, hTable, vTable = fname(f, ifo)
+    hForce, vForce, hTable, vTable = fname(f, ifo.Suspension)
 
     try:
         # full TF (conventional)
