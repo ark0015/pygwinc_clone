@@ -6,7 +6,6 @@ import numpy as np
 
 from .ifo import available_ifos
 from .struct import Struct
-from .precomp import precompIFO
 from .plot import plot_noise
 from .io import load_hdf5, save_hdf5
 
@@ -112,7 +111,6 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     # FIXME: how do we allow adding arbitrary addtional noise sources
     # from just ifo description, without having to specify full budget
     Budget = load_budget('aLIGO')
-    ifo = precompIFO(freq, ifo, PRfixed)
     traces = Budget(freq, ifo=ifo).run()
     plot_style = getattr(Budget, 'plot_style', {})
 

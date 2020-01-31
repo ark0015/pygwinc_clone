@@ -15,7 +15,6 @@ logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from .. import available_ifos, load_budget
-from .. import precompIFO
 from .. import load_hdf5, save_hdf5
 
 try:
@@ -180,8 +179,7 @@ def main():
         freq = np.logspace(np.log10(5), np.log10(6000), 3000)
         for name in available_ifos():
             Budget = load_budget(name)
-            ifo = precompIFO(freq, Budget.ifo)
-            traces = Budget(freq, ifo=ifo).run()
+            traces = Budget(freq).run()
             path = os.path.join(args.cache, name+'.h5')
             save_hdf5(path, freq, traces)
         return
@@ -219,8 +217,7 @@ def main():
         freq, tracesA, attrs = load_hdf5(path)
 
         Budget = load_budget(name)
-        ifo = precompIFO(freq, Budget.ifo)
-        tracesB = Budget(freq, ifo=ifo).run()
+        tracesB = Budget(freq).run()
 
         if inspiral_range:
             totalA = tracesA['Total'][0]

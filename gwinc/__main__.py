@@ -10,7 +10,6 @@ logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from . import available_ifos, load_budget, plot_noise
-from .precomp import precompIFO
 from . import io
 
 ##################################################
@@ -175,9 +174,6 @@ def main():
     # main calculations
 
     if not traces:
-        if ifo:
-            logging.info("precomputing ifo...")
-            ifo = precompIFO(freq, ifo)
         logging.info("calculating budget...")
         traces = Budget(freq=freq, ifo=ifo).run()
 

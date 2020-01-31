@@ -17,8 +17,7 @@ description is loaded, the noise budget can be calculated and plotted:
 >>> import numpy as np
 >>> freq = np.logspace(1, 3, 1000)
 >>> Budget = gwinc.load_budget('aLIGO')
->>> ifo = gwinc.precompIFO(freq, Budget.ifo)
->>> traces = Budget(freq, ifo=ifo).run()
+>>> traces = Budget(freq).run()
 >>> fig = gwinc.plot_noise(freq, traces)
 >>> fig.show()
 ```

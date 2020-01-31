@@ -2,10 +2,94 @@ import numpy as np
 from numpy import pi, sin, exp, sqrt
 
 from .. import const
+from ..struct import Struct
 from .. import nb
 from .. import noise
+from .. import suspension
 
 ##################################################
+
+def coating_thickness(ifo, optic):
+    optic = ifo.Optics.get(optic)
+    if 'CoatLayerOpticalThickness' in optic:
+        return optic['CoatLayerOpticalThickness']
+    T = optic.Transmittance
+    dL = optic.CoatingThicknessLown
+    dCap = optic.CoatingThicknessCap
+    return noise.coatingthermal.getCoatDopt(ifo.Materials, T, dL, dCap=dCap)
+
+
+def arm_cavity(ifo):
+    L = ifo.Infrastructure.Length
+
+    g1 = 1 - L / ifo.Optics.Curvature.ITM
+    g2 = 1 - L / ifo.Optics.Curvature.ETM
+    gcav = sqrt(g1 * g2 * (1 - g1 * g2))
+    gden = g1 - 2 * g1 * g2 + g2
+
+    if (g1 * g2 * (1 - g1 * g2)) <= 0:
+        raise Exception('Unstable arm cavity g-factors.  Change ifo.Optics.Curvature')
+    elif gcav < 1e-3:
+        logging.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
+
+    ws = sqrt(L * ifo.Laser.Wavelength / pi)
+    w1 = ws * sqrt(abs(g2) / gcav)
+    w2 = ws * sqrt(abs(g1) / gcav)
+
+    # waist size
+    w0 = ws * sqrt(gcav / abs(gden))
+    zr = pi * w0**2 / ifo.Laser.Wavelength
+    z1 = L * g2 * (1 - g1) / gden
+    z2 = L * g1 * (1 - g2) / gden
+
+    # waist, input, output
+    return w0, w1, w2
+
+
+def ifo_power(ifo, PRfixed=True):
+    """Compute power on beamsplitter, finesse, and power recycling factor.
+
+    """
+    c = const.c
+    pin = ifo.Laser.Power
+    t1 = sqrt(ifo.Optics.ITM.Transmittance)
+    r1 = sqrt(1 - ifo.Optics.ITM.Transmittance)
+    r2 = sqrt(1 - ifo.Optics.ETM.Transmittance)
+    t5 = sqrt(ifo.Optics.PRM.Transmittance)
+    r5 = sqrt(1 - ifo.Optics.PRM.Transmittance)
+    loss = ifo.Optics.Loss  # single TM loss
+    bsloss = ifo.Optics.BSLoss
+    acoat = ifo.Optics.ITM.CoatingAbsorption
+    pcrit = ifo.Optics.pcrit
+
+    # Finesse, effective number of bounces in cavity, power recycling factor
+    finesse = 2*pi / (t1**2 + 2*loss)  # arm cavity finesse
+    neff    = 2 * finesse / pi
+
+    # Arm cavity reflectivity with finite loss
+    garm = t1 / (1 - r1*r2*sqrt(1-2*loss))  # amplitude gain wrt input field
+    rarm = r1 - t1 * r2 * sqrt(1-2*loss) * garm
+
+    if PRfixed:
+        Tpr = ifo.Optics.PRM.Transmittance  # use given value
+    else:
+        Tpr = 1-(rarm*sqrt(1-bsloss))**2  # optimal recycling mirror transmission
+        t5 = sqrt(Tpr)
+        r5 = sqrt(1 - Tpr)
+    prfactor = t5**2 / (1 + r5 * rarm * sqrt(1-bsloss))**2
+
+    pbs  = pin * prfactor  # BS power from input power
+    parm = pbs * garm**2 / 2  # arm power from BS power
+
+    thickness = ifo.Optics.ITM.get('Thickness', ifo.Materials.MassThickness)
+    asub = 1.3 * 2 * thickness * ifo.Optics.SubstrateAbsorption
+    pbsl = 2 *pcrit / (asub+acoat*neff)  # bs power limited by thermal lensing
+
+    if pbs > pbsl:
+        logging.warning('P_BS exceeds BS Thermal limit!')
+
+    return pbs, parm, finesse, prfactor, Tpr
+
 
 def dhdl(f, armlen):
     """Strain to length conversion for noise power spetra
@@ -35,6 +119,49 @@ def dhdl(f, armlen):
 
 ##################################################
 
+def precomp_mirror(f, ifo):
+    ifo.Materials.MirrorVolume = \
+        pi * ifo.Materials.MassRadius**2 \
+        * ifo.Materials.MassThickness
+    ifo.Materials.MirrorMass = \
+        ifo.Materials.MirrorVolume \
+        * ifo.Materials.Substrate.MassDensity
+
+
+def precomp_gwinc(f, ifo):
+    ifo.gwinc = Struct()
+    pbs, parm, finesse, prfactor, Tpr = ifo_power(ifo)
+    ifo.gwinc.pbs = pbs
+    ifo.gwinc.parm = parm
+    ifo.gwinc.finesse = finesse
+    ifo.gwinc.prfactor = prfactor
+
+
+def precomp_suspension(f, ifo):
+    if 'VHCoupling' not in ifo.Suspension:
+        ifo.Suspension.VHCoupling = Struct()
+        ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / const.R_earth
+
+    if ifo.Suspension.Type == 'BQuad':
+        material = 'Silicon'
+    else:
+        material = 'Silica'
+    hForce, vForce, hTable, vTable = suspension.suspQuad(f, ifo.Suspension, material)
+    try:
+        # full TF (conventional)
+        ifo.Suspension.hForce = hForce.fullylossy
+        ifo.Suspension.vForce = vForce.fullylossy
+        # TFs with each stage lossy
+        ifo.Suspension.hForce_singlylossy = hForce.singlylossy
+        ifo.Suspension.vForce_singlylossy = vForce.singlylossy
+    except:
+        ifo.Suspension.hForce = hForce
+        ifo.Suspension.vForce = vForce
+    ifo.Suspension.hTable = hTable
+    ifo.Suspension.vTable = vTable
+
+##################################################
+
 class Strain(nb.Calibration):
     def calc(self):
         dhdl_sqr, sinc_sqr = dhdl(self.freq, self.ifo.Infrastructure.Length)
@@ -52,6 +179,8 @@ class QuantumVacuum(nb.Noise):
     )
 
     def calc(self):
+        precomp_mirror(self.freq, self.ifo)
+        precomp_gwinc(self.freq, self.ifo)
         return noise.quantum.shotrad(self.freq, self.ifo)
 
 
@@ -65,6 +194,7 @@ class Seismic(nb.Noise):
     )
 
     def calc(self):
+        precomp_suspension(self.freq, self.ifo)
         if 'PlatformMotion' in self.ifo.Seismic:
             if self.ifo.Seismic.PlatformMotion == 'BSC':
                 nt, nr = noise.seismic.seismic_BSC_ISI(self.freq)
@@ -146,6 +276,7 @@ class SuspensionThermal(nb.Noise):
     )
 
     def calc(self):
+        precomp_suspension(self.freq, self.ifo)
         n = noise.suspensionthermal.suspension_thermal(self.freq, self.ifo.Suspension)
         return n * 4
 
@@ -162,10 +293,9 @@ class CoatingBrownian(nb.Noise):
     def calc(self):
         wavelength = self.ifo.Laser.Wavelength
         materials = self.ifo.Materials
-        wBeam_ITM = self.ifo.Optics.ITM.BeamRadius
-        wBeam_ETM = self.ifo.Optics.ETM.BeamRadius
-        dOpt_ITM = self.ifo.Optics.ITM.CoatLayerOpticalThickness
-        dOpt_ETM = self.ifo.Optics.ETM.CoatLayerOpticalThickness
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
+        dOpt_ITM = coating_thickness(self.ifo, 'ITM')
+        dOpt_ETM = coating_thickness(self.ifo, 'ETM')
         nITM = noise.coatingthermal.coating_brownian(
             self.freq, materials, wavelength, wBeam_ITM, dOpt_ITM)
         nETM = noise.coatingthermal.coating_brownian(
@@ -186,10 +316,9 @@ class CoatingThermoOptic(nb.Noise):
     def calc(self):
         wavelength = self.ifo.Laser.Wavelength
         materials = self.ifo.Materials
-        wBeam_ITM = self.ifo.Optics.ITM.BeamRadius
-        wBeam_ETM = self.ifo.Optics.ETM.BeamRadius
-        dOpt_ITM = self.ifo.Optics.ITM.CoatLayerOpticalThickness
-        dOpt_ETM = self.ifo.Optics.ETM.CoatLayerOpticalThickness
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
+        dOpt_ITM = coating_thickness(self.ifo, 'ITM')
+        dOpt_ETM = coating_thickness(self.ifo, 'ETM')
         nITM, junk1, junk2, junk3 = noise.coatingthermal.coating_thermooptic(
             self.freq, materials, wavelength, wBeam_ITM, dOpt_ITM[:])
         nETM, junk1, junk2, junk3 = noise.coatingthermal.coating_thermooptic(
@@ -208,9 +337,11 @@ class ITMThermoRefractive(nb.Noise):
     )
 
     def calc(self):
-        gPhase = self.ifo.gwinc.finesse * 2/np.pi
+        finesse = ifo_power(self.ifo)[2]
+        gPhase =  finesse * 2/np.pi
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         n = noise.substratethermal.substrate_thermorefractive(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ITM)
         return n * 2 / (gPhase)**2
 
 
@@ -225,9 +356,11 @@ class ITMCarrierDensity(nb.Noise):
     )
 
     def calc(self):
-        gPhase = self.ifo.gwinc.finesse * 2/np.pi
+        finesse = ifo_power(self.ifo)[2]
+        gPhase = finesse * 2/np.pi
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         n = noise.substratethermal.substrate_carrierdensity(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ITM)
         return n * 2 / (gPhase)**2
 
 
@@ -242,10 +375,11 @@ class SubstrateBrownian(nb.Noise):
     )
 
     def calc(self):
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         nITM = noise.substratethermal.substrate_brownian(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ITM)
         nETM = noise.substratethermal.substrate_brownian(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ETM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ETM)
         return (nITM + nETM) * 2
 
 
@@ -260,10 +394,11 @@ class SubstrateThermoElastic(nb.Noise):
     )
 
     def calc(self):
+        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         nITM = noise.substratethermal.substrate_thermoelastic(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ITM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ITM)
         nETM = noise.substratethermal.substrate_thermoelastic(
-            self.freq, self.ifo.Materials, self.ifo.Optics.ETM.BeamRadius)
+            self.freq, self.ifo.Materials, wBeam_ETM)
         return (nITM + nETM) * 2
 
 
