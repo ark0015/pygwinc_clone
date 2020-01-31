@@ -78,7 +78,7 @@ class BudgetItem:
     def __str__(self):
         # FIXME: provide info on internal state (load/update/calc/etc.)
         return '<{} {}>'.format(
-            ' '.join([c.__name__ for c in self.__class__.__bases__]),
+            ', '.join([c.__name__ for c in self.__class__.__bases__]),
             self.name,
         )
 
