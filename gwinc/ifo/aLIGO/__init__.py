@@ -16,3 +16,7 @@ class aLIGO(nb.Budget):
         SubstrateThermoElastic,
         ExcessGas,
     ]
+
+    calibrations = [
+        Strain,
+    ]

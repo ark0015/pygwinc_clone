@@ -18,3 +18,7 @@ class Voyager(nb.Budget):
         SubstrateThermoElastic,
         ExcessGas,
     ]
+
+    calibrations = [
+        Strain,
+    ]

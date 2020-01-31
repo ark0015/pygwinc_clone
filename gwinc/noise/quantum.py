@@ -249,7 +249,7 @@ def shotrad(f, ifo):
     #       sum(abs((vHD * Msig(:,:,k))).^2);
     #   end
 
-    return n * ifo.gwinc.sinc_sqr
+    return n * ifo.Infrastructure.Length**2
 
 
 def compile_ARM_RES_TF():

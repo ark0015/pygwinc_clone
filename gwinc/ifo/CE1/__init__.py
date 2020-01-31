@@ -66,3 +66,7 @@ class CE1(nb.Budget):
         Substrate,
         ExcessGas,
     ]
+
+    calibrations = [
+        Strain,
+    ]

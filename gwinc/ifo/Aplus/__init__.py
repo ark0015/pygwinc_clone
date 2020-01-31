@@ -16,3 +16,7 @@ class Aplus(nb.Budget):
         SubstrateThermoElastic,
         ExcessGas,
     ]
+
+    calibrations = [
+        Strain,
+    ]
