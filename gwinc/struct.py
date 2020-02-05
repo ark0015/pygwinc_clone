@@ -276,7 +276,7 @@ class Struct(object):
         """Create Struct from YAML string.
 
         """
-        d = yaml.load(y)
+        d = yaml.load(y, Loader=yaml_loader)
         return cls.from_dict(d)
 
 
@@ -320,8 +320,7 @@ class Struct(object):
 
         with open(path, 'r') as f:
             if ext in ['.yaml', '.yml']:
-                d = yaml.load(f, Loader=yaml_loader)
-                return cls.from_dict(d)
+                return cls.from_yaml(f)
             elif ext == '.mat':
                 s = loadmat(f, squeeze_me=True, struct_as_record=False)
                 return cls.from_matstruct(s)
