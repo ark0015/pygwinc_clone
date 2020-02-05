@@ -12,8 +12,7 @@ import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .. import load_budget
-from ..gwinc import gwinc
+from .. import load_budget, gwinc
 from ..gwinc_matlab import gwinc_matlab
 try:
     import inspiral_range
