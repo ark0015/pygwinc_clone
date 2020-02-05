@@ -32,12 +32,15 @@ def gwinc(freq, ifoin, source=None, plot=False, PRfixed=True):
     Budget, ifo_, freq_, plot_style = load_ifo('aLIGO')
 
     # add some precomputed info to the ifo struct
-    #this implicitly deepcopies and the return value is the copy
+    # this implicitly deepcopies and the return value is the copy
     ifo = precompIFO(freq, ifoin, PRfixed)
 
     traces = Budget(freq, ifo=ifo).calc_trace()
 
-    noises = {n:d[0] for n, d in traces.items()}
+    # construct matgwinc-compatible noises structure
+    noises = {}
+    for name, (data, style) in traces.items():
+        noises[style.get('label', name)] = data
     noises['Freq'] = freq
 
     pbs      = ifo.gwinc.pbs
