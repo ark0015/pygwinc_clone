@@ -155,6 +155,7 @@ pygwinc: {fom:.2f} Mpc""".format(
         try:
             mnoise = mnoises[name]
         except KeyError:
+            logging.warning("skipping missing MATGWINC trace: {}".format(name))
             continue
         # logging.info("compare: {}".format(name))
 
