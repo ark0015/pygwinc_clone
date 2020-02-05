@@ -1,7 +1,7 @@
 import os
 import logging
 
-from ..struct import load_struct, STRUCT_EXT
+from ..struct import Struct
 from ..util import load_module
 
 
@@ -28,8 +28,8 @@ def load_ifo(name_or_path):
     Named IFOs should correspond to one of the IFOs available in the
     gwinc package (see gwinc.available_ifos()).  If a path is provided
     it should either be a budget package (directory) or module (ending
-    in .py), or an IFO struct (see gwinc.load_struct()).  In the
-    latter case the base aLIGO budget definition will be used.
+    in .py), or an IFO struct (see gwinc.Struct).  In the latter case
+    the base aLIGO budget definition will be used.
 
     Returns primary Budget class, ifo structure, frequency array, and
     plot style dictionary, with the last three being None if they are
@@ -42,9 +42,9 @@ def load_ifo(name_or_path):
         path = name_or_path.rstrip('/')
         bname, ext = os.path.splitext(os.path.basename(path))
 
-        if ext in STRUCT_EXT:
+        if ext in Struct.STRUCT_EXT:
             logging.info("loading struct {}...".format(path))
-            ifo = load_struct(path)
+            ifo = Struct.from_file(path)
             bname = 'aLIGO'
             modname = 'gwinc.ifo.aLIGO'
             logging.info("loading budget {}...".format(modname))
@@ -69,7 +69,7 @@ def load_ifo(name_or_path):
     ifo = getattr(mod, 'IFO', ifo)
     ifopath = os.path.join(modpath, 'ifo.yaml')
     if not ifo and ifopath:
-        ifo = load_struct(ifopath)
+        ifo = Struct.from_file(ifopath)
     freq = getattr(mod, 'FREQ', None)
     plot_style = getattr(mod, 'PLOT_STYLE', PLOT_STYLE)
 

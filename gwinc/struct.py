@@ -57,6 +57,9 @@ class Struct(object):
 
     """
 
+    STRUCT_EXT = ['.yaml', '.yml', '.mat', '.m']
+    """accepted extension types for struct files"""
+
     # FIXME: There should be a way to allow setting nested struct
     # attributes, e.g.:
     #
@@ -328,10 +331,33 @@ class Struct(object):
     def from_file(cls, path):
         """Load Struct from .yaml or MATLAB .mat file.
 
-        File type will be determined by extension.
+        Accepted file types are .yaml, .mat, or .m.
+
+        For .m files, the file is expected to include either an object
+        or function that corresponds to the basename of the file.  The
+        MATLAB engine will be invoked to execute the .m code and
+        extract the resultant IFO data.
+
+        If `path` is a tuple, all elements will be joined ala
+        os.path.join, with the first element resolved to it's absolute
+        dirname.  This is useful for loading package-relative files
+        with e.g.:
+
+          Struct.from_file((__file__, 'myifo.yaml'))
 
         """
-        (root, ext) = os.path.splitext(path)
+        if type(path) == tuple:
+            path = os.path.join(os.path.abspath(os.path.dirname(path[0])), *path[1:])
+        base, ext = os.path.splitext(path)
+
+        if ext == '.m':
+            from ..gwinc_matlab import Matlab
+            matlab = Matlab()
+            matlab.addpath(os.path.dirname(path))
+            func_name = os.path.basename(base)
+            matlab.eval("ifo = {};".format(func_name), nargout=0)
+            ifo = matlab.extract('ifo')
+            return Struct.from_matstruct(ifo)
 
         with open(path, 'r') as f:
             if ext in ['.yaml', '.yml']:
@@ -341,31 +367,3 @@ class Struct(object):
                 return cls.from_matstruct(s)
             else:
                 raise IOError("Unknown file type: {}".format(ext))
-
-
-def load_struct(path):
-    """Load struct from YAML or MATLAB file.
-
-    Files may be either .yaml, .mat or .m.  For .m files, the file is
-    expected to include either an object or function that corresponds
-    to the basename of the file.  The MATLAB engine will be invoked to
-    execute the .m code and extract the resultant IFO data.
-
-    """
-    root, ext = os.path.splitext(path)
-
-    if ext == '.m':
-        from ..gwinc_matlab import Matlab
-        matlab = Matlab()
-        matlab.addpath(os.path.dirname(path))
-        func_name = os.path.basename(root)
-        matlab.eval("ifo = {};".format(func_name), nargout=0)
-        ifo = matlab.extract('ifo')
-        return Struct.from_matstruct(ifo)
-
-    else:
-        return Struct.from_file(path)
-
-
-# accepted extension types for struct files
-STRUCT_EXT = ['.yaml', '.yml', '.mat', '.m']
