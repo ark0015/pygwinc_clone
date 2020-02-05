@@ -6,7 +6,7 @@ class QuantumVacuum(nb.Noise):
 
     """
     style = dict(
-        label='Quantum',
+        label='Quantum Vacuum',
         color='#ad03de',
     )
 
@@ -32,7 +32,7 @@ class Newtonian(nb.Noise):
 
     """
     style = dict(
-        label='Newtonian',
+        label='Newtonian Gravity',
         color='#15b01a',
     )
 
