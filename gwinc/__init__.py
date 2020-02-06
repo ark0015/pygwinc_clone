@@ -133,8 +133,10 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     # report astrophysical scores if so desired
     score = None
     if source:
-        score = int73(freq, noises['Total'], ifo, source)
-        score.Omega = intStoch(freq, noises['Total'], 0, ifo, source)
+        logging.warning("Source score calculation currently not supported.  See `inspiral-range` package for similar functionality:")
+        logging.warning("https://git.ligo.org/gwinc/inspiral-range")
+        # score = int731(freq, noises['Total'], ifo, source)
+        # score.Omega = intStoch(freq, noises['Total'], 0, ifo, source)
 
     # --------------------------------------------------------
     # output graphics
@@ -161,7 +163,7 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
         if (ifo.Laser.Power*prfactor != pbs):
             logging.info('Lensing limited input power: %7.2f W' % (pbs/prfactor))
 
-        if source:
+        if score:
             logging.info('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
             logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
             logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
