@@ -32,7 +32,7 @@ class BudgetItem:
         return None
 
     def update(self, **kwargs):
-        """Overload method for updating data needed to calculate final PSD.
+        """Overload method for updating data.
 
         By default any keyword arguments provided are written directly
         as attribute variables (as with __init__).
@@ -42,7 +42,7 @@ class BudgetItem:
             setattr(self, key, val)
 
     def calc(self):
-        """Overload method for calculation of final PSD.
+        """Overload method for final PSD calculation.
 
         Should return an array of power-referenced values evaluated at
         all evaluation frequencies (self.freq).
@@ -151,6 +151,17 @@ class Noise(BudgetItem):
         else:
             data = None
         return data, self.style
+
+    def run(self, **kwargs):
+        """Convenience method to load, update, and return calc traces.
+
+        Equivalent of load(), update(), calc_traces() run in sequence.
+        Keyword arguments are passed to update().
+
+        """
+        self.load()
+        self.update(**kwargs)
+        return self.calc_trace()
 
 
 class Budget(Noise):

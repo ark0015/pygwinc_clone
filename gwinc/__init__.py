@@ -113,7 +113,7 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     # from just ifo description, without having to specify full budget
     Budget = load_budget('aLIGO')
     ifo = precompIFO(freq, ifo, PRfixed)
-    traces = Budget(freq, ifo=ifo).calc_trace()
+    traces = Budget(freq, ifo=ifo).run()
     plot_style = getattr(Budget, 'plot_style', {})
 
     # construct matgwinc-compatible noises structure

@@ -179,10 +179,7 @@ def main():
             logging.info("precomputing ifo...")
             ifo = precompIFO(freq, ifo)
         logging.info("calculating budget...")
-        budget = Budget(freq=freq, ifo=ifo)
-        budget.load()
-        budget.update()
-        traces = budget.calc_trace()
+        traces = Budget(freq=freq, ifo=ifo).run()
 
     # logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
     # logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
