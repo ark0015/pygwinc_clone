@@ -1,5 +1,5 @@
-import datetime
 import h5py
+import datetime
 
 
 SCHEMA = 'GWINC noise budget'
@@ -42,7 +42,7 @@ def _read_trace_recursive(element):
         if isinstance(item, h5py.Group):
             trace[name] = _read_trace_recursive(item)
         else:
-            trace[name] = item.value, dict(item.attrs.items())
+            trace[name] = item[:], dict(item.attrs.items())
     return trace
 
 
@@ -54,7 +54,7 @@ def load_hdf5(path):
     """
     with h5py.File(path, 'r') as f:
         # FIXME: check SCHEMA name/version
-        freq = f['Freq'].value
+        freq = f['Freq'][:]
         traces = _read_trace_recursive(f['/traces'])
         attrs = dict(f.attrs.items())
         return freq, traces, attrs
