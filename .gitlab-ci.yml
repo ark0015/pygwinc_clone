@@ -10,15 +10,14 @@ test:
   - echo $CI_COMMIT_SHA | cut -b1-8 > gitID.txt
   script:
   - apt-get update -qq
-  - apt-get install -y -qq python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3
+  - apt-get install -y -qq python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3 python3-pypdf2
   - git clone https://gitlab-ci-token:ci_token@git.ligo.org/gwinc/inspiral_range.git
   - export PYTHONPATH=inspiral_range
   - export MPLBACKEND=agg
-  - python3 -m gwinc aLIGO -s aLIGO.png
-  - python3 -m gwinc Aplus -s Aplus.png
-  - python3 -m gwinc Voyager -s Voyager.png
-  - python3 -m gwinc.test aLIGO -t 10e-6 -k Seismic -k "Substrate Thermo-Elastic" -p -s aLIGO_test.png
-  - python3 -m gwinc.test -t 100e-6 -k Seismic -k "Substrate Thermo-Elastic" Aplus -p -s Aplus_test.png
+  - for ifo in aLIGO Aplus Voyager CE1 CE2; do
+  -     python3 -m gwinc $ifo -s $ifo.png
+  - done
+  - python3 -m gwinc.test -r gwinc_test_report.pdf
   after_script:
   - rm gitID.txt
   cache:
@@ -31,8 +30,9 @@ test:
     - aLIGO.png
     - Aplus.png
     - Voyager.png
-    - aLIGO_test.png
-    - Aplus_test.png
+    - CE1.png
+    - CE2.png
+    - gwinc_test_report.pdf
 
 pages:
   stage: deploy
@@ -40,11 +40,10 @@ pages:
   - test
   script:
   - mkdir public
-  - mv aLIGO.png public/
-  - mv Aplus.png public/
-  - mv Voyager.png public/
-  - mv aLIGO_test.png public/ || true
-  - mv Aplus_test.png public/ || true
+  - for ifo in aLIGO Aplus Voyager CE1 CE2; do
+  -     mv $ifo.png public/
+  - done
+  - mv gwinc_test_report.pdf public/ || true
   - apt-get install -y -qq python3-pip python3-dev make
   - pip3 install sphinx sphinx-rtd-theme
   - cd docs

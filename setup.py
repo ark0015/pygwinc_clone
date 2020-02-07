@@ -30,8 +30,10 @@ setup_args = dict(
 
     install_requires = [
         'h5py',
+        'ipython',
         'matplotlib',
         'numpy',
+        'PyPDF2',
         'pyyaml',
         'scipy',
     ],

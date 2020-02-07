@@ -1,229 +1,283 @@
 import os
 import sys
+import glob
 import signal
-import pickle
-import subprocess
-import hashlib
+import logging
+import tempfile
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
+from collections import OrderedDict
+from collections.abc import Mapping
+from PyPDF2 import PdfFileReader, PdfFileWriter
 
-import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .. import load_budget, gwinc
-from ..gwinc_matlab import gwinc_matlab
+from .. import available_ifos, load_budget
+from .. import precompIFO
+from .. import load_hdf5, save_hdf5
+
 try:
     import inspiral_range
 except ImportError:
     inspiral_range = None
 
 
-FLO = 5
-FHI = 6000
-NPOINTS = 3000
+TOLERANCE = 1e-6
+CACHE_PATH = os.path.join(os.path.dirname(__file__), 'cache')
 
 
-def path_hash(path):
-    """Calculate SHA1 hash of path, either directory or file"""
-    if not path or not os.path.exists(path):
-        return
-    path = os.path.expanduser(path)
-    if os.path.isdir(path):
-        d = path
-        f = '.'
-    else:
-        d = os.path.dirname(path)
-        f = os.path.basename(path)
-    CWD = os.getcwd()
-    os.chdir(d)
-    cmd = 'find {} -type f ! -wholename "*/.*" -print0 | sort -z | xargs -0 sha1sum | sha1sum'.format(f)
-    sha1sum_out = subprocess.check_output(cmd, shell=True)
-    sha1sum = sha1sum_out.split()[0]
-    os.chdir(CWD)
-    return sha1sum.decode()
+def walk_traces(traces, root=()):
+    """recursively walk through traces
 
-##################################################
+    yields (key_tuple, value), where key_tuple is a tuple of nested
+    dict keys of the traces dict locating the given value.
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--plot', '-p', action='store_true', help='plot differences')
-    parser.add_argument('--save', '-s', help='save plot to file')
-    parser.add_argument('--recalc', '-r', action='store_true', help='recalculate all traces')
-    parser.add_argument('--tolerance', '-t', help='fractional tolerance', type=float, default=1e-6)
-    parser.add_argument('--skip', '-k', action='append', help='traces to skip comparing')
-    parser.add_argument('IFO', help='IFO name or description file')
-    args = parser.parse_args()
+    """
+    for key, val in traces.items():
+        r = root+(key,)
+        if isinstance(val, Mapping):
+            for k, v in walk_traces(val, root=r):
+                yield k, v
+            continue
+        else:
+            yield r, val
 
-    logging.info("loading IFO '{}'...".format(args.IFO))
-    Budget = load_budget(args.IFO)
-    ifo = Budget.ifo
 
-    freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
-
-    ##############################
-    # matgwinc processing
-
-    mdata_pkl = os.path.join(os.path.dirname(__file__), '{}.pkl'.format(args.IFO))
-
-    ifo_hash = hashlib.sha1(ifo.to_txt().encode()).hexdigest()
-    gwinc_hash = path_hash(os.getenv('GWINCPATH'))
-    if not gwinc_hash:
-        logging.warning("GWINCPATH not specified or does not exist; skipping check for changes to matgwinc code.")
-
-    mrecalc = args.recalc
-
-    if os.path.exists(mdata_pkl) and not mrecalc:
-        mrecalc = False
-        logging.info("loading matgwinc data {}...".format(mdata_pkl))
-        with open(mdata_pkl, 'rb') as f:
-            if sys.version_info.major > 2:
-                mdata = pickle.load(f, encoding='latin1')
-            else:
-                mdata = pickle.load(f)
-
-        if mdata['ifo_hash'] != ifo_hash:
-            logging.info("ifo hash has changed: {}".format(ifo_hash))
-            mrecalc = True
-        if gwinc_hash and mdata['gwinc_hash'] != gwinc_hash:
-            logging.info("matgwinc hash has changed: {}".format(gwinc_hash))
-            mrecalc = True
-
-    if mrecalc:
-        logging.info("calculating matgwinc noises...")
-        try:
-            mscore, mnoises, mifo = gwinc_matlab(freq, ifo)
-        except (ImportError, OSError):
-            sys.exit("MATLAB engine not available.")
-        mdata = dict(score=mscore, noises=mnoises, ifo=mifo, ifo_hash=ifo_hash, gwinc_hash=gwinc_hash)
-        with open(mdata_pkl, 'wb') as f:
-            pickle.dump(mdata, f)
-
-    mnoises = mdata['noises']
-
-    ##############################
-    # pygwinc processing
-
-    logging.info("calculating pygwinc noises...")
-    score, noises, ifo = gwinc(freq, ifo)
-
-    ##############################
-    # calc inspiral ranges
-
-    if inspiral_range:
-        logging.info("calculating inspiral ranges...")
-
-        range_func = inspiral_range.range
-        H = inspiral_range.waveform.CBCWaveform(freq)
-
-        mfom = range_func(freq, mnoises['Total'], H=H)
-        _, mnoises['int73'] = inspiral_range.int73(freq, mnoises['Total'])
-        logging.info("matgwinc range: {:.2f} Mpc".format(mfom))
-
-        fom = range_func(freq, noises['Total'], H=H)
-        _, noises['int73'] = inspiral_range.int73(freq, noises['Total'])
-        logging.info("pygwinc range: {:.2f} Mpc".format(fom))
-
-        fom_title = """inspiral {func} {m1}/{m2} Msol:
-matgwinc: {mfom:.2f} Mpc
-pygwinc: {fom:.2f} Mpc""".format(
-            func=range_func.__name__,
-            m1=H.params['m1'],
-            m2=H.params['m2'],
-            mfom=mfom,
-            fom=fom,
-        )
-
-    else:
-        fom_title = ''
-
-    ##############################
-    # find differences
-
-    skip = args.skip
-    fractional_tolerance = args.tolerance
-
-    diffs = {}
-    for name, noise in noises.items():
-        if name in ['Freq']:
+def zip_noises(tracesA, tracesB, skip):
+    """zip matching noises from traces"""
+    for keys, (noiseA, _) in walk_traces(tracesA):
+        # keys is a tuple of nested keys for noise
+        name = keys[-1]
+        # skip keys we'll add at the end
+        if name in ['Total', 'int73']:
             continue
         if skip and name in skip:
             logging.warning("SKIPPING TEST: '{}'".format(name))
             continue
 
         try:
-            mnoise = mnoises[name]
-        except KeyError:
-            logging.warning("skipping missing MATGWINC trace: {}".format(name))
+            t = tracesB
+            for key in keys:
+                t = t[key]
+            noiseB, style = t
+        except (KeyError, TypeError):
+            logging.warning("MISSING B TRACE: '{}'".format(name))
             continue
-        # logging.info("compare: {}".format(name))
 
-        mn = mnoise
-        pn = noise
-        # _, mn = inspiral_range.int73(freq, mnoise)
-        # _, pn = inspiral_range.int73(freq, noise)
+        yield name, noiseA, noiseB
 
-        diff = np.sqrt(mn) - np.sqrt(pn)
-        frac = abs(diff / np.sqrt(pn))
+    yield 'Total', tracesA['Total'][0], tracesB['Total'][0]
 
-        if max(frac) < fractional_tolerance:
+    if 'int73' in tracesA:
+        yield 'int73', tracesA['int73'][0], tracesB['int73'][0]
+
+
+def compare_traces(tracesA, tracesB, tolerance=TOLERANCE, skip=None):
+    """Compare two gwinc trace dictionaries
+
+    Noises listed in `skip` will not be compared.
+
+    Returns a dictionary of noises that differ fractionally (on a
+    point-by-point basis) by more that `tolerance` between `tracesA`
+    and `tracesB`.
+
+    """
+    #name_width = max([len(n[0][-1]) for n in walk_traces(tracesA)])
+    name_width = 15
+    diffs = OrderedDict()
+    for name, noiseA, noiseB in zip_noises(tracesA, tracesB, skip):
+        logging.debug("comparing {}...".format(name))
+
+        ampA = np.sqrt(noiseA)
+        ampB = np.sqrt(noiseB)
+        diff = ampB - ampA
+        frac = abs(diff / ampA)
+
+        if max(frac) < tolerance:
             continue
 
         logging.warning("EXCESSIVE DIFFERENCE: {:{w}} {:6.1f} ppm".format(
-            name, max(frac)*1e6, w=max([len(n) for n in noises])))
-        # logging.warning("  max: {:e}, min: {:e}".format(max(frac), min(frac)))
+            name, max(frac)*1e6, w=name_width))
 
-        diffs[name] = (mn, pn, frac)
+        diffs[name] = (noiseA, noiseB, frac)
 
-    ##############################
-    # plot
+    return diffs
 
-    if args.plot:
-        spec = (len(diffs)+1, 2)
-        sharex = None
-        for i, name in enumerate(diffs):
-            mn, pn, frac = diffs[name]
 
-            axl = plt.subplot2grid(spec, (i, 0), sharex=sharex)
-            axl.loglog(freq, np.sqrt(pn), label='pygwinc')
-            axl.loglog(freq, np.sqrt(mn), label='matgwinc')
-            axl.grid()
-            axl.legend(loc='upper right')
-            axl.set_ylabel(name)
-            if i == 0:
-                sharex = axl
+def plot_diffs(freq, diffs, tolerance,
+               name, labelA, labelB, fom_title='',
+               save=None):
+    spec = (len(diffs)+1, 2)
+    sharex = None
+    for i, nname in enumerate(diffs):
+        noiseA, noiseB, frac = diffs[nname]
 
-            axr = plt.subplot2grid(spec, (i, 1), sharex=sharex)
-            axr.loglog(freq, frac)
-            axr.grid()
-            axr.axhline(y=max(frac), color='r', linestyle='--')
-            axr.text(max(freq)+4000, max(frac), '{:.1f} ppm'.format(max(frac)*1e6),
-                     horizontalalignment='left', verticalalignment='center',
-                     color='red')
+        axl = plt.subplot2grid(spec, (i, 0), sharex=None)
+        axl.loglog(freq, np.sqrt(noiseA), label=labelA)
+        axl.loglog(freq, np.sqrt(noiseB), label=labelB)
+        axl.grid()
+        axl.legend(loc='upper right')
+        axl.set_ylabel(nname)
+        if i == 0:
+            axl.set_title("noise value")
+
+        if i == 0:
+            sharex = axl
+        axr = plt.subplot2grid(spec, (i, 1), sharex=sharex)
+        axr.loglog(freq, frac)
+        axr.grid()
+        axr.axhline(y=max(frac), color='r', linestyle='--')
+        axr.text(max(freq)+4000, max(frac), '{:.1f} ppm'.format(max(frac)*1e6),
+                 horizontalalignment='left', verticalalignment='center',
+                 color='red')
+        if i == 0:
+            axr.set_title("fractional difference")
+
+        plt.suptitle('''{} {}/{} noise comparison
+(noises that differ by more than {} ppm)
+
+{}'''.format(name, labelA, labelB, tolerance*1e6, fom_title))
+
+    axl.set_xlabel("frequency [Hz]")
+    axr.set_xlabel("frequency [Hz]")
+
+    if save:
+        plt.gcf().set_size_inches(11, (len(diffs)*4 + 1))
+        plt.savefig(save)
+    else:
+        plt.show()
+
+##################################################
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tolerance', '-t',  type=float, default=TOLERANCE,
+                        help='fractional tolerance [{}]'.format(TOLERANCE))
+    parser.add_argument('--skip', '-k', metavar='NOISE', action='append',
+                        help='traces to skip in comparison (multiple may be specified)')
+    parser.add_argument('--cache', '-c', metavar='PATH', default=CACHE_PATH,
+                        help='specify alternate IFO traces cache path')
+    rgroup = parser.add_mutually_exclusive_group()
+    rgroup.add_argument('--plot', '-p', action='store_true',
+                        help='plot differences')
+    rgroup.add_argument('--report', '-r', metavar='REPORT.pdf',
+                        help='create PDF report of test results (only created if differences found)')
+    rgroup.add_argument('--gen-cache', action='store_true',
+                        help='update/create IFO traces cache directory')
+    parser.add_argument('ifo', metavar='IFO', nargs='*',
+                        help='specific ifos to test (default all)')
+    args = parser.parse_args()
+
+    if args.gen_cache:
+        try:
+            os.makedirs(args.cache)
+        except FileExistsError:
+            pass
+        freq = np.logspace(np.log10(5), np.log10(6000), 3000)
+        for name in available_ifos():
+            Budget = load_budget(name)
+            ifo = precompIFO(freq, Budget.ifo)
+            traces = Budget(freq, ifo=ifo).run()
+            path = os.path.join(args.cache, name+'.h5')
+            save_hdf5(path, freq, traces)
+        return
+        
+    if args.report:
+        base, ext = os.path.splitext(args.report)
+        if ext != '.pdf':
+            parser.error("Test reports only support PDF format.")
+        outdir = tempfile.TemporaryDirectory()
+    
+    # find all cached IFOs
+    logging.info("loading cache {}...".format(args.cache))
+    cached_ifos = {}
+    for f in sorted(os.listdir(args.cache)):
+        name, ext = os.path.splitext(f)
+        if ext != '.h5':
+            continue
+        cached_ifos[name] = os.path.join(args.cache, f)
+
+    # select
+    if args.ifo:
+        ifos = {name:cached_ifos[name] for name in args.ifo}
+    else:
+        ifos = cached_ifos
+
+    labelA = 'cache'
+    labelB = 'head'
+
+    fail = False
+
+    # compare
+    for name, path in ifos.items():
+        logging.info("{} tests...".format(name))
+
+        freq, tracesA, attrs = load_hdf5(path)
+
+        Budget = load_budget(name)
+        ifo = precompIFO(freq, Budget.ifo)
+        tracesB = Budget(freq, ifo=ifo).run()
+
+        if inspiral_range:
+            totalA = tracesA['Total'][0]
+            totalB = tracesB['Total'][0]
+            range_func = inspiral_range.range
+            H = inspiral_range.waveform.CBCWaveform(freq)
+            fomA = range_func(freq, totalA, H=H)
+            tracesA['int73'] = inspiral_range.int73(freq, totalA)[1], None
+            fomB = range_func(freq, totalB, H=H)
+            tracesB['int73'] = inspiral_range.int73(freq, totalB)[1], None
+            fom_summary = """inspiral {func} {m1}/{m2} Msol:
+            {labelA}: {fomA:.2f} Mpc
+            {labelB}: {fomB:.2f} Mpc""".format(
+                func=range_func.__name__,
+                m1=H.params['m1'],
+                m2=H.params['m2'],
+                labelA=labelA,
+                fomA=fomA,
+                labelB=labelB,
+                fomB=fomB,
+            )
+        else:
+            fom_summary = ''
+
+        diffs = compare_traces(tracesA, tracesB, args.tolerance, args.skip)
 
         if diffs:
-            axl.set_xlabel("frequency [Hz]")
-            axr.set_xlabel("frequency [Hz]")
-    
-            plt.suptitle("""{} mat/py gwinc noise comparison
-noises that differ by more than {} ppm [(mat-py)/py]
-{}""".format(args.IFO, fractional_tolerance*1e6, fom_title))
-
-            if args.save:
-                plt.gcf().set_size_inches(11, (len(diffs)+1)*4)
-                plt.savefig(args.save)
-            else:
-                plt.show()
-
+            logging.warning("{} tests FAIL".format(name))
+            fail |= True
+            if args.plot or args.report:
+                if args.report:
+                    save = os.path.join(outdir.name, name+'.pdf')
+                else:
+                    save = None
+                plot_diffs(
+                    freq, diffs, args.tolerance,
+                    name, labelA, labelB, fom_summary,
+                    save=save,
+                )
         else:
-            logging.warning("All tests passed, so no plot was generated")
+            logging.info("{} tests pass.".format(name))
 
-    ##############################
+    if not fail:
+        logging.info("all tests pass.")
+        return 0
 
-    if len(diffs) > 0:
-        return 1
-    return 0
+    if args.report:
+        logging.info("generating report {}...".format(args.report))
+        pdf_writer = PdfFileWriter()
+        for path in glob.glob(os.path.join(outdir.name, '*.pdf')):
+            pdf_reader = PdfFileReader(path)
+            for page in range(pdf_reader.getNumPages()):
+                pdf_writer.addPage(pdf_reader.getPage(page))
+        with open(args.report, 'wb') as f:
+            pdf_writer.write(f)
+        outdir.cleanup()
+
+    logging.info("TESTS FAILED.")
+    return 1
 
 ##################################################
 
