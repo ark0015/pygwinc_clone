@@ -21,13 +21,12 @@ def carrierdensity_adiabatic(f, ifo):
     diffHole = ifo.Materials.Substrate.HoleDiffusion
     cdDens = ifo.Materials.Substrate.CarrierDensity
     r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
-    L = ifo.Infrastructure.Length
     gPhase = ifo.gwinc.finesse*2/pi
 
     psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*Omega**2) # units are meters
     psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*Omega**2) # units are meters
     psdMeters = 2 * (psdElec + psdHole) # electrons and holes for two ITMs
-    n = psdMeters / (gPhase*L)**2
+    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
     return n
 
 
@@ -38,7 +37,6 @@ def carrierdensity_exact(f, ifo):
 
     """
     w = ifo.Optics.ITM.BeamRadius
-    L = ifo.Infrastructure.Length
     H = ifo.Materials.MassThickness
     kBT = const.kB * ifo.Materials.Substrate.Temp
     hbar = const.hbar
@@ -71,7 +69,7 @@ def carrierdensity_exact(f, ifo):
     
     psdMeters = 2 * (psdElec + psdHole)
     
-    n = psdMeters / (gPhase*L)**2
+    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
 
     return n
 
@@ -91,12 +89,11 @@ def thermorefractiveITM_adiabatic(f, ifo):
     Temp = ifo.Materials.Substrate.Temp
     kBT = const.kB * Temp
     r0 = ifo.Optics.ITM.BeamRadius/np.sqrt(2)
-    L = ifo.Infrastructure.Length
     gPhase = ifo.gwinc.finesse*2/pi
 
     psd = 4*H*beta**2*kappa*kBT*Temp/(pi*r0**4*Omega**2*(rho*C)**2) # units are meters
     psdMeters = 2*psd # two ITMs
-    n = psdMeters / (gPhase*L)**2
+    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
     return n
 
 
@@ -108,7 +105,6 @@ def thermorefractiveITM_exact(f, ifo):
     """
     
     w = ifo.Optics.ITM.BeamRadius
-    L = ifo.Infrastructure.Length
     H = ifo.Materials.MassThickness
     kBT = const.kB * ifo.Materials.Substrate.Temp
     Temp = ifo.Materials.Substrate.Temp
@@ -137,7 +133,7 @@ def thermorefractiveITM_exact(f, ifo):
     
     psdMeters = 2*psd # two itms
     
-    n = psdMeters / (gPhase*L)**2
+    n = psdMeters / (gPhase)**2 * ifo.gwinc.dhdl_sqr
 
     return n
 
@@ -156,7 +152,6 @@ def subbrownian(f, ifo):
     c2 = ifo.Materials.Substrate.c2
     n = ifo.Materials.Substrate.MechanicalLossExponent
     alphas = ifo.Materials.Substrate.Alphas
-    L = ifo.Infrastructure.Length
     kBT = const.kB * ifo.Materials.Substrate.Temp
 
     # Bulk substrate contribution
