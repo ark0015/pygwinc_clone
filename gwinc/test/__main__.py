@@ -137,14 +137,16 @@ def plot_diffs(freq, diffs, tolerance,
 
         plt.suptitle('''{} {}/{} noise comparison
 (noises that differ by more than {} ppm)
-
 {}'''.format(name, labelA, labelB, tolerance*1e6, fom_title))
 
     axl.set_xlabel("frequency [Hz]")
     axr.set_xlabel("frequency [Hz]")
 
+    plt.subplots_adjust(top=0.8, right=0.85, wspace=0.3)
     if save:
-        plt.gcf().set_size_inches(11, (len(diffs)*4 + 1))
+        pwidth = 10
+        pheight = (len(diffs) * 5) + 2
+        plt.gcf().set_size_inches(pwidth, pheight)
         plt.savefig(save)
     else:
         plt.show()
@@ -229,9 +231,11 @@ def main():
             tracesA['int73'] = inspiral_range.int73(freq, totalA)[1], None
             fomB = range_func(freq, totalB, H=H)
             tracesB['int73'] = inspiral_range.int73(freq, totalB)[1], None
-            fom_summary = """inspiral {func} {m1}/{m2} Msol:
-            {labelA}: {fomA:.2f} Mpc
-            {labelB}: {fomB:.2f} Mpc""".format(
+            fom_summary = """
+inspiral {func} {m1}/{m2} Msol:
+{labelA}: {fomA:.2f} Mpc
+{labelB}: {fomB:.2f} Mpc
+""".format(
                 func=range_func.__name__,
                 m1=H.params['m1'],
                 m2=H.params['m2'],
