@@ -14,7 +14,7 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from .. import available_ifos, load_budget
+from .. import IFOS, load_budget
 from .. import load_hdf5, save_hdf5
 
 try:

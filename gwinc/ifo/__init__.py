@@ -1,6 +1,14 @@
 import os
 
 
+IFOS = [
+    'aLIGO',
+    'Aplus',
+    'Voyager',
+    'CE1',
+    'CE2',
+]
+
 PLOT_STYLE = dict(
     ylabel=u"Strain [1/\u221AHz]",
 )
@@ -18,15 +26,3 @@ def lpath(file0, file1):
 
     """
     return os.path.abspath(os.path.join(os.path.dirname(file0), file1))
-
-
-def available_ifos():
-    """List available included pre-defined IFOs
-
-    """
-    ifos = []
-    root = os.path.dirname(__file__)
-    for f in os.listdir(root):
-        if os.path.isdir(os.path.join(root, f)) and f[0] != '_':
-            ifos.append(f)
-    return sorted(ifos)

@@ -4,7 +4,7 @@ import logging
 import importlib
 import numpy as np
 
-from .ifo import available_ifos
+from .ifo import IFOS
 from .struct import Struct
 from .plot import plot_noise
 from .io import load_hdf5, save_hdf5
@@ -37,9 +37,9 @@ def load_budget(name_or_path):
     """Load GWINC IFO Budget by name or from path.
 
     Named IFOs should correspond to one of the IFOs available in the
-    gwinc package (see gwinc.available_ifos()).  If a path is provided
-    it should either be a budget package (directory) or module (ending
-    in .py), or an IFO struct definition (see gwinc.Struct).
+    gwinc package (see gwinc.IFOS).  If a path is provided it should
+    either be a budget package (directory) or module (ending in .py),
+    or an IFO struct definition (see gwinc.Struct).
 
     If a budget package path is provided, and the package includes an
     'ifo.yaml' file, that file will be loaded into a Struct and
@@ -71,10 +71,10 @@ def load_budget(name_or_path):
             logging.info("loading module path {}...".format(modname))
 
     else:
-        if name_or_path not in available_ifos():
+        if name_or_path not in IFOS:
             raise RuntimeError("Unknonw IFO '{}' (available IFOs: {}).".format(
                 name_or_path,
-                available_ifos(),
+                IFOS,
             ))
         bname = name_or_path
         modname = 'gwinc.ifo.'+name_or_path

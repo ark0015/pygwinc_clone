@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
-from . import available_ifos, load_budget, plot_noise
+from . import IFOS, load_budget, plot_noise
 from . import io
 
 ##################################################
@@ -18,7 +18,7 @@ description = """Plot GWINC noise budget for specified IFO.
 
 Available included IFOs: {}
 
-""".format(', '.join(["'{}'".format(ifo) for ifo in available_ifos()]))
+""".format(', '.join(["'{}'".format(ifo) for ifo in IFOS]))
 # for ifo in available_ifos():
 #     description += "  '{}'\n".format(ifo)
 description += """
