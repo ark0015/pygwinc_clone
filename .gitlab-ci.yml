@@ -17,6 +17,7 @@ test:
   - for ifo in aLIGO Aplus Voyager CE1 CE2; do
   -     python3 -m gwinc $ifo -s $ifo.png
   - done
+  - python3 -m gwinc.ifo -s all_compare.png
   - python3 -m gwinc.test -r gwinc_test_report.pdf
   after_script:
   - rm gitID.txt
@@ -32,6 +33,7 @@ test:
     - Voyager.png
     - CE1.png
     - CE2.png
+    - all_compare.png
     - gwinc_test_report.pdf
 
 pages:
@@ -43,6 +45,7 @@ pages:
   - for ifo in aLIGO Aplus Voyager CE1 CE2; do
   -     mv $ifo.png public/
   - done
+  - mv all_compare.png public/ || true
   - mv gwinc_test_report.pdf public/ || true
   - apt-get install -y -qq python3-pip python3-dev make
   - pip3 install sphinx sphinx-rtd-theme
