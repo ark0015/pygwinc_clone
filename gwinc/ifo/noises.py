@@ -342,7 +342,7 @@ class ITMThermoRefractive(nb.Noise):
         w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         n = noise.substratethermal.substrate_thermorefractive(
             self.freq, self.ifo.Materials, wBeam_ITM)
-        return n * 2 / (gPhase)**2
+        return n * 2 / gPhase**2
 
 
 class ITMCarrierDensity(nb.Noise):
@@ -361,7 +361,7 @@ class ITMCarrierDensity(nb.Noise):
         w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         n = noise.substratethermal.substrate_carrierdensity(
             self.freq, self.ifo.Materials, wBeam_ITM)
-        return n * 2 / (gPhase)**2
+        return n * 2 / gPhase**2
 
 
 class SubstrateBrownian(nb.Noise):
