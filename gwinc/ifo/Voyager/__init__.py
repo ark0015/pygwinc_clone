@@ -1,4 +1,5 @@
 from gwinc.ifo.noises import *
+from gwinc.ifo import PLOT_STYLE
 
 
 class Voyager(nb.Budget):
@@ -22,3 +23,5 @@ class Voyager(nb.Budget):
     calibrations = [
         Strain,
     ]
+
+    plot_style = PLOT_STYLE

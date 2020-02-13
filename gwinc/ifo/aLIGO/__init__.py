@@ -1,4 +1,5 @@
 from gwinc.ifo.noises import *
+from gwinc.ifo import PLOT_STYLE
 
 
 class aLIGO(nb.Budget):
@@ -20,3 +21,5 @@ class aLIGO(nb.Budget):
     calibrations = [
         Strain,
     ]
+
+    plot_style = PLOT_STYLE

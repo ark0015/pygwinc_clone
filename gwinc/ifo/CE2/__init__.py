@@ -1,4 +1,6 @@
 from gwinc.ifo.noises import *
+from gwinc.ifo import PLOT_STYLE
+
 
 class Newtonian(nb.Budget):
     """Newtonian Gravity
@@ -18,6 +20,7 @@ class Newtonian(nb.Budget):
         NewtonianInfrasound,
     ]
 
+
 class Coating(nb.Budget):
     """Coating Thermal
 
@@ -34,6 +37,7 @@ class Coating(nb.Budget):
         CoatingBrownian,
         CoatingThermoOptic,
     ]
+
 
 class Substrate(nb.Budget):
     """Substrate Thermal
@@ -55,6 +59,7 @@ class Substrate(nb.Budget):
         SubstrateThermoElastic,
     ]
 
+
 class CE2(nb.Budget):
 
     name = 'Cosmic Explorer 2'
@@ -72,3 +77,5 @@ class CE2(nb.Budget):
     calibrations = [
         Strain,
     ]
+
+    plot_style = PLOT_STYLE

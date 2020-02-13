@@ -9,6 +9,7 @@ IFOS = [
     'CE2',
 ]
 
+
 PLOT_STYLE = dict(
     ylabel=u"Strain [1/\u221AHz]",
 )
