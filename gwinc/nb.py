@@ -212,13 +212,13 @@ class Budget(Noise):
     """
 
     noises = []
-    """List of constituent noise classes"""
+    """List of constituent noise classes, or (noise, cal) tuples"""
 
     calibrations = []
-    """List of calibrations to be applied to all noises in budget"""
+    """List of calibrations to be applied to all budget noises (not references)"""
 
     references = []
-    """List of reference nosie classes"""
+    """List of reference noise classes, or (ref, cal) tuples"""
 
     def __init__(self, *args, noises=None, **kwargs):
         """Initialize Budget object.
@@ -253,10 +253,10 @@ class Budget(Noise):
         for nc in self.noises:
             name = self.__init_noise(nc, noises)
             self._budget_noises.add(name)
-        # add common calibrations
+        # initialize common calibrations and add to all budget noises
         for cal in self.calibrations:
             self.__add_calibration(cal, self._budget_noises)
-        # add references
+        # initialize references, without common calibrations
         for nc in self.references:
             self.__init_noise(nc, noises)
         # error if requested noise is not present
