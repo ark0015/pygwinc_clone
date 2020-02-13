@@ -94,8 +94,8 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     """Calculate strain noise budget for a specified interferometer model.
 
     Argument `freq` is the frequency array for which the noises will
-    be calculated, and `ifoin` is the IFO model (see the `load_ifo()`
-    function).
+    be calculated, and `ifo` is the IFO model (see the `load_budget()`
+    function).  The nominal 'aLIGO' budget structure will be used.
 
     If `source` structure provided, so evaluates the sensitivity of
     the detector to several potential gravitational wave
