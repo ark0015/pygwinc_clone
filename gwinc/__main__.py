@@ -10,7 +10,6 @@ logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from . import IFOS, load_budget, plot_noise
-from . import io
 
 ##################################################
 
@@ -89,8 +88,9 @@ def main():
     # initial arg processing
 
     if os.path.splitext(os.path.basename(args.IFO))[1] in ['.hdf5', '.h5']:
+        from .io import load_hdf5
         Budget = None
-        freq, traces, attrs = io.load_hdf5(args.IFO)
+        freq, traces, attrs = load_hdf5(args.IFO)
         ifo = getattr(attrs, 'IFO', None)
         plot_style = attrs
 
@@ -201,10 +201,11 @@ def main():
 
     # save noise traces to HDF5 file
     if args.save and os.path.splitext(args.save)[1] in ['.hdf5', '.h5']:
+        from .io import save_hdf5
         logging.info("saving budget traces {}...".format(args.save))
         if ifo:
             plot_style['IFO'] = ifo.to_yaml()
-        io.save_hdf5(
+        save_hdf5(
             path=args.save,
             freq=freq,
             traces=traces,

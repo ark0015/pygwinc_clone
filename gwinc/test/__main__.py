@@ -15,7 +15,7 @@ logging.basicConfig(format='%(message)s',
                     level=os.getenv('LOG_LEVEL', logging.INFO))
 
 from .. import IFOS, load_budget
-from .. import load_hdf5, save_hdf5
+from ..io import load_hdf5, save_hdf5
 
 try:
     import inspiral_range

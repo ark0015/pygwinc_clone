@@ -7,7 +7,6 @@ import numpy as np
 from .ifo import IFOS
 from .struct import Struct
 from .plot import plot_noise
-from .io import load_hdf5, save_hdf5
 
 
 def _load_module(name_or_path):
