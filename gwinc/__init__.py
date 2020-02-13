@@ -124,8 +124,7 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     finesse = ifo.gwinc.finesse
     prfactor = ifo.gwinc.prfactor
     if ifo.Laser.Power * prfactor != pbs:
-        pass
-        #warning(['Thermal lensing limits input power to ' num2str(pbs/prfactor, 3) ' W']);
+        logging.warning("Thermal lensing limits input power to {} W".format(pbs/prfactor))
 
     # report astrophysical scores if so desired
     score = None
