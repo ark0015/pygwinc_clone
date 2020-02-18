@@ -2,6 +2,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
+import inspiral_range
+
 from . import IFOS, PLOT_STYLE
 from .. import load_budget
 
@@ -26,11 +28,22 @@ def main():
 
     freq = np.logspace(np.log10(FLO), np.log10(FHI), NPOINTS)
 
+    budgets = {}
+    range_pad = 0
     for ifo in IFOS:
-        Budget = load_budget(ifo)
-        data = Budget(freq).calc()
-        label = Budget.name
+        budget = load_budget(ifo)(freq)
+        name = budget.name
+        budgets[name] = budget
+        range_pad = max(len(name), range_pad)
 
+    for name, budget in budgets.items():
+        data = budget.calc()
+        BNS_range = inspiral_range.range(freq, data)
+        label = '{name:<{pad}} {bns:>6.0f} Mpc'.format(
+            name=name,
+            pad=range_pad,
+            bns=BNS_range,
+        )
         ax.loglog(freq, np.sqrt(data), label=label)
 
     ax.grid(
@@ -42,8 +55,8 @@ def main():
     )
 
     ax.legend(
-        # ncol=2,
         fontsize='small',
+        prop={'family': 'monospace'},
     )
 
     ax.autoscale(enable=True, axis='y', tight=True)
@@ -52,7 +65,8 @@ def main():
 
     ax.set_xlabel('Frequency [Hz]')
     ax.set_ylabel(PLOT_STYLE['ylabel'])
-    ax.set_title("PyGWINC reference IFO strain comparison")
+    ax.set_title("""PyGWINC reference IFO strain comparison
+(with BNS range)""")
 
     if args.save:
         fig.savefig(args.save)
