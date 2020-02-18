@@ -6,8 +6,10 @@ import numpy as np
 from IPython.terminal.embed import InteractiveShellEmbed
 
 import logging
-logging.basicConfig(format='%(message)s',
-                    level=os.getenv('LOG_LEVEL', logging.INFO))
+logging.basicConfig(
+    format='%(message)s',
+    level=os.getenv('LOG_LEVEL', logging.WARNING),
+)
 
 from . import IFOS, load_budget, plot_noise
 
