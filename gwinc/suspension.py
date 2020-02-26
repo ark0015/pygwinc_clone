@@ -1,7 +1,6 @@
 from __future__ import division
 from numpy import pi, sqrt, sin, cos, tan, real, imag, zeros
 import numpy as np
-import logging
 
 from . import const
 from .struct import Struct
@@ -179,7 +178,6 @@ def suspQuad(f, sus, material='Silica'):
         else:
             WireMaterial = 'C70Steel'
 
-        logging.debug('stage {} wires: {}'.format(n, WireMaterial))
         wireMat = sus[WireMaterial]
 
         alpha_w[n] = wireMat.Alpha  # coeff. thermal expansion
@@ -205,7 +203,6 @@ def suspQuad(f, sus, material='Silica'):
         else:
             BladeMaterial = 'MaragingSteel'
 
-        logging.debug('stage {} blades: {}'.format(n, BladeMaterial))
         bladeMat = sus[BladeMaterial]
 
         alpha_b[n] = bladeMat.Alpha   # coeff. thermal expansion
