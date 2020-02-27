@@ -139,7 +139,7 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
 
     if plot:
         logging.info('Laser Power:            %7.2f Watt' % ifo.Laser.Power)
-        logging.info('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/pi))
+        logging.info('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/np.pi))
         logging.info('SRM transmission:       %9.4f' % ifo.Optics.SRM.Transmittance)
         logging.info('ITM transmission:       %9.4f' % ifo.Optics.ITM.Transmittance)
         logging.info('PRM transmission:       %9.4f' % ifo.Optics.PRM.Transmittance)
