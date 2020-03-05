@@ -34,8 +34,12 @@ input file (IFO) can be an HDF5 file saved from a previous call, in
 which case all noise traces and IFO parameters will be loaded from
 that file.
 
+Individual IFO parameters can be overriden with the --ifo option:
+
+  gwinc --ifo Optics.SRM.Tunephase=3.14 ...
+
 If the inspiral_range package is installed, various figures of merit
-can be calculated for the resultant spectrum with the --fom argument,
+can be calculated for the resultant spectrum with the --fom option,
 e.g.:
 
   gwinc --fom horizon ...
@@ -55,6 +59,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--freq', '-f', metavar='FSPEC',
     help="frequency array specification in Hz, either as 'flo:fhi' or 'flo:npoints:fhi' [{}]".format(FREQ))
+parser.add_argument(
+    '--ifo', '-o',
+    #nargs='+', action='extend',
+    action='append',
+    help="override budget IFO parameter (may be specified multiple times)")
 parser.add_argument(
     '--title', '-t',
     help="plot title")
@@ -125,6 +134,11 @@ def main():
             freq = getattr(Budget, 'freq', freq_from_spec(FREQ))
         plot_style = getattr(Budget, 'plot_style', {})
         traces = None
+
+    if args.ifo:
+        for paramval in args.ifo:
+            param, val = paramval.split('=', 1)
+            ifo[param] = float(val)
 
     if args.yaml:
         if not ifo:
