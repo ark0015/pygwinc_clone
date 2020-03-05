@@ -54,31 +54,43 @@ parser = argparse.ArgumentParser(
     prog='gwinc',
     description=description,
     formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('--flo', '-fl', default=FLO, type=float,
-                    help="lower frequency bound in Hz [{}]".format(FLO))
-parser.add_argument('--fhi', '--fh', default=FHI, type=float,
-                    help="upper frequency bound in Hz [{}]".format(FHI))
-parser.add_argument('--npoints', '-n', default=NPOINTS,
-                    help="number of frequency points [{}]".format(NPOINTS))
-parser.add_argument('--title', '-t',
-                    help="plot title")
-parser.add_argument('--fom',
-                    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
+parser.add_argument(
+    '--flo', '-fl', default=FLO, type=float,
+    help="lower frequency bound in Hz [{}]".format(FLO))
+parser.add_argument(
+    '--fhi', '--fh', default=FHI, type=float,
+    help="upper frequency bound in Hz [{}]".format(FHI))
+parser.add_argument(
+    '--npoints', '-n', default=NPOINTS,
+    help="number of frequency points [{}]".format(NPOINTS))
+parser.add_argument(
+    '--title', '-t',
+    help="plot title")
+parser.add_argument(
+    '--fom',
+    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
 group = parser.add_mutually_exclusive_group()
-group.add_argument('--interactive', '-i', action='store_true',
-                   help="interactive plot with interactive shell")
-group.add_argument('--save', '-s',
-                   help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
-group.add_argument('--yaml', '-y', action='store_true',
-                   help="print IFO as yaml to stdout and exit")
-group.add_argument('--text', '-x', action='store_true',
-                   help="print IFO as text table to stdout and exit")
-group.add_argument('--diff', '-d', metavar='IFO',
-                   help="show differences table between another IFO description")
-group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
-                   help="supress plotting")
-parser.add_argument('IFO',
-                    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
+group.add_argument(
+    '--interactive', '-i', action='store_true',
+    help="interactive plot with interactive shell")
+group.add_argument(
+    '--save', '-s',
+    help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
+group.add_argument(
+    '--yaml', '-y', action='store_true',
+    help="print IFO as yaml to stdout and exit")
+group.add_argument(
+    '--text', '-x', action='store_true',
+    help="print IFO as text table to stdout and exit")
+group.add_argument(
+    '--diff', '-d', metavar='IFO',
+    help="show differences table between another IFO description")
+group.add_argument(
+    '--no-plot', '-np', action='store_false', dest='plot',
+    help="supress plotting")
+parser.add_argument(
+    'IFO',
+    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
 
 
 def main():
