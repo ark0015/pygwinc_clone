@@ -188,7 +188,7 @@ def main():
         logging.info("calculating inspiral {}...".format(range_func))
         H = inspiral_range.CBCWaveform(freq, **range_params)
         logging.debug("params: {}".format(H.params))
-        fom = eval('inspiral_range.{}'.format(range_func))(freq, noises['Total'], H=H)
+        fom = eval('inspiral_range.{}'.format(range_func))(freq, traces['Total'][0], H=H)
         logging.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
         fom_title = '{func} {m1}/{m2} Msol: {fom:.2f} Mpc'.format(
             func=range_func,
