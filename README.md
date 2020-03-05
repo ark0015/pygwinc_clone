@@ -7,8 +7,7 @@
 `pygwinc` is a multi-faceted tool for processing and plotting noise
 budgets for ground-based gravitational wave detectors.  It's primary
 feature is a collection of mostly analytic noise calculation functions
-for various sources of noise affecting detectors (see [noise
-functions](#noise-functions) below):
+for various sources of noise affecting detectors (`gwinc.noise`):
 
 * quantum noise
 * mirror coating thermal noise
@@ -18,13 +17,16 @@ functions](#noise-functions) below):
 * Newtonian/gravity-gradient noise
 * residual gas noise
 
-`pygwinc` is also a generalized noise budgeting tool, allowing users
-to create arbitrary noise budgets (for any experiment, not just
-ground-based GW detectors) using measured or analytically calculated
-data.  See the [budget interface](#budget-interface) section below.
+See [noise functions](#noise-functions) below.
+
+`pygwinc` also includes a generalized noise budgeting tool
+(`gwinc.nb`) that allows users to create arbitrary noise budgets (for
+any experiment, not just ground-based GW detectors) using measured or
+analytically calculated data.  See the [budget
+interface](#Budget-interface) section below.
 
 `pygwinc` includes canonical budgets for various well-known current
-and future detectors:
+and future detectors (`gwinc.ifo`):
 
 * [aLIGO](https://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
 * [A+](https://gwinc.docs.ligo.org/pygwinc/Aplus.png)
@@ -35,9 +37,10 @@ and future detectors:
 See [IFO.md](IFO.md) for the latest CI-generated plots and hdf5 cached
 data.
 
-For calculating various common "inspiral range" figures of merit
-please see the
-[`inspiral_range`](https://git.ligo.org/gwinc/inspiral-range) package.
+The [`inspiral_range`](https://git.ligo.org/gwinc/inspiral-range)
+package can be used to calculate various common "inspiral range"
+figures of merit for gravitational wave detector budgets.  See
+[figures of merit](#figures-of-merit) section below.
 
 
 ## usage
@@ -45,9 +48,9 @@ please see the
 ### command line interface
 
 `pygwinc` provides a command line interface that can be used to
-calculate and plot noise budgets for the various canonical IFOs
-described above, save/plot hdf5 trace data, and dump budget IFO
-parameters:
+calculate and plot noise budgets for generic noise budgets or the
+various canonical IFOs described above, save/plot hdf5 trace data, and
+dump budget IFO parameters:
 ```shell
 $ python3 -m gwinc aLIGO
 ```
@@ -80,10 +83,10 @@ $ python3 -m gwinc -h
 ```
 
 
-### basic python library usage
+### python library
 
-For custom code, parameter optimization, etc. all functionality can be
-accessed through the `gwinc` library interface:
+For custom plotting, parameter optimization, etc. all functionality can be
+accessed directly through the `gwinc` library interface:
 ```python
 >>> import gwinc
 >>> import numpy as np
@@ -96,19 +99,34 @@ accessed through the `gwinc` library interface:
 
 The `load_budget()` function takes most of the same inputs as the
 command line interface (e.g. IFO names, budget module paths, YAML
-parameter files), and returns the un-instantiated Budget class defined
-in the specified budget module.
+parameter files), and returns the un-instantiated `Budget` class
+defined in the specified budget module (see [budget
+interface](#budget-interface) below).
+
+The budget `run()` method is a convenience method that calculates all
+budget noises and the noise total and returns a (possibly) nested
+dictionary of a noise data, in the form of a `(data, style)` tuple
+where 'data' is the PSD data and 'style' is a plot style dictionary
+for the trace.  The dictionary will be nested if the budget includes
+any sub-budgets.
 
 
 ## noise functions
 
 `pygwinc` noise functions are available in the `gwinc.noise` package.
-This package includes multiple modules for the different types of
+This package includes multiple sub-modules for the different types of
 noises, e.g. `suspensionthermal`, `coatingthermal`, `quantum`, etc.)
 
 The various noise functions need many different parameters to
-calculate their noise outputs.  The parameters are expected to be in
-the form of object attributes, e.g.:
+calculate their noise outputs.  Many parameters are expected to be in
+the form of object attributes of a class-like container that is passed
+to the calculation function.  The pygwinc
+[`Struct`](#gwinc.Struct-objects) object is designed to hold such
+parameters.
+
+For instance, the `coating_brownian` function expects a `materials`
+structure as input argument, that holds the various mirror materials
+parameters (e.g. `materials.Substrate.MirrorY`):
 ```python
 def coating_brownian(f, materials, wavelength, wBeam, dOpt):
     ...
@@ -119,17 +137,13 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
     Ysub = sub.MirrorY
 ```
 
-The `materials` input argument in this case is expected to be an
-object with a `Substrate` attribute, which itself has a `MirrorY`
-attribute.
-
 
 ### `gwinc.Struct` objects
 
-To make all this easier `pygwinc` provides a `Struct` class that can
-hold parameters in attributes and additionally acts like a dictionary.
-`Struct`s can be created from dictionaries, or loaded from various
-file formats (see below).
+`pygwinc` provides a `Struct` class that can hold parameters in
+attributes and additionally acts like a dictionary, for passing to the
+noise calculation functions.  `Struct`s can be created from
+dictionaries, or loaded from various file formats (see below).
 
 
 ### YAML parameter files
@@ -164,19 +178,53 @@ engine](https://www.mathworks.com/help/matlab/matlab-engine-for-python.html).
 
 ## budget interface
 
-The basic structure of a `pygwinc` noise budget is a "budget module".
-A budget modules is a standard python module (single `.py` file) or
-package (directory containing `__inti__.py` file) which contains at
-least one `nb.Budget` class definition named after the module name.
+`pygwinc` provides a generic noise budget interface, `gwinc.nb`, that
+can be used to define custom noise budgets (it also underlies the
+"canonical" budgets included in `gwinc.ifo`).  Budgets are defined in
+a "budget module" which includes `BudgetItem` definitions.
 
-The `gwinc.nb` package provides various `BudgetItem` classes that can
+### BudgetItem classes
+
+The `gwinc.nb` package provides three `BudgetItem` classes that can be
 inherited to define the various components of a budget:
 
-* `nb.Noise`: BudgetItem describing a noise source
-* `nb.Calibration`: BudgetItem describing a noise calibration
-* `nb.Budget`: BudgetItem describing a group of noises
+* `nb.Noise`: a noise source
+* `nb.Calibration`: a noise calibration
+* `nb.Budget`: a group of noises
 
-Here's an example of a budget module name `MyBudget`:
+The primary action of a `BudgetItem` happens in it's `calc()` method.
+For `Noise` classes, the `calc` method should return the noise PSD at
+the specified frequency points.  For the `Calibration` class, `calc`
+should return a frequency response.  `Budget` classes should not have
+a special `calc` method defined as they already know how to calculate
+the overall noise from their constituent noises and calibrations.
+
+Additionally `BudgetItem`s have two other methods, `load` and
+`update`, that can be overridden by the user to handle arbitrary data
+processing.  These are useful for creating budgets from "live" dynamic
+noise measurements and the like.  The three core methods therefore
+are:
+
+* `load()`: initial loading of static data
+* `update(**kwargs)`: update data/attributes
+* `calc()`: return final data array
+
+See the built-in documentation for more info (e.g. `pydoc3
+gwinc.nb.BudgetItem`)
+
+
+### budget module definition
+
+A budget module is a standard python module (single `.py` file) or
+package (directory containing `__inti__.py` file) containing
+`BudgetItem` definitions describing the various noises and
+calibrations of a budget, as well as the overall budget calculation
+itself.  Each budget module should include one `nb.Budget` class
+definition named after the module name.
+
+Here's an example of a budget module named `MyBudget`.  It defines two
+`Noise` classes and one `Calibration` class, as well as the overall
+`Budget` class (name `MyBudget` that puts them all together):
 ```shell
 $ find MyBudget
 MyBudget/
@@ -203,7 +251,7 @@ class SuspensionThermal(nb.Noise):
 
     def calc(self):
         n = noise.suspensionthermal.suspension_thermal(
-            self.freq, self.ifo.sus)
+            self.freq, self.ifo.Suspension)
         return 2 * n
 
 
@@ -238,24 +286,27 @@ class MyBudget(nb.Budget):
     ]
 ```
 
-This budget would then be loaded with the `gwinc.load_budget()`
-function, and processed with the `Budget.run()` method:
+The `style` attributes of the various `Noise` classes define plot
+style for the noise.
+
+This budget can be loaded with the `gwinc.load_budget()` function, and
+processed with the `Budget.run()` method:
 ```python
 Budget = load_budget('/path/to/MyBudget')
 budget = Budget(freq)
 traces = budget.run()
 ```
 
-Other than the necessary `frequency` Budget init argument, any
-additional keyword arguments are assigned as class attributes to the
-budget object, and to all of it's constituent sub
-noises/calibrations/budgets.
+Other than the necessary `freq` initialization argument that defines
+the frequency array, any additional keyword arguments are assigned as
+class attributes to the budget object, and to all of it's constituent
+sub noises/calibrations/budgets.
 
 Note that the `SuspensionThermal` Noise class above uses the
 `suspension_thermal` analytic noise calculation function, which takes
 a "suspension" Struct as input argument.  In this case, this
 suspension Struct is extracted from the `self.ifo` Struct at
-`self.ifo.sus`.
+`self.ifo.Suspension`.
 
 If a budget module defined as a package includes an `ifo.yaml`
 [parameter file](#parameter-files) in the package directory, the
@@ -283,21 +334,63 @@ budget interface:
 * [CE2](master/gwinc/ifo/CE2)
 
 
-### BudgetItem load/update/calc methods
+### extracting single noise terms
 
-The Noise/Calibration/Budget `BudgetItem`s have three core methods
-that can be overridden by the user to handle arbitrary data
-processing.  This is useful for creating budgets from "live" dynamic
-noise measurements and the like:
+There are various way to extract single noise terms from the Budget
+interface.  The most straightforward way is to run the full budget,
+and extract the noise data the output traces dictionary:
 
-* `load()`: initial loading of static data
-* `update(**kwargs)`: update data/attributes
-* `calc()`: return final data array
+```python
+Budget = load_budget('/path/to/MyBudget')
+budget = Budget(freq)
+traces = budget.calc_traces()
+data, plot_style = traces['QuantumVacuum']
+```
 
-See the built-in documentation for more info (e.g. `pydoc3
-gwinc.nb.BudgetItem`)
-  
-  
+You can also calculate the final calibrated output noise for just a
+single term using the Budget `calc_noise()` method:
+```python
+data = budget.calc_noise('QuantumVacuum')
+```
+
+You can also calculate a noise at it's source, without applying any
+calibrations, by using the Budget `__getitem__` interface to extract
+the specific Noise BudgetItem for the noise you're interested in, and
+running it's `calc()` method directly:
+```python
+data = budget['QuantumVacuum'].calc()
+```
+
+
+# figures of merit
+
+The [`inspiral_range`](https://git.ligo.org/gwinc/inspiral-range)
+package can be used to calculate various common "inspiral range"
+figures of merit for gravitational wave detector budgets.  Here's an
+example of how to use it to calculate the inspiral range of the
+baseline 'Aplus' detector:
+```python
+import gwinc
+import inspiral_range
+import numpy as np
+
+freq = np.logspace(1, 3, 1000)
+Budget = gwinc.load_budget('Aplus')
+traces = Budget(freq).run()
+
+range = inspiral_range.range(
+    freq, traces['Total'][0],
+    m1=30, m2=30,
+)
+```
+
+Note you need to extract the zeroth element of the `traces['Total']`
+tuple, which is the actual PSD data.
+
+See the [`inspiral_range`](https://git.ligo.org/gwinc/inspiral-range)
+package for more details.
+
+
 <!-- ## comparison with MATLAB gwinc -->
 
 <!-- `pygwinc` includes the ability use MATLAB gwinc directly via the -->
