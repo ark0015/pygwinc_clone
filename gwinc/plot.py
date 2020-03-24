@@ -40,7 +40,8 @@ def plot_noise(
                 alpha=0.6,
                 lw=4,
             )
-            ylim = [min(data)/10, max(data)]
+            if ylim is None:
+                ylim = [min(data)/10, max(data)]
         if 'label' not in style:
             style['label'] = name
         if 'linewidth' in style:
