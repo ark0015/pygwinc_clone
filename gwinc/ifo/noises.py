@@ -184,6 +184,20 @@ class QuantumVacuum(nb.Noise):
         return noise.quantum.shotrad(self.freq, self.ifo)
 
 
+class StandardQuantumLimit(nb.Noise):
+    """Standard Quantum Limit
+
+    """
+    style = dict(
+        label="Standard Quantum Limit",
+        color="#000000",
+        linestyle=":", # Dotted.
+    )
+
+    def calc(self):
+        return 8 * const.hbar / (self.ifo.Materials.MirrorMass * (2 * np.pi * self.freq) ** 2)
+
+
 class Seismic(nb.Noise):
     """Seismic
 
