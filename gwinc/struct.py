@@ -294,7 +294,7 @@ class Struct(object):
         """Create Struct from YAML string.
 
         """
-        d = yaml.load(y, Loader=yaml_loader)
+        d = yaml.load(y, Loader=yaml_loader) or {}
         return cls(d)
 
 
