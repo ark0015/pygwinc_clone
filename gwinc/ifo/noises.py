@@ -112,12 +112,11 @@ def dhdl(f, armlen):
     omega_arm_b = (1 + sin(nu_small)) * pi * f * armlen / c
     sinc_sqr = 4 / abs(sin(omega_arm_f) * exp(-1j * omega_arm) / omega_arm_f
                        + sin(omega_arm_b) * exp(1j * omega_arm) / omega_arm_b)**2
-    # keep DC value equal to 1
-    sinc_sqr /= sinc_sqr[0]
     dhdl_sqr = sinc_sqr / armlen**2
     return dhdl_sqr, sinc_sqr
 
 ##################################################
+
 
 def precomp_mirror(f, ifo):
     ifo.Materials.MirrorVolume = \
