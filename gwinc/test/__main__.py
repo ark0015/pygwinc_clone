@@ -177,7 +177,7 @@ def main():
         except FileExistsError:
             pass
         freq = np.logspace(np.log10(5), np.log10(6000), 3000)
-        for name in available_ifos():
+        for name in IFOS:
             Budget = load_budget(name)
             traces = Budget(freq).run()
             path = os.path.join(args.cache, name+'.h5')
