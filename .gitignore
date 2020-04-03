@@ -18,3 +18,6 @@ __pycache__/
 
 MANIFEST
 
+# Mac OS Files
+*.DS_Store
+
