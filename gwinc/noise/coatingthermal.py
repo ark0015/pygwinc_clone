@@ -3,7 +3,7 @@
 '''
 from __future__ import division, print_function
 import numpy as np
-from numpy import pi, sum, zeros, exp, real, imag, sqrt, sin, cos, sinh, cosh, polyfit, roots, min, ceil, log
+from numpy import pi, exp, real, imag, sqrt, sin, cos, sinh, cosh, ceil, log
 
 from .. import const
 from ..const import BESSEL_ZEROS as zeta
@@ -53,10 +53,10 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
     nL = coat.Indexlown
 
     # make vectors of material properties
-    nN = zeros(len(dOpt))
-    yN = zeros(len(dOpt))
-    pratN = zeros(len(dOpt))
-    phiN = zeros(len(dOpt))
+    nN = np.zeros(len(dOpt))
+    yN = np.zeros(len(dOpt))
+    pratN = np.zeros(len(dOpt))
+    phiN = np.zeros(len(dOpt))
 
     # make simple alternating structure (low-index, high-index doublets)
     # (adapted from the more general calculation in
@@ -77,7 +77,7 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
 
     # geometrical thickness of each layer and total
     dGeo = wavelength * np.asarray(dOpt) / nN
-    #dCoat = sum(dGeo)
+    #dCoat = np.sum(dGeo)
 
     ###################################
     # Brownian
@@ -107,12 +107,12 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
     else:
         SbrZ = (4 * kBT / (pi * wBeam**2 * w)) * \
                (1 - pratsub - 2 * pratsub**2) / Ysub
-        SbrZ *= (sum(dGeo[::2] * brLayer[::2] * phiN[::2]) * (f / 100)**(coat.Philown_slope) +
-                 sum(dGeo[1::2] * brLayer[1::2] * phiN[1::2]) * (f / 100)**(coat.Phihighn_slope))
+        SbrZ *= (np.sum(dGeo[::2] * brLayer[::2] * phiN[::2]) * (f / 100)**(coat.Philown_slope) +
+                 np.sum(dGeo[1::2] * brLayer[1::2] * phiN[1::2]) * (f / 100)**(coat.Phihighn_slope))
 
     # for the record: evaluate summation in eq 1 of PhysRevD.91.042002
     # normalized by total coating thickness to make it unitless
-    #cCoat = sum(dGeo * brLayer * phiN) / dCoat
+    #cCoat = np.sum(dGeo * brLayer * phiN) / dCoat
 
     return SbrZ
 
@@ -339,17 +339,17 @@ def getCoatLayers(materials, wavelength, dOpt):
              * ( ((1 + sigC) / (1 + sigS)) + (1 - 2 * sigS) * Y_C / Y_S )
         return ce
 
-    aLayer = zeros(Nlayer)
+    aLayer = np.zeros(Nlayer)
     aLayer[::2] = alphaL * getExpansionRatio(Y_L, sigL, Y_S, sigS)
     aLayer[1::2] = alphaH * getExpansionRatio(Y_H, sigH, Y_S, sigS)
 
     # and beta
-    bLayer = zeros(Nlayer)
+    bLayer = np.zeros(Nlayer)
     bLayer[::2] = betaL
     bLayer[1::2] = betaH
 
     # and refractive index
-    nLayer = zeros(Nlayer)
+    nLayer = np.zeros(Nlayer)
     nLayer[::2] = nL
     nLayer[1::2] = nH
 
@@ -357,7 +357,7 @@ def getCoatLayers(materials, wavelength, dOpt):
     dLayer = wavelength * np.asarray(dOpt) / nLayer
 
     # and sigma correction
-    sLayer = zeros(Nlayer)
+    sLayer = np.zeros(Nlayer)
     sLayer[::2] = alphaL * (1 + sigL) / (1 - sigL)
     sLayer[1::2] = alphaH * (1 + sigH) / (1 - sigH)
 
@@ -396,9 +396,9 @@ def getCoatAvg(materials, wavelength, dOpt):
     junk1, junk2, junk3, dLayer, junk4 = getCoatLayers(materials, wavelength, dOpt)
 
     # heat capacity
-    dc = sum(dLayer)
-    dL = sum(dLayer[::2])
-    dH = sum(dLayer[1::2])
+    dc = np.sum(dLayer)
+    dL = np.sum(dLayer[::2])
+    dH = np.sum(dLayer[1::2])
     Cc = (C_L * dL + C_H * dH) / dc
 
     # thermal diffusivity
@@ -452,10 +452,10 @@ def getCoatTOPhase(nIn, nOut, nLayer, dOpt, aLayer, bLayer, sLayer):
     dphi_dd = 4 * pi * dcdp
 
     # thermo-refractive coupling
-    dphi_TR = sum(dphi_dd * (bLayer + sLayer * nLayer) * dGeo)
+    dphi_TR = np.sum(dphi_dd * (bLayer + sLayer * nLayer) * dGeo)
 
     # thermo-elastic
-    dphi_TE = 4 * pi * sum(aLayer * dGeo)
+    dphi_TE = 4 * pi * np.sum(aLayer * dGeo)
 
     # total
     dphi_dT = dphi_TR + dphi_TE
@@ -482,8 +482,8 @@ def getCoatFiniteCorr(materials, wavelength, wBeam, dOpt):
 
     """
     # parameter extraction
-    R = materials.MassRadius      #substrate radius
-    H = materials.MassThickness   #substrate thickness
+    R = materials.MassRadius
+    H = materials.MassThickness
 
     alphaS = materials.Substrate.MassAlpha
     C_S = materials.Substrate.MassCM * materials.Substrate.MassDensity
@@ -503,8 +503,8 @@ def getCoatFiniteCorr(materials, wavelength, wBeam, dOpt):
     nH = materials.Coating.Indexhighn
 
     # coating sums
-    dL = wavelength * sum(dOpt[::2]) / nL
-    dH = wavelength * sum(dOpt[1::2]) / nH
+    dL = wavelength * np.sum(dOpt[::2]) / nL
+    dH = wavelength * np.sum(dOpt[1::2]) / nH
     dc = dH + dL
 
     # AVERAGE SPECIFIC HEAT (simple volume average for coating)
@@ -543,8 +543,8 @@ def getCoatFiniteCorr(materials, wavelength, wBeam, dOpt):
          (1 + sigS) * (1 - Qm)**2 / ((1 - Qm)**2 - 4 * km**2 * H**2 * Qm)
 
     # eq 90 and 91
-    S1 = (12 * R**2 / H**2) * sum(pm / zeta**2)
-    S2 = sum(pm**2 * Lm**2)
+    S1 = (12 * R**2 / H**2) * np.sum(pm / zeta**2)
+    S2 = np.sum(pm**2 * Lm**2)
     P = (Xr - 2 * sigS * Yr - Cr + S1 * (Cr - Yr * (1 - sigS)))**2 + S2
 
     # eq 60 and 70
@@ -571,13 +571,13 @@ def getCoatDopt(materials, T, dL, dCap=0.5):
     def getTrans(materials, Ndblt, dL, dH, dCap, dTweak):
 
         # the optical thickness vector
-        dOpt = zeros(2 * Ndblt)
+        dOpt = np.zeros(2 * Ndblt)
         dOpt[0] = dCap
         dOpt[1::2] = dH
         dOpt[2::2] = dL
 
         N = dTweak.size
-        T = zeros(N)
+        T = np.zeros(N)
         for n in range(N):
             dOpt[-1] = dTweak[n]
             r = getCoatRefl(materials, dOpt)[0]
@@ -590,13 +590,13 @@ def getCoatDopt(materials, T, dL, dCap=0.5):
 
         # tweak bottom layer
         Tn = getTrans(materials, Ndblt, dL, dH, dCap, dScan)
-        pf = polyfit(dScan, Tn - T, Nfit)
-        rts = roots(pf)
+        pf = np.polyfit(dScan, Tn - T, Nfit)
+        rts = np.roots(pf)
         if not any((imag(rts) == 0) & (rts > 0)):
             dTweak = None
             Td = 0
             return dTweak, Td
-        dTweak = real(min(rts[(imag(rts) == 0) & (rts > 0)]))
+        dTweak = real(np.min(rts[(imag(rts) == 0) & (rts > 0)]))
 
         # compute T for this dTweak
         Td = getTrans(materials, Ndblt, dL, dH, dCap, np.array([dTweak]))
@@ -664,7 +664,7 @@ def getCoatDopt(materials, T, dL, dCap=0.5):
 
     ########################
     # return dOpt vector
-    dOpt = zeros(2 * Ndblt)
+    dOpt = np.zeros(2 * Ndblt)
     dOpt[0] = dCap
     dOpt[1::2] = dH
     dOpt[2::2] = dL
@@ -692,7 +692,7 @@ def getCoatRefl(materials, dOpt):
     Nlayer = len(dOpt)
 
     # refractive index of input, coating, and output materials
-    nAll = zeros(Nlayer + 2)
+    nAll = np.zeros(Nlayer + 2)
     nAll[0] = 1  # vacuum input
     nAll[1::2] = nL
     nAll[2::2] = nH
@@ -730,8 +730,8 @@ def getCoatRefl2(nIn, nOut, nLayer, dOpt):
     r = (nAll[:-1] - nAll[1:]) / (nAll[:-1] + nAll[1:])
 
     # combine reflectivities
-    rbar = zeros(r.size, dtype=complex)
-    ephi = zeros(r.size, dtype=complex)
+    rbar = np.zeros(r.size, dtype=complex)
+    ephi = np.zeros(r.size, dtype=complex)
 
     # round-trip phase in each layer
     ephi[0] = 1
