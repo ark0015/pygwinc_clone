@@ -3,7 +3,7 @@
 '''
 from __future__ import division
 import numpy as np
-from numpy import pi, imag, zeros
+from numpy import pi, imag
 
 from .. import const
 
@@ -30,7 +30,7 @@ def suspension_thermal(f, sus):
     # and vertical to beamline coupling angle
     theta = sus.VHCoupling.theta
 
-    noise = zeros((1, f.size))
+    noise = np.zeros((1, f.size))
 
     # if the temperature is uniform along the suspension
     if 'Temp' in sus:
@@ -67,7 +67,7 @@ def suspension_thermal(f, sus):
         # Thermal Noise Calculation
         ##########################################################
 
-        dxdF = zeros(hForce.shape, dtype=complex)
+        dxdF = np.zeros(hForce.shape, dtype=complex)
         for n, stage in enumerate(reversed(sus.Stage)):
             # add up the contribution from each stage
 
