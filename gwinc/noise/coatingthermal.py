@@ -89,10 +89,10 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
     zdir = -1
     dcdp_z = zdir * dcdp  # z-dir only matters here
 
-    # layer contrubutions (b_j in PhysRevD.91.042002)
-    brLayer = ( (1 - nN * dcdp_z / 2)**2 * (Ysub / yN) +
-                (1 - pratsub - 2 * pratsub**2)**2 * yN /
-                ((1 + pratN)**2 * (1 - 2 * pratN) * Ysub) )/ (1 - pratN)
+    # layer contributions, b_j (eq 1) from doi:10.1103/PhysRevD.91.042002, errors corrected
+    brLayer = ( 1/(1-pratN) *
+                ( (1-nN*dcdp_z/2)**2 * (1-2*pratN)*(1+pratN)*Ysub / ((1-2*pratsub)*(1+pratsub)*yN) +
+                  (1-2*pratsub)*(1+pratsub)*yN / ((1+pratN)*Ysub) ) )
 
     # sum them up for total
     w = 2 * pi * f
