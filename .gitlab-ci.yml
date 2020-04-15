@@ -1,55 +1,94 @@
-image: igwn/base:buster
-
 stages:
-- test
-- deploy
+  - dist
+  - test
+  - gen_cache
+  - update_cache
+  - deploy_prep
+  - deploy
 
+# build the docker image we will use in all the jobs, with all
+# dependencies pre-installed/configured
+.dependencies: &dependencies
+  stage: dist
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/$CI_JOB_NAME:$CI_COMMIT_REF_NAME
+    GIT_STRATEGY: none
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - |
+      cat <<EOF > Dockerfile
+      FROM igwn/base:buster
+      RUN apt-get update -qq
+      RUN apt-get -y install --no-install-recommends git python3 python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3 python3-pypdf2 python3-h5py
+      RUN git clone https://gitlab-ci-token:ci_token@git.ligo.org/gwinc/inspiral_range.git
+      EOF
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+
+# actually generate the docker image
+images/base:
+  <<: *dependencies
+
+# run the tests and generate the test report on failure
 test:
   stage: test
-  before_script:
-  - echo $CI_COMMIT_SHA | cut -b1-8 > gitID.txt
+  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
   script:
-  - rm -rf ifo gwinc_test_report.pdf
-  - mkdir ifo
-  - apt-get update -qq
-  - apt-get install -y -qq git python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3 python3-pypdf2 python3-h5py
-  - git clone https://gitlab-ci-token:ci_token@git.ligo.org/gwinc/inspiral_range.git
-  - export PYTHONPATH=inspiral_range
-  - export MPLBACKEND=agg
-  - python3 -m gwinc.test -r gwinc_test_report.pdf
-  - for ifo in aLIGO Aplus Voyager CE1 CE2; do
-  -     python3 -m gwinc $ifo -s ifo/$ifo.png
-  -     python3 -m gwinc $ifo -s ifo/$ifo.h5
-  - done
-  - python3 -m gwinc.ifo -s ifo/all_compare.png
-  after_script:
-  - rm gitID.txt
-  cache:
-    key: "$CI_PROJECT_NAMESPACE:$CI_PROJECT_NAME:$CI_JOB_NAME"
-    untracked: true
+    - rm -f gwinc_test_report.pdf
+    - export MPLBACKEND=agg
+    - python3 -m gwinc.test -r gwinc_test_report.pdf
+  artifacts:
+    when: on_failure
+    paths:
+      - gwinc_test_report.pdf
+    expose_as: 'GWINC test failure report PDF'
+
+# prep for doc generation
+clean_docs:
+  stage: deploy_prep
+  needs:
+    - test
+  script:
+    - rm -rf public
+    - mkdir public
   artifacts:
     when: always
-    expire_in: 4w
     paths:
-    - ifo
-    - gwinc_test_report.pdf
+      - public
 
+# create plots for the canonical IFOs
+ifos:
+  stage: deploy
+  needs:
+    - clean_docs
+  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  script:
+      - mkdir -p public/ifo
+      - export PYTHONPATH=inspiral_range
+      - for ifo in $(python3 -c "import gwinc; print(' '.join(gwinc.IFOS))"); do
+      -     python3 -m gwinc $ifo -s public/ifo/$ifo.png
+      -     python3 -m gwinc $ifo -s public/ifo/$ifo.h5
+      - done
+      - python3 -m gwinc.ifo -s public/ifo/all_compare.png
+  artifacts:
+    when: always
+    paths:
+      - public/ifo
+
+# generate the html doc web pages
 pages:
   stage: deploy
-  dependencies:
-  - test
+  only:
+    - master
+  needs:
+    - clean_docs
+  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
   script:
-  - rm -rf public
-  - mv ifo public
-  - apt-get install -y -qq python3-sphinx-rtd-theme
-  - cd docs
-  - make html
-  - cd ..
-  - mv ./build/sphinx/html/* public/
-
+    - apt-get install -y -qq python3-sphinx-rtd-theme
+    - cd docs
+    - make html
+    - cd ..
+    - mv ./build/sphinx/html/* public/
   artifacts:
     paths:
-    - public
-    expire_in: 4w
-  only:
-  - master
+      - public
