@@ -11,9 +11,6 @@ from collections import OrderedDict
 from collections.abc import Mapping
 from PyPDF2 import PdfFileReader, PdfFileWriter
 
-logging.basicConfig(format='%(message)s',
-                    level=os.getenv('LOG_LEVEL', logging.INFO))
-
 from .. import IFOS, load_budget
 from ..io import load_hdf5, save_hdf5
 
@@ -21,6 +18,11 @@ try:
     import inspiral_range
 except ImportError:
     inspiral_range = None
+
+
+logging.basicConfig(
+    format='%(message)s',
+    level=os.getenv('LOG_LEVEL', logging.INFO))
 
 
 TOLERANCE = 1e-6
@@ -106,7 +108,7 @@ def compare_traces(tracesA, tracesB, tolerance=TOLERANCE, skip=None):
 
 
 def plot_diffs(freq, diffs, tolerance,
-               name, labelA, labelB, fom_title='',
+               name, styleA, styleB, fom_title='',
                save=None):
     spec = (len(diffs)+1, 2)
     sharex = None
@@ -114,8 +116,8 @@ def plot_diffs(freq, diffs, tolerance,
         noiseA, noiseB, frac = diffs[nname]
 
         axl = plt.subplot2grid(spec, (i, 0), sharex=None)
-        axl.loglog(freq, np.sqrt(noiseA), label=labelA)
-        axl.loglog(freq, np.sqrt(noiseB), label=labelB)
+        axl.loglog(freq, np.sqrt(noiseA), **styleA)
+        axl.loglog(freq, np.sqrt(noiseB), **styleB)
         axl.grid()
         axl.legend(loc='upper right')
         axl.set_ylabel(nname)
@@ -136,7 +138,7 @@ def plot_diffs(freq, diffs, tolerance,
 
         plt.suptitle('''{} {}/{} noise comparison
 (noises that differ by more than {} ppm)
-{}'''.format(name, labelA, labelB, tolerance*1e6, fom_title))
+{}'''.format(name, styleA['label'], styleB['label'], tolerance*1e6, fom_title))
 
     axl.set_xlabel("frequency [Hz]")
     axr.set_xlabel("frequency [Hz]")
@@ -154,21 +156,28 @@ def plot_diffs(freq, diffs, tolerance,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tolerance', '-t',  type=float, default=TOLERANCE,
-                        help='fractional tolerance [{}]'.format(TOLERANCE))
-    parser.add_argument('--skip', '-k', metavar='NOISE', action='append',
-                        help='traces to skip in comparison (multiple may be specified)')
-    parser.add_argument('--cache', '-c', metavar='PATH', default=CACHE_PATH,
-                        help='specify alternate IFO traces cache path')
+    parser.add_argument(
+        '--tolerance', '-t',  type=float, default=TOLERANCE,
+        help='fractional tolerance [{}]'.format(TOLERANCE))
+    parser.add_argument(
+        '--skip', '-k', metavar='NOISE', action='append',
+        help='traces to skip in comparison (multiple may be specified)')
+    parser.add_argument(
+        '--cache', '-c', metavar='PATH', default=CACHE_PATH,
+        help='specify alternate IFO traces cache path')
     rgroup = parser.add_mutually_exclusive_group()
-    rgroup.add_argument('--plot', '-p', action='store_true',
-                        help='plot differences')
-    rgroup.add_argument('--report', '-r', metavar='REPORT.pdf',
-                        help='create PDF report of test results (only created if differences found)')
-    rgroup.add_argument('--gen-cache', action='store_true',
-                        help='update/create IFO traces cache directory')
-    parser.add_argument('ifo', metavar='IFO', nargs='*',
-                        help='specific ifos to test (default all)')
+    rgroup.add_argument(
+        '--plot', '-p', action='store_true',
+        help='plot differences')
+    rgroup.add_argument(
+        '--report', '-r', metavar='REPORT.pdf',
+        help='create PDF report of test results (only created if differences found)')
+    rgroup.add_argument(
+        '--gen-cache', action='store_true',
+        help='update/create IFO traces cache directory')
+    parser.add_argument(
+        'ifo', metavar='IFO', nargs='*',
+        help='specific ifos to test (default all)')
     args = parser.parse_args()
 
     if args.gen_cache:
@@ -183,13 +192,13 @@ def main():
             path = os.path.join(args.cache, name+'.h5')
             save_hdf5(path, freq, traces)
         return
-        
+
     if args.report:
         base, ext = os.path.splitext(args.report)
         if ext != '.pdf':
             parser.error("Test reports only support PDF format.")
         outdir = tempfile.TemporaryDirectory()
-    
+
     # find all cached IFOs
     logging.info("loading cache {}...".format(args.cache))
     cached_ifos = {}
@@ -201,50 +210,57 @@ def main():
 
     # select
     if args.ifo:
-        ifos = {name:cached_ifos[name] for name in args.ifo}
+        ifos = args.ifo
     else:
-        ifos = cached_ifos
+        ifos = IFOS
 
-    labelA = 'cache'
-    labelB = 'head'
+    style_cache = dict(label='cache', linestyle='-')
+    style_head = dict(label='head', linestyle='--')
 
     fail = False
 
     # compare
-    for name, path in ifos.items():
+    for name in ifos:
         logging.info("{} tests...".format(name))
 
-        freq, tracesA, attrs = load_hdf5(path)
+        path = cached_ifos[name]
+
+        if not os.path.exists(path):
+            logging.warning("{} test cache not found".format(name))
+            fail |= True
+            continue
+
+        freq, traces_cache, attrs = load_hdf5(path)
 
         Budget = load_budget(name)
-        tracesB = Budget(freq).run()
+        traces_head = Budget(freq).run()
 
         if inspiral_range:
-            totalA = tracesA['Total'][0]
-            totalB = tracesB['Total'][0]
+            total_cache = traces_cache['Total'][0]
+            total_head = traces_head['Total'][0]
             range_func = inspiral_range.range
             H = inspiral_range.waveform.CBCWaveform(freq)
-            fomA = range_func(freq, totalA, H=H)
-            tracesA['int73'] = inspiral_range.int73(freq, totalA)[1], None
-            fomB = range_func(freq, totalB, H=H)
-            tracesB['int73'] = inspiral_range.int73(freq, totalB)[1], None
+            fom_cache = range_func(freq, total_cache, H=H)
+            traces_cache['int73'] = inspiral_range.int73(freq, total_cache)[1], None
+            fom_head = range_func(freq, total_head, H=H)
+            traces_head['int73'] = inspiral_range.int73(freq, total_head)[1], None
             fom_summary = """
 inspiral {func} {m1}/{m2} Msol:
-{labelA}: {fomA:.2f} Mpc
-{labelB}: {fomB:.2f} Mpc
+{label_cache}: {fom_cache:.2f} Mpc
+{label_head}: {fom_head:.2f} Mpc
 """.format(
                 func=range_func.__name__,
                 m1=H.params['m1'],
                 m2=H.params['m2'],
-                labelA=labelA,
-                fomA=fomA,
-                labelB=labelB,
-                fomB=fomB,
+                label_cache=style_cache['label'],
+                fom_cache=fom_cache,
+                label_head=style_head['label'],
+                fom_head=fom_head,
             )
         else:
             fom_summary = ''
 
-        diffs = compare_traces(tracesA, tracesB, args.tolerance, args.skip)
+        diffs = compare_traces(traces_cache, traces_head, args.tolerance, args.skip)
 
         if diffs:
             logging.warning("{} tests FAIL".format(name))
@@ -256,7 +272,7 @@ inspiral {func} {m1}/{m2} Msol:
                     save = None
                 plot_diffs(
                     freq, diffs, args.tolerance,
-                    name, labelA, labelB, fom_summary,
+                    name, style_cache, style_head, fom_summary,
                     save=save,
                 )
         else:
