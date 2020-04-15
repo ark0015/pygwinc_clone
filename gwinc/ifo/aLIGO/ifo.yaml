@@ -212,7 +212,7 @@ Materials:
     Betalown: 8e-6                # dn/dT,  (ref. 14)
     ThermalDiffusivitylown: 1.38  # Fejer et al
     Indexlown: 1.45
-    Philown: 5.0e-5               # loss angle at 100Hz (was 4.0e-5)
+    Philown: 4e-5                 # loss angle at 100Hz
     Philown_slope: 0              # G1600641 and arXiv:1712.05701 suggest
                                   # slopes between 0 and 0.3, depending on
                                   # deposition method. Slawek's analysis in
