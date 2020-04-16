@@ -64,7 +64,7 @@ ifos:
   image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
   script:
       - mkdir -p public/ifo
-      - export PYTHONPATH=inspiral_range
+      - export PYTHONPATH=/inspiral_range
       - for ifo in $(python3 -c "import gwinc; print(' '.join(gwinc.IFOS))"); do
       -     python3 -m gwinc $ifo -s public/ifo/$ifo.png
       -     python3 -m gwinc $ifo -s public/ifo/$ifo.h5
