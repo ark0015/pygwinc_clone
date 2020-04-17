@@ -90,5 +90,6 @@ pages:
     - cd ..
     - mv ./build/sphinx/html/* public/
   artifacts:
+    when: always
     paths:
       - public
