@@ -61,13 +61,12 @@ ifo:
     when: always
     paths:
       - ifo
-    expire_in: 4w
 
 # generate the html doc web pages
 html:
   stage: docs
-  # only:
-  #   - master
+  only:
+    - master
   needs:
     - test
   image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
@@ -82,12 +81,11 @@ html:
     when: always
     paths:
       - public
-    expire_in: 4w
 
 pages:
   stage: deploy
-  # only:
-  #   - master
+  only:
+    - master
   needs:
     - job: ifo
       artifacts: true
