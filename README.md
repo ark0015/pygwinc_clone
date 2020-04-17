@@ -2,12 +2,14 @@
 
 # Python Gravitational Wave Interferometer Noise Calculator
 
-![gwinc](https://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
+[![aLIGO](https://gwinc.docs.ligo.org/pygwinc/ifo/aLIGO.png "Canonical
+IFOs")](IFO.md)
 
 `pygwinc` is a multi-faceted tool for processing and plotting noise
 budgets for ground-based gravitational wave detectors.  It's primary
-feature is a collection of mostly analytic noise calculation functions
-for various sources of noise affecting detectors (`gwinc.noise`):
+feature is a collection of mostly analytic [noise calculation
+functions](#noise-functions) for various sources of noise affecting
+detectors (`gwinc.noise`):
 
 * quantum noise
 * mirror coating thermal noise
@@ -17,22 +19,20 @@ for various sources of noise affecting detectors (`gwinc.noise`):
 * Newtonian/gravity-gradient noise
 * residual gas noise
 
-See [noise functions](#noise-functions) below.
-
-`pygwinc` also includes a generalized noise budgeting tool
-(`gwinc.nb`) that allows users to create arbitrary noise budgets (for
-any experiment, not just ground-based GW detectors) using measured or
-analytically calculated data.  See the [budget
-interface](#Budget-interface) section below.
+`pygwinc` is also a generalized noise budgeting tool (`gwinc.nb`) that
+allows users to create arbitrary noise budgets (for any experiment,
+not just ground-based GW detectors) using measured or analytically
+calculated data.  See the [budget interface](#Budget-interface)
+section below.
 
 `pygwinc` includes canonical budgets for various well-known current
-and future detectors (`gwinc.ifo`):
+and future GW detectors (`gwinc.ifo`):
 
-* [aLIGO](https://gwinc.docs.ligo.org/pygwinc/aLIGO.png)
-* [A+](https://gwinc.docs.ligo.org/pygwinc/Aplus.png)
-* [Voyager](https://gwinc.docs.ligo.org/pygwinc/Voyager.png)
-* [Cosmic Explorer 1](https://gwinc.docs.ligo.org/pygwinc/CE1.png)
-* [Cosmic Explorer 2](https://gwinc.docs.ligo.org/pygwinc/CE2.png)
+* [aLIGO](https://gwinc.docs.ligo.org/pygwinc/ifo/aLIGO.png)
+* [A+](https://gwinc.docs.ligo.org/pygwinc/ifo/Aplus.png)
+* [Voyager](https://gwinc.docs.ligo.org/pygwinc/ifo/Voyager.png)
+* [Cosmic Explorer 1](https://gwinc.docs.ligo.org/pygwinc/ifo/CE1.png)
+* [Cosmic Explorer 2](https://gwinc.docs.ligo.org/pygwinc/ifo/CE2.png)
 
 See [IFO.md](IFO.md) for the latest CI-generated plots and hdf5 cached
 data.
@@ -325,13 +325,7 @@ traces = budget.run()
 ```
 
 The IFOs included in `gwinc.ifo` provide examples of the use of the
-budget interface:
-
-* [aLIGO](gwinc/ifo/aLIGO)
-* [Aplus](gwinc/ifo/Aplus)
-* [Voyager](gwinc/ifo/Voyager)
-* [CE1](master/gwinc/ifo/CE1)
-* [CE2](master/gwinc/ifo/CE2)
+budget interface (e.g. [gwinc.ifo.aLIGO](gwinc/ifo/aLIGO)).
 
 
 ### extracting single noise terms

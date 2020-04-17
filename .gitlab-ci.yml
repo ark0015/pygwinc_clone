@@ -3,7 +3,7 @@ stages:
   - test
   - gen_cache
   - update_cache
-  - deploy_prep
+  - docs
   - deploy
 
 # build the docker image we will use in all the jobs, with all
@@ -43,52 +43,59 @@ test:
       - gwinc_test_report.pdf
     expose_as: 'GWINC test failure report PDF'
 
-# prep for doc generation
-clean_docs:
-  stage: deploy_prep
+# create plots for the canonical IFOs
+ifo:
+  stage: docs
   needs:
     - test
-  script:
-    - rm -rf public
-    - mkdir public
-  artifacts:
-    when: always
-    paths:
-      - public
-
-# create plots for the canonical IFOs
-ifos:
-  stage: deploy
-  needs:
-    - clean_docs
   image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
   script:
-      - mkdir -p public/ifo
+      - mkdir -p ifo
       - export PYTHONPATH=/inspiral_range
       - for ifo in $(python3 -c "import gwinc; print(' '.join(gwinc.IFOS))"); do
-      -     python3 -m gwinc $ifo -s public/ifo/$ifo.png
-      -     python3 -m gwinc $ifo -s public/ifo/$ifo.h5
+      -     python3 -m gwinc $ifo -s ifo/$ifo.png
+      -     python3 -m gwinc $ifo -s ifo/$ifo.h5
       - done
-      - python3 -m gwinc.ifo -s public/ifo/all_compare.png
+      - python3 -m gwinc.ifo -s ifo/all_compare.png
   artifacts:
     when: always
     paths:
-      - public/ifo
+      - ifo
+    expire_in: 4w
 
 # generate the html doc web pages
-pages:
-  stage: deploy
-  only:
-    - master
+html:
+  stage: docs
+  # only:
+  #   - master
   needs:
-    - clean_docs
+    - test
   image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
   script:
+    - rm -rf public
     - apt-get install -y -qq python3-sphinx-rtd-theme
     - cd docs
     - make html
     - cd ..
-    - mv ./build/sphinx/html/* public/
+    - mv ./build/sphinx/html public
+  artifacts:
+    when: always
+    paths:
+      - public
+    expire_in: 4w
+
+pages:
+  stage: deploy
+  # only:
+  #   - master
+  needs:
+    - job: ifo
+      artifacts: true
+    - job: html
+      artifacts: true
+  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  script:
+    - mv ifo public/
   artifacts:
     when: always
     paths:
