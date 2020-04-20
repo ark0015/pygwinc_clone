@@ -7,8 +7,8 @@ stages:
   - deploy
 
 # build the docker image we will use in all the jobs, with all
-# dependencies pre-installed/configured
-.dependencies: &dependencies
+# dependencies pre-installed/configured.
+gwinc/base:
   stage: dist
   variables:
     IMAGE_TAG: $CI_REGISTRY_IMAGE/$CI_JOB_NAME:$CI_COMMIT_REF_NAME
@@ -25,14 +25,10 @@ stages:
     - docker build -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
 
-# actually generate the docker image
-images/base:
-  <<: *dependencies
-
 # run the tests and generate the test report on failure
 test:
   stage: test
-  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
     - rm -f gwinc_test_report.pdf
     - export MPLBACKEND=agg
@@ -48,7 +44,7 @@ ifo:
   stage: docs
   needs:
     - test
-  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
       - mkdir -p ifo
       - export PYTHONPATH=/inspiral_range
@@ -69,7 +65,7 @@ html:
     - master
   needs:
     - test
-  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
     - rm -rf public
     - apt-get install -y -qq python3-sphinx-rtd-theme
@@ -82,6 +78,8 @@ html:
     paths:
       - public
 
+# the "pages" job has special meaning, as it's "public" artifact
+# becomes the directory served through gitlab static pages
 pages:
   stage: deploy
   only:
@@ -91,7 +89,7 @@ pages:
       artifacts: true
     - job: html
       artifacts: true
-  image: $CI_REGISTRY_IMAGE/images/base:$CI_COMMIT_REF_NAME
+  image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
     - mv ifo public/
   artifacts:
