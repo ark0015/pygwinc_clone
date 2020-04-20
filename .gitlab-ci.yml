@@ -1,10 +1,19 @@
 stages:
   - dist
   - test
-  - gen_cache
-  - update_cache
+  - review
   - docs
   - deploy
+
+# have to specify this so that all jobs execute for all commits
+# including merge requests
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
+
+variables:
+  GIT_STRATEGY: clone
 
 # build the docker image we will use in all the jobs, with all
 # dependencies pre-installed/configured.
@@ -19,14 +28,16 @@ gwinc/base:
       cat <<EOF > Dockerfile
       FROM igwn/base:buster
       RUN apt-get update -qq
-      RUN apt-get -y install --no-install-recommends git python3 python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3 python3-pypdf2 python3-h5py
+      RUN apt-get -y install --no-install-recommends git gitlab-cli python3 python3-yaml python3-scipy python3-matplotlib python3-ipython lalsimulation-python3 python3-pypdf2 python3-h5py
       RUN git clone https://gitlab-ci-token:ci_token@git.ligo.org/gwinc/inspiral_range.git
       EOF
     - docker build -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
 
-# run the tests and generate the test report on failure
-test:
+# validate that the noises haven't changed relative to the reference
+# (the reference itself could have been updated, though, see
+# check_approval job)
+validate_noise:
   stage: test
   image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
@@ -37,13 +48,60 @@ test:
     when: on_failure
     paths:
       - gwinc_test_report.pdf
-    expose_as: 'GWINC test failure report PDF'
+    expose_as: 'noise validation failure report'
+
+# this is a special job intended to run only for merge requests where
+# the test reference hash file has been updated, indicating that there
+# has been a noise change.  if the merge request has not yet been
+# approved, generate a report of noise changes relative to the target
+# branch and present that to the reviewers.  if the merge request is
+# approved, re-run this job, which will succeed if the MR is approved.
+check_approval:
+  stage: review
+  rules:
+    # - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+    - if: $CI_MERGE_REQUEST_ID
+      changes:
+        - gwinc/test/ref_hash
+  image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
+  script:
+    - echo "NOISE REFERENCE CHANGE, checking approval..."
+    - |
+      cat <<EOF > check_approved.py
+      import sys
+      import gitlab
+      project_id = sys.argv[1]
+      mr_iid = sys.argv[2]
+      # this only works for public repos, otherwise need to specify
+      # private_token=
+      gl = gitlab.Gitlab('https://git.ligo.org')
+      project = gl.projects.get(project_id)
+      mr = project.mergerequests.get(mr_iid)
+      approvals = mr.approvals.get()
+      print(approvals.approved)
+      EOF
+    - echo $CI_MERGE_REQUEST_PROJECT_ID, $CI_MERGE_REQUEST_IID, $CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
+    - approved=$(python3 check_approved.py $CI_MERGE_REQUEST_PROJECT_ID $CI_MERGE_REQUEST_IID )
+    - if [[ $approved != True ]] ; then
+    -     old_hash=$(git cat-file -p origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME:gwinc/test/ref_hash)
+    -     if ! python3 -m gwinc.test --git-ref $old_hash -r gwinc_test_report.pdf ; then
+    -         echo "APPROVAL REQUIRED TO MERGE THIS BRANCH."
+    -         /bin/false
+    -     else
+    -         echo "Reference update did not cause appreciable noise change."
+    -     fi
+    - else
+    -     echo "Merge request approved, reference change accepted."
+    - fi
+  artifacts:
+    when: on_failure
+    paths:
+      - gwinc_test_report.pdf
+    expose_as: 'noise changes relative to target branch head APPROVAL REQUIRED TO MERGE'
 
 # create plots for the canonical IFOs
 ifo:
   stage: docs
-  needs:
-    - test
   image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
       - mkdir -p ifo
@@ -63,8 +121,6 @@ html:
   stage: docs
   only:
     - master
-  needs:
-    - test
   image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
     - rm -rf public

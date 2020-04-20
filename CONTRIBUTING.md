@@ -42,7 +42,25 @@ commit after the commits that change the noise calculations* (git
 commits can't have foreknowledge of their own commit hash).
 
 Once you submit your merge request, an automated pipeline will run the
-test command to validate your changes.  If budgets differences are
-detected the pipeline will fail, alerting reviewers that a more
-detailed review is required.  Test issues will need to be resolved
-before code can be merged.
+test command to validate your changes.  If there are budgets
+differences but the reference has not been updated, the pipeline will
+fail and indicate that a reference update is required.  Updates to the
+reference will also cause a validation pipeline failure, but these
+failures can be resolved through reviewer approval of the changes (see
+below).
+
+
+## For admins: approving noise curve changes
+
+As discussed above, merge requests that generate noise changes will
+cause pipeline failures.  If the MR properly includes a reference
+update, then the failure should only be in the approval check.  A
+report will be generated comparing all noise changes against the
+target branch (usually 'master').  See the 'View exposed artifacts'
+menu item in the pipeline report.  Once you have reviewed the report
+and the code, and understand and accept the noise changes, click the
+'Approve' button in the MR.  Once sufficient approval has been given,
+re-run the `review:check_approval` pipeline job, which should now pick
+up that approval has been given and allow the pipeline to succeed.
+Once the pipeline succeeds the merge can be enacted.  Click the
+'Merge' button to finally merge the code.
