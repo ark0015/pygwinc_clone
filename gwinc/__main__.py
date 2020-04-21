@@ -34,8 +34,12 @@ input file (IFO) can be an HDF5 file saved from a previous call, in
 which case all noise traces and IFO parameters will be loaded from
 that file.
 
+Individual IFO parameters can be overriden with the --ifo option:
+
+  gwinc --ifo Optics.SRM.Tunephase=3.14 ...
+
 If the inspiral_range package is installed, various figures of merit
-can be calculated for the resultant spectrum with the --fom argument,
+can be calculated for the resultant spectrum with the --fom option,
 e.g.:
 
   gwinc --fom horizon ...
@@ -46,39 +50,59 @@ See documentation for inspiral_range package for details.
 """
 
 IFO = 'aLIGO'
-FLO = 5
-FHI = 6000
-NPOINTS = 3000
+FREQ = '5:3000:6000'
 
 parser = argparse.ArgumentParser(
     prog='gwinc',
     description=description,
     formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('--flo', '-fl', default=FLO, type=float,
-                    help="lower frequency bound in Hz [{}]".format(FLO))
-parser.add_argument('--fhi', '--fh', default=FHI, type=float,
-                    help="upper frequency bound in Hz [{}]".format(FHI))
-parser.add_argument('--npoints', '-n', default=NPOINTS,
-                    help="number of frequency points [{}]".format(NPOINTS))
-parser.add_argument('--title', '-t',
-                    help="plot title")
-parser.add_argument('--fom',
-                    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
+parser.add_argument(
+    '--freq', '-f', metavar='FSPEC',
+    help="frequency array specification in Hz, either as 'flo:fhi' or 'flo:npoints:fhi' [{}]".format(FREQ))
+parser.add_argument(
+    '--ifo', '-o',
+    #nargs='+', action='extend',
+    action='append',
+    help="override budget IFO parameter (may be specified multiple times)")
+parser.add_argument(
+    '--title', '-t',
+    help="plot title")
+parser.add_argument(
+    '--fom',
+    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
 group = parser.add_mutually_exclusive_group()
-group.add_argument('--interactive', '-i', action='store_true',
-                   help="interactive plot with interactive shell")
-group.add_argument('--save', '-s',
-                   help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
-group.add_argument('--yaml', '-y', action='store_true',
-                   help="print IFO as yaml to stdout and exit")
-group.add_argument('--text', '-x', action='store_true',
-                   help="print IFO as text table to stdout and exit")
-group.add_argument('--diff', '-d', metavar='IFO',
-                   help="show differences table between another IFO description")
-group.add_argument('--no-plot', '-np', action='store_false', dest='plot',
-                   help="supress plotting")
-parser.add_argument('IFO',
-                    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
+group.add_argument(
+    '--interactive', '-i', action='store_true',
+    help="interactive plot with interactive shell")
+group.add_argument(
+    '--save', '-s',
+    help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
+group.add_argument(
+    '--yaml', '-y', action='store_true',
+    help="print IFO as yaml to stdout and exit")
+group.add_argument(
+    '--text', '-x', action='store_true',
+    help="print IFO as text table to stdout and exit")
+group.add_argument(
+    '--diff', '-d', metavar='IFO',
+    help="show differences table between another IFO description")
+group.add_argument(
+    '--no-plot', '-np', action='store_false', dest='plot',
+    help="supress plotting")
+parser.add_argument(
+    'IFO',
+    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
+
+
+def freq_from_spec(spec):
+    fspec = spec.split(':')
+    if len(fspec) == 2:
+        fspec = fspec[0], FREQ.split(':')[1], fspec[1]
+    return np.logspace(
+        np.log10(float(fspec[0])),
+        np.log10(float(fspec[2])),
+        int(fspec[1]),
+    )
 
 
 def main():
@@ -95,15 +119,26 @@ def main():
         freq, traces, attrs = load_hdf5(args.IFO)
         ifo = getattr(attrs, 'IFO', None)
         plot_style = attrs
+        if args.freq:
+            logging.warning("ignoring frequency specification for frequencies defined in HDF5...")
 
     else:
         Budget = load_budget(args.IFO)
         ifo = Budget.ifo
-        # FIXME: this should be done only if specified, to allow for
-        # using any FREQ specified in the Budget
-        freq = np.logspace(np.log10(args.flo), np.log10(args.fhi), args.npoints)
+        if args.freq:
+            try:
+                freq = freq_from_spec(args.freq)
+            except IndexError:
+                parser.error("improper frequency specification '{}'".format(args.freq))
+        else:
+            freq = getattr(Budget, 'freq', freq_from_spec(FREQ))
         plot_style = getattr(Budget, 'plot_style', {})
         traces = None
+
+    if args.ifo:
+        for paramval in args.ifo:
+            param, val = paramval.split('=', 1)
+            ifo[param] = float(val)
 
     if args.yaml:
         if not ifo:

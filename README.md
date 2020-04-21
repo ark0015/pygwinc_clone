@@ -68,6 +68,12 @@ Materials.Coating.Philown    5e-05            3e-05
 $ python3 -m gwinc my_aLIGO.yaml
 ```
 
+You can also use the `--ifo` option to change parameters from the
+command line:
+```shell
+$ python3 -m gwinc aLIGO --ifo Optics.SRM.Tunephase=3.14
+```
+
 Stand-alone YAML files will always assume the nominal ['aLIGO' budget
 description](gwinc/ifo/aLIGO).
 
