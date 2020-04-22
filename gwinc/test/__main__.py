@@ -36,11 +36,26 @@ def test_path(*args):
     return os.path.join(os.path.dirname(__file__), *args)
 
 
-def git_ref_resolve_hash(git_ref):
-    """Resolve a git reference into its hash string."""
+def git_find_upstream_name():
+    try:
+        remotes = subprocess.run(
+            ['git', 'remote', '-v'],
+            capture_output=True, universal_newlines=True,
+            check=True,
+        ).stdout
+    except subprocess.CalledProcessError as e:
+        logging.error(e.stderr.split('\n')[0])
+    for remote in remotes.split('\n'):
+        name, url, fp = remote.split()
+        if 'gwinc/pygwinc.git' in url:
+            return name
+
+
+def git_rev_resolve_hash(git_rev):
+    """Resolve a git revision into its hash string."""
     try:
         return subprocess.run(
-            ['git', 'show', '-s', '--format=format:%H', git_ref],
+            ['git', 'show', '-s', '--format=format:%H', git_rev],
             capture_output=True, universal_newlines=True,
             check=True,
         ).stdout
@@ -57,50 +72,46 @@ def prune_cache_dir():
         return
     expired_paths = sorted(
         [os.path.join(cache_dir, path) for path in os.listdir(cache_dir)],
-        key=lambda path: os.stat(path).st_atime,
+        key=lambda path: os.stat(path).st_atime, reverse=True,
     )[CACHE_LIMIT:]
     if not expired_paths:
         return
-    logging.info("pruning {} old cache...".format(len(expired_paths)))
     for path in expired_paths:
-        logging.debug("pruning {}...".format(path))
+        logging.info("pruning old cache: {}".format(path))
         shutil.rmtree(path)
 
 
-def gen_cache_for_ref(ref_hash, path):
-    """generate cache from git reference
-
-    The ref_hash should be a git hash, and path should be the location
-    of the generated cache.
+def gen_cache(git_hash, path):
+    """generate cache for specified git hash at the specified path
 
     The included shell script is used to extract the gwinc code from
     the appropriate git commit, and invoke a new python instance to
     generate the noise curves.
 
     """
-    logging.info("creating new cache from reference {}...".format(ref_hash))
+    logging.info("creating new cache for hash {}...".format(git_hash))
     subprocess.run(
-        [test_path('gen_cache.sh'), ref_hash, path],
+        [test_path('gen_cache.sh'), git_hash, path],
         check=True,
     )
 
 
 def load_cache(path):
-    """load a cache from path
+    """load a cache from the specified path
 
-    returns a dictionary with 'ref_hash' and 'ifos' keys.
+    returns a "cache" dictionary with 'git_hash' and 'ifos' keys.
 
     """
     logging.info("loading cache {}...".format(path))
     cache = {}
-    ref_hash_path = os.path.join(path, 'ref_hash')
-    if os.path.exists(ref_hash_path):
-        with open(ref_hash_path) as f:
-            ref_hash = f.read().strip()
+    git_hash_path = os.path.join(path, 'git_hash')
+    if os.path.exists(git_hash_path):
+        with open(git_hash_path) as f:
+            git_hash = f.read().strip()
     else:
-        ref_hash = None
-    logging.debug("cache hash: {}".format(ref_hash))
-    cache['ref_hash'] = ref_hash
+        git_hash = None
+    logging.debug("cache hash: {}".format(git_hash))
+    cache['git_hash'] = git_hash
     cache['ifos'] = {}
     for f in sorted(os.listdir(path)):
         name, ext = os.path.splitext(f)
@@ -222,39 +233,76 @@ def plot_diffs(freq, diffs, styleA, styleB):
 ##################################################
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="""GWINC noise validation
+
+This command calculates the canonical noise budgets with the current
+code and compares them against those calculated with code from a
+specified git revision.  You must be running from a git checkout of
+the source for this to work.  The command will fail if it detects any
+noise differences.  Plots or a PDF report of differences can be
+generated with the '--plot' or '--report' commands respectively.
+
+By default it will attempt to determine the git reference for upstream
+master for your current configuration (usually 'origin/master' or
+'upstream/master').  You may specify an arbitrary git revision with
+the --git-rev command.  For example, to compare against another
+remote/branch use:
+
+$ python3 -m gwinc.test --git-rev remote/dev-branch
+
+or if you have uncommitted changes compare against the current head
+with:
+
+$ python3 -m gwinc.test -g HEAD
+
+See gitrevisions(7) for various ways to refer to git revisions.
+
+A cache of traces from reference git revisions will be stored in
+gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         '--tolerance', '-t',  type=float, default=TOLERANCE,
-        help='fractional tolerance [{}]'.format(TOLERANCE))
+        help="fractional tolerance of comparison [{}]".format(TOLERANCE))
     parser.add_argument(
         '--skip', '-k', metavar='NOISE', action='append',
-        help='traces to skip in comparison (multiple may be specified)')
-    parser.add_argument(
-        '--git-ref', '-g', metavar='HASH', default='HEAD',
-        help='specify git ref to compare against')
+        help="traces to skip in comparison (multiple may be specified)")
     rgroup = parser.add_mutually_exclusive_group()
     rgroup.add_argument(
+        '--git-rev', '-g', metavar='REV',
+        help="specify specific git revision to compare against")
+    ogroup = parser.add_mutually_exclusive_group()
+    ogroup.add_argument(
         '--plot', '-p', action='store_true',
-        help='plot differences')
-    rgroup.add_argument(
+        help="show interactive plot differences")
+    ogroup.add_argument(
         '--report', '-r', metavar='REPORT.pdf',
-        help='create PDF report of test results (only created if differences found)')
+        help="create PDF report of test results (only created if differences found)")
     parser.add_argument(
         'ifo', metavar='IFO', nargs='*',
-        help='specific ifos to test (default all)')
+        help="specific ifos to test (default all)")
     args = parser.parse_args()
 
     # get the reference hash
-    ref_hash = git_ref_resolve_hash(args.git_ref)
-    if not ref_hash:
+    if args.git_rev:
+        git_rev = args.git_rev
+    else:
+        remote = git_find_upstream_name()
+        if not remote:
+            sys.exit("Could not resolve upstream remote name")
+        git_rev = '{}/master'.format(remote)
+        logging.info("presumed upstream git reference: {}".format(git_rev))
+    git_hash = git_rev_resolve_hash(git_rev)
+    if not git_hash:
         sys.exit("Could not resolve reference, could not run test.")
-    logging.info("ref hash: {}".format(ref_hash))
+    logging.info("git hash: {}".format(git_hash))
 
     # load the cache
-    cache_path = test_path('cache', ref_hash)
+    cache_path = test_path('cache', git_hash)
     if not os.path.exists(cache_path):
         prune_cache_dir()
-        gen_cache_for_ref(ref_hash, cache_path)
+        gen_cache(git_hash, cache_path)
     cache = load_cache(cache_path)
 
     if args.report:
@@ -328,7 +376,7 @@ inspiral {func} {m1}/{m2} Msol:
 (noises that differ by more than {} ppm)
 reference git hash: {}
 {}'''.format(name, style_cache['label'], style_head['label'],
-             args.tolerance*1e6, cache['ref_hash'], fom_summary))
+             args.tolerance*1e6, cache['git_hash'], fom_summary))
             if args.report:
                 pwidth = 10
                 pheight = (len(diffs) * 5) + 2
