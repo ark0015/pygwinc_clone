@@ -27,7 +27,6 @@ logging.basicConfig(
     level=os.getenv('LOG_LEVEL', logging.INFO))
 
 
-FREQ = np.logspace(np.log10(5), np.log10(6000), 3000)
 TOLERANCE = 1e-6
 CACHE_LIMIT = 5
 
