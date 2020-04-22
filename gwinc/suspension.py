@@ -100,7 +100,6 @@ def getJointParams(sus, n):
             TempUpper = stages[n-1].Temp
         else:
             TempUpper = sus.Temp
-    TempUpper = Temp  # FIXME: reproduces the old calculation
 
     ##############################
     # material parameters
@@ -114,10 +113,6 @@ def getJointParams(sus, n):
     elif 'WireMaterial' in stage:
         wireMatUpper = stage.WireMaterial
         wireMatLower = stage.WireMaterial
-    # FIXME: reproduces the old calculation
-    elif n == last_stage and sus.Type == 'BQuad':
-        wireMatUpper = 'Silicon'
-        wireMatLower = 'Silicon'
     elif n == last_stage:
         wireMatUpper = 'Silica'
         wireMatLower = 'Silica'
@@ -132,9 +127,6 @@ def getJointParams(sus, n):
     # support blade (upper joint only)
     if 'BladeMaterial' in stage:
         bladeMat = stage.BladeMaterial
-    # FIXME: reproduces the old calculation
-    elif n == last_stage and sus.Type == 'BQuad':
-        bladeMat = 'Silicon'
     else:
         bladeMat = 'MaragingSteel'
 
@@ -206,7 +198,7 @@ def wireGeometry(r, N, RibbonThickness=None, TaperedEndRadius=None, **kwargs):
     return (xsect, xsectEnd, xII, mu_v, mu_h)
 
 
-def wireTELoss(w, tension, xsectEnd, xII, Temp, alpha, beta, rho, C, K, Y, xsect,
+def wireTELoss(w, tension, xsectEnd, xII, Temp, alpha, beta, rho, C, K, Y,
                RibbonThickness=None, **kwargs):
     """Thermoelastic calculations for wires
 
@@ -222,9 +214,6 @@ def wireTELoss(w, tension, xsectEnd, xII, Temp, alpha, beta, rho, C, K, Y, xsect
     # horizontal TE time constant, wires
     # The constant 7.37e-2 is 1/(4*q0^2) from eq 12, C. Zener 10.1103/PhysRev.53.90 (1938)
     tau = 7.37e-2 * 4 * (rho * C * xsectEnd) / (pi * K)
-    # FIXME: reproduces the old calculation
-    # then xsect can be dropped from the argument list
-    tau = 7.37e-2 * 4 * (rho * C * xsect) / (pi * K)
 
     # deal with ribbon geometry
     if RibbonThickness is not None:
@@ -306,16 +295,12 @@ def continuumWireKh(w, N, length, tension, xsect, xII, rho, Y, phi):
     #     = T k (cos(k L) + k delta sin(k L))
     #   for w -> 0, this reduces to N_w * T * k
     khnum = N * tension * k * (coskl + dk * sinkl)
-    # FIXME: reproduces the old calculation
-    khnum = N * tension * k * (1 + dk**2) * (coskl + dk * sinkl)
 
     # denominator, horiz spring constant
     #   D after equation 8 in GG
     #   D = sin(k L) - 2 k delta cos(k L)
     #   for w -> 0, this reduces to k (L - 2 delta)
     khden = sinkl - 2 * dk * coskl
-    # FIXME: reproduces the old calculation
-    khden = (1 - dk**2) * sinkl - 2 * dk * coskl
 
     return khnum/khden
 
@@ -336,9 +321,6 @@ def continuumWireKv(w, N, length, xsect, xsectEnd, rho, Y, phi,
         kv_mid = N * xsect * Y * k / tan(k * l_mid)
         kv_end = N * xsectEnd * Y * k / tan(k * l_end)
         kv = 1/(2/kv_end + 1/kv_mid)
-        # FIXME: reproduces the old calculation
-        kv_end = N * xsectEnd * Y * k / tan(k * 2*l_end)
-        kv = 1/(1/kv_end + 1/kv_mid)
 
     return kv
 
@@ -491,7 +473,7 @@ def suspQuad(f, sus):
             # nominally this term becomes zero for steel wires as ds_w is zero
             # The last term is for TE loss
             phih_TE = wireTELoss(w, tension, xsectEnd, xII, Temp,
-                                 alpha_w, beta_w, rho_w, C_w, K_w, Y_w, xsect,
+                                 alpha_w, beta_w, rho_w, C_w, K_w, Y_w,
                                  **wireShape)
             phih = phi_w * (1 + mu_h * ds_w) + phih_TE
 
