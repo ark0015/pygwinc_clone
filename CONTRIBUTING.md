@@ -16,11 +16,9 @@ as possible, and provide a complete, descriptive log of the changes
 legibility.
 
 `pygwinc` comes with a validation command that can compare budgets
-between different versions of the code and produce a graphical report.
-`pygwinc` stores a reference to the git commit that is considered the
-latest good reference for the budget calculation functions, and the
-validation is run against that reference by default.  The command can
-be run with:
+from the current code against those produced from different versions
+in git (by default it compares against the current HEAD).  The command
+can be run with:
 ```shell
 $ python3 -m gwinc.test
 ```
@@ -30,37 +28,22 @@ arbitrary commit using the '--git-ref' option.  Traces for referenced
 commits are cached, which speeds up subsequent comparison runs
 significantly.
 
-Commits for code changes that modify budget calculations should be
-followed up updates to test reference. This can be done with the
-'--update-ref' option to the test command:
-```shell
-$ python3 -m gwinc.test --update-ref
-``` 
-If no specific reference is provided, a pointer to the last commit
-will be made.  *Note: reference updates need to be made in a separate
-commit after the commits that change the noise calculations* (git
-commits can't have foreknowledge of their own commit hash).
-
-Once you submit your merge request, an automated pipeline will run the
-test command to validate your changes.  If there are budgets
-differences but the reference has not been updated, the pipeline will
-fail and indicate that a reference update is required.  Updates to the
-reference will also cause a validation pipeline failure, but these
-failures can be resolved through reviewer approval of the changes (see
-below).
+Once you submit your merge request a special CI job will determine if
+there are budgets differences between your code and the master branch.
+If there are, explicit approval from reviewers will be required before
+your changes can be merged (see "approving noise" below).
 
 
-## For admins: approving noise curve changes
+## For reviewers: approving noise curve changes
 
 As discussed above, merge requests that generate noise changes will
-cause pipeline failures.  If the MR properly includes a reference
-update, then the failure should only be in the approval check.  A
-report will be generated comparing all noise changes against the
-target branch (usually 'master').  See the 'View exposed artifacts'
-menu item in the pipeline report.  Once you have reviewed the report
-and the code, and understand and accept the noise changes, click the
-'Approve' button in the MR.  Once sufficient approval has been given,
-re-run the `review:check_approval` pipeline job, which should now pick
-up that approval has been given and allow the pipeline to succeed.
-Once the pipeline succeeds the merge can be enacted.  Click the
-'Merge' button to finally merge the code.
+cause a pipeline failure in the `review:noise_change_approval` CI job.
+The job will generate a report comparing the new noise traces against
+those from master, which can be found under the 'View exposed
+artifacts' menu item in the pipeline report.  Once you have reviewed
+the report and the code, and understand and accept the noise changes,
+click the 'Approve' button in the MR.  Once sufficient approval has
+been given, `review:noise_change_approval` job can be re-run, which
+should now pick up that approval has been given and allow the pipeline
+to succeed.  Once the pipeline succeeds the merge request can be
+merged.  Click the 'Merge' button to finally merge the code.
