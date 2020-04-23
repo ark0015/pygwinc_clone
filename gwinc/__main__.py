@@ -80,19 +80,19 @@ group.add_argument(
     help="save plot (.png/.pdf/.svg) or budget traces (.hdf5/.h5) to file (may be specified multiple times)")
 group.add_argument(
     '--yaml', '-y', action='store_true',
-    help="print IFO as yaml to stdout and exit")
+    help="print IFO as yaml to stdout and exit (budget not calculated)")
 group.add_argument(
     '--text', '-x', action='store_true',
-    help="print IFO as text table to stdout and exit")
+    help="print IFO as text table to stdout and exit (budget not calculated)")
 group.add_argument(
     '--diff', '-d', metavar='IFO',
-    help="show differences table between another IFO description")
+    help="show differences table between another IFO description and exit (budget not calculated)")
 group.add_argument(
     '--no-plot', '-np', action='store_false', dest='plot',
     help="supress plotting")
 parser.add_argument(
     'IFO',
-    help="IFO name, description file path (.yaml, .mat, .m), budget module (.py), or HDF5 data file (.hdf5, .h5)")
+    help="IFO name, or path to budget module (.py), description file (.yaml/.mat/.m), or HDF5 data file (.hdf5/.h5)")
 
 
 def freq_from_spec(spec):
