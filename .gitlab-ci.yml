@@ -41,8 +41,7 @@ generate_budgets:
       - mkdir -p ifo
       - export PYTHONPATH=/inspiral_range
       - for ifo in $(python3 -c "import gwinc; print(' '.join(gwinc.IFOS))"); do
-      -     python3 -m gwinc $ifo -s ifo/$ifo.png
-      -     python3 -m gwinc $ifo -s ifo/$ifo.h5
+      -     python3 -m gwinc $ifo -s ifo/$ifo.png -s ifo/$ifo.h5
       - done
       - python3 -m gwinc.ifo -s ifo/all_compare.png
   artifacts:

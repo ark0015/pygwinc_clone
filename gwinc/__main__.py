@@ -51,6 +51,7 @@ See documentation for inspiral_range package for details.
 
 IFO = 'aLIGO'
 FREQ = '5:3000:6000'
+DATA_SAVE_FORMATS = ['.hdf5', '.h5']
 
 parser = argparse.ArgumentParser(
     prog='gwinc',
@@ -75,8 +76,8 @@ group.add_argument(
     '--interactive', '-i', action='store_true',
     help="interactive plot with interactive shell")
 group.add_argument(
-    '--save', '-s',
-    help="save budget traces (.hdf5/.h5) or plot (.pdf/.png/.svg) to file")
+    '--save', '-s', action='append',
+    help="save plot (.png/.pdf/.svg) or budget traces (.hdf5/.h5) to file (may be specified multiple times)")
 group.add_argument(
     '--yaml', '-y', action='store_true',
     help="print IFO as yaml to stdout and exit")
@@ -113,7 +114,7 @@ def main():
     ##########
     # initial arg processing
 
-    if os.path.splitext(os.path.basename(args.IFO))[1] in ['.hdf5', '.h5']:
+    if os.path.splitext(os.path.basename(args.IFO))[1] in DATA_SAVE_FORMATS:
         from .io import load_hdf5
         Budget = None
         freq, traces, attrs = load_hdf5(args.IFO)
@@ -134,6 +135,14 @@ def main():
             freq = getattr(Budget, 'freq', freq_from_spec(FREQ))
         plot_style = getattr(Budget, 'plot_style', {})
         traces = None
+
+    out_data_files = set()
+    out_plot_files = set()
+    if args.save:
+        for path in args.save:
+            if os.path.splitext(path)[1] in DATA_SAVE_FORMATS:
+                out_data_files.add(path)
+        out_plot_files = set(args.save) - out_data_files
 
     if args.ifo:
         for paramval in args.ifo:
@@ -234,23 +243,10 @@ def main():
         plot_style['title'] += '\n{}'.format(fom_title)
 
     ##########
-    # output
-
-    # save noise traces to HDF5 file
-    if args.save and os.path.splitext(args.save)[1] in ['.hdf5', '.h5']:
-        from .io import save_hdf5
-        logging.info("saving budget traces {}...".format(args.save))
-        if ifo:
-            plot_style['IFO'] = ifo.to_yaml()
-        save_hdf5(
-            path=args.save,
-            freq=freq,
-            traces=traces,
-            **plot_style
-        )
+    # interactive
 
     # interactive shell plotting
-    elif args.interactive:
+    if args.interactive:
         ipshell = InteractiveShellEmbed(
             user_ns={
                 'freq': freq,
@@ -272,8 +268,25 @@ You may interact with plot using "plt." methods, e.g.:
         ipshell.run_code("plt.title('{}')".format(plot_style['title']))
         ipshell()
 
+    ##########
+    # output
+
+    # save noise traces to HDF5 file
+    if out_data_files:
+        from .io import save_hdf5
+        attrs = dict(plot_style)
+        attrs['IFO'] = ifo.to_yaml()
+        for path in out_data_files:
+            logging.info("saving budget traces {}...".format(path))
+            save_hdf5(
+                path=path,
+                freq=freq,
+                traces=traces,
+                **attrs,
+            )
+
     # standard plotting
-    elif args.plot:
+    if args.plot or out_plot_files:
         logging.info("plotting noises...")
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
@@ -284,10 +297,9 @@ You may interact with plot using "plt." methods, e.g.:
             **plot_style
         )
         fig.tight_layout()
-        if args.save:
-            fig.savefig(
-                args.save,
-            )
+        if out_plot_files:
+            for path in out_plot_files:
+                fig.savefig(path)
         else:
             plt.show()
 
