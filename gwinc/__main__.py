@@ -3,7 +3,6 @@ import os
 import signal
 import argparse
 import numpy as np
-from IPython.terminal.embed import InteractiveShellEmbed
 
 import logging
 logging.basicConfig(
@@ -247,14 +246,8 @@ def main():
 
     # interactive shell plotting
     if args.interactive:
+        from IPython.terminal.embed import InteractiveShellEmbed
         ipshell = InteractiveShellEmbed(
-            user_ns={
-                'freq': freq,
-                'traces': traces,
-                'ifo': ifo,
-                'plot_style': plot_style,
-                'plot_noise': plot_noise,
-            },
             banner1='''
 GWINC interactive plotter
 
@@ -262,10 +255,18 @@ You may interact with plot using "plt." methods, e.g.:
 
 >>> plt.title("foo")
 >>> plt.savefig("foo.pdf")
-''')
+''',
+            user_ns={
+                'freq': freq,
+                'traces': traces,
+                'ifo': ifo,
+                'plot_style': plot_style,
+                'plot_noise': plot_noise,
+            },
+        )
         ipshell.enable_pylab()
-        ipshell.run_code("plot_noise(freq, traces, **plot_style)")
-        ipshell.run_code("plt.title('{}')".format(plot_style['title']))
+        ipshell.ex("fig = plot_noise(freq, traces, **plot_style)")
+        ipshell.ex("plt.title('{}')".format(plot_style['title']))
         ipshell()
 
     ##########
