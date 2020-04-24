@@ -42,28 +42,10 @@ def git_ref_resolve_hash(git_ref):
         return subprocess.run(
             ['git', 'show', '-s', '--format=format:%H', git_ref],
             capture_output=True, universal_newlines=True,
+            check=True,
         ).stdout
-    except subprocess.CalledProcessError:
-        return None
-
-
-def write_ref_hash(ref_hash):
-    """Write ref hash to reference file
-
-    """
-    with open(test_path('ref_hash'), 'w') as f:
-        f.write('{}\n'.format(ref_hash))
-
-
-def load_ref_hash():
-    """Load the current reference git hash.
-
-    """
-    try:
-        with open(test_path('ref_hash')) as f:
-            return f.read().strip()
-    except IOError:
-        return None
+    except subprocess.CalledProcessError as e:
+        logging.error(e.stderr.split('\n')[0])
 
 
 def prune_cache_dir():
@@ -79,7 +61,7 @@ def prune_cache_dir():
     )[CACHE_LIMIT:]
     if not expired_paths:
         return
-    logging.info("pruning {} old caches...".format(len(expired_paths)))
+    logging.info("pruning {} old cache...".format(len(expired_paths)))
     for path in expired_paths:
         logging.debug("pruning {}...".format(path))
         shutil.rmtree(path)
@@ -248,12 +230,9 @@ def main():
         '--skip', '-k', metavar='NOISE', action='append',
         help='traces to skip in comparison (multiple may be specified)')
     parser.add_argument(
-        '--git-ref', '-g', metavar='HASH',
+        '--git-ref', '-g', metavar='HASH', default='HEAD',
         help='specify git ref to compare against')
     rgroup = parser.add_mutually_exclusive_group()
-    rgroup.add_argument(
-        '--update-ref', '-u', metavar='HASH', nargs='?', const='HEAD',
-        help="update the stored reference git hash to HASH (or 'HEAD' if not specified) and exit")
     rgroup.add_argument(
         '--plot', '-p', action='store_true',
         help='plot differences')
@@ -265,46 +244,11 @@ def main():
         help='specific ifos to test (default all)')
     args = parser.parse_args()
 
-    # get the current hash of HEAD
-    head_hash = git_ref_resolve_hash('HEAD')
-    if not head_hash:
-        logging.warning("could not determine git HEAD hash.")
-
-    # update the reference if specified
-    if args.update_ref:
-        if args.update_ref == 'HEAD':
-            if not head_hash:
-                sys.exit("Could not update reference to head.")
-            logging.info("updating reference to HEAD...")
-            ref_hash = head_hash
-        else:
-            ref_hash = git_ref_resolve_hash(args.update_ref)
-        logging.info("updating reference git hash: {}".format(ref_hash))
-        write_ref_hash(ref_hash)
-        sys.exit()
-
     # get the reference hash
-    if args.git_ref:
-        ref_hash = git_ref_resolve_hash(args.git_ref)
-    else:
-        ref_hash = load_ref_hash()
-        if not ref_hash:
-            pass
-        try:
-            with open(test_path('ref_hash')) as f:
-                ref_hash = f.read().strip()
-        except IOError:
-            logging.warning("could not open reference")
-            sys.exit("Unspecified reference git hash, could not run test.")
-
-    logging.info("head hash: {}".format(head_hash))
-    logging.info("ref  hash: {}".format(ref_hash))
-
-    # don't bother test if hashes match
-    if ref_hash == head_hash:
-        logging.info("HEAD matches reference, not bothering to calculate.")
-        logging.info("Use --git-ref to compare against an arbitrary git commit.")
-        sys.exit()
+    ref_hash = git_ref_resolve_hash(args.git_ref)
+    if not ref_hash:
+        sys.exit("Could not resolve reference, could not run test.")
+    logging.info("ref hash: {}".format(ref_hash))
 
     # load the cache
     cache_path = test_path('cache', ref_hash)
