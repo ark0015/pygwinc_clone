@@ -77,7 +77,9 @@ noise_change_approval:
       approvals = mr.approvals.get()
       print(approvals.approved)
       EOF
-    - export | grep '^CI_'
+    - echo CI_MERGE_REQUEST_PROJECT_ID=$CI_MERGE_REQUEST_PROJECT_ID
+    - echo CI_MERGE_REQUEST_IID=$CI_MERGE_REQUEST_IID
+    - echo CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     - approved=$(python3 check_approved.py $CI_MERGE_REQUEST_PROJECT_ID $CI_MERGE_REQUEST_IID )
     - if [[ $approved != True ]] ; then
     -     echo "Approval not yet given, checking for noise changes..."
