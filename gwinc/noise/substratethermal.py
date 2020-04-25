@@ -61,8 +61,6 @@ def substrate_carrierdensity(f, materials, wBeam, exact=False):
 def substrate_thermorefractive(f, materials, wBeam, exact=False):
     """Substrate thermal displacement noise spectrum from thermorefractive fluctuations
 
-    For semiconductor substrates.
-
     :f: frequency array in Hz
     :materials: gwinc optic materials structure
     :wBeam: beam radius (at 1 / e^2 power)

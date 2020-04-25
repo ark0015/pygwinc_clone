@@ -143,11 +143,13 @@ def wireGeometry(r, N, RibbonThickness=None, TaperedEndRadius=None, **kwargs):
     """Compute wire geometry-dependent factors
 
     r is the wire radius, or ribbon width.
+    N is the number of wires or ribbons
     RibbonThickness must be set when ribbons are used, or
     TaperedEndRadius when tapered fibers are used.
+    Other kwargs are ignored.
 
-    Returns the cross-sectional area and moment of inertia,
-    and the modified surface to volume ratios (vertical and horizontal).
+    Returns cross-sectional areas (central and end) and moment of inertia,
+    and modified surface to volume ratios (vertical and horizontal).
 
     """
     # Usual case: round wire/fiber
@@ -203,12 +205,22 @@ def wireTELoss(w, tension, xsectEnd, xII, Temp, alpha, beta, rho, C, K, Y,
     """Thermoelastic calculations for wires
 
     Repeated for upper and lower joint of each stage.
+    w = angular frequency
+    tension = weight supported per wire
+    xsectEnd = cross sectional area of wire end
+    xII = cross sectional moment of inertia
+    Temp = temperature
     alpha = coeff of thermal expansion
     beta = temp dependence of Young's modulus
     rho = mass density
     C = heat capacity
     K = thermal conductivity W/(m K)
     Y = Young's modulus
+    RibbonThickness must be set when ribbons are used
+    Other kwargs are ignored
+
+    Returns the loss angle associated with thermoelastic damping
+    (wire horizontal)
 
     """
     # horizontal TE time constant, wires
@@ -237,12 +249,18 @@ def bladeTELoss(w, t, Temp, alpha, beta, rho, C, K, Y):
     """Thermoelastic calculations for blades
 
     Invoked for upper joint only (there is no lower blade)
+    w = angular frequency
+    t = blade thickness
+    Temp = temperature
     alpha = coeff of thermal expansion
     beta = temp dependence of Young's modulus
     rho = mass density
     C = heat capacity
     K = thermal conductivity W/(m K)
     Y = Young's modulus
+
+    Returns the loss angle associated with thermoelastic damping
+    (blade vertical)
 
     """
     # vertical TE time constant, blades
@@ -274,6 +292,17 @@ def bladeTELoss(w, t, Temp, alpha, beta, rho, C, K, Y):
 def continuumWireKh(w, N, length, tension, xsect, xII, rho, Y, phi):
     """Horizontal spring constant, including violin modes
 
+    w = angular frequency
+    N = number of wires
+    length = wire length
+    tension = weight supported per wire
+    xsect = wire cross sectional area
+    xII = cross sectional moment of inertia
+    rho = mass density
+    Y = Young's modulus
+    phi = loss angle
+
+    Returns the spring constant (wire horizontal)
     """
     Y = Y * (1 + 1j * phi)  # complex Young's modulus
 
@@ -309,6 +338,18 @@ def continuumWireKv(w, N, length, xsect, xsectEnd, rho, Y, phi,
                     TaperedEndLength=None, **kwargs):
     """Vertical spring constant, including bounce mode.
 
+    w = angular frequency
+    N = number of wires
+    length = wire length
+    xsect = wire cross sectional area
+    xsectEnd = cross sectional area of wire end
+    rho = mass density
+    Y = Young's modulus
+    phi = loss angle
+    TaperedEndLength must be set when tapered fibers are used
+    Other kwargs are ignored
+
+    Returns the spring constant (wire vertical)
     """
     Y = Y * (1 + 1j * phi)  # complex Young's modulus
     k = sqrt(rho / Y) * w
