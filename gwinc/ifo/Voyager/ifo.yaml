@@ -76,72 +76,103 @@ Seismic:
   Omicron: 10                      # Feedforward cancellation factor
   TestMassHeight: 1.5              # m
   RayleighWaveSpeed: 250           # m/s
+  PlatformMotion: '6D'
   #darmSeiSusFile: 'CryogenicLIGO/Sensitivity/GWINC/seismic.mat'
 
 Suspension:
-  Type: 'BQuad'
+  Type: 'Quad'
   VHCoupling:
-    theta: 1e-3 # vertical-horizontal x-coupling
+    theta: 1e-3  # vertical-horizontal x-coupling
   FiberType: 'Ribbon'
   # For Ribbon suspension
+  # 1:10 aspect ratio & stress limited to 1GPa
+  # -- Feb 25, 2018 (KA)
   Ribbon:
-    Thickness: 220e-6 # m
-    Width: 2200e-6    # m
-  Fiber:
-    Radius: 205e-6    # m
-  BreakStress: 750e6 # Pa; ref. K. Strain
+    Thickness: 500e-6  # m
+    Width: 10000e-6    # m
   # Note stage numbering: mirror is at beginning of stack, not end
-  # these mass numbers are from v8 of the Voyager design doc
+  #
+  # mass/length from Koji's seis&sus_thermal optimization
+  # load('Suspension_subcodes/sus_param.mat')
+  #
+  # Vert spring constants scaled from the aLIGO values
+  # according to the suspended mass by each stage
+  # The spring constant of the final stage
+  # Silicon Blade for max 1GPa stress has 43mm sag under 50kg load.
+  # This corresponds to 1.14e4 N/m. There are 4 blades.
+  # Silicon Blade for max 300MPa stress has 9.6mm sag under 50kg load.
+  # This corresponds to 1.14e4 N/m. There are 4 blades.
+  # Silicon Blade (40cmx8cm) for max 100MPa stress has 7.5mm sag under 50kg load.
+  # This corresponds to 6.5e4 N/m. There are 4 blades.
+  #
+  # Wire radii scaled from the aLIGO values
+  # according to the suspended mass by each stage
+  # For steel stages, we limit the stress up to 700MPa which was the number
+  # from the aLIGO case.
+  #
+  # Blade thicknesses scaled from the aLIGO values
+  # Used only for TE calculation
+  # Not reflected to the vertical spring constants
+  # Need to be recalculated -- Feb 25, 2018 (KA)
+  # Spring constant is proportional to (the blade thickness)^3.
   Stage:
-    # Load saved file with optimized mass. Masses are optimized for longitudinal isolation assuming the PUM has springs
-    #susmat = loadmat('CryogenicLIGO/QuadModel/quad_optimized_masses_for_PUM_with_springs.mat')
-    - Mass: 200.0 # kg; susmat['testmass_mass'][0,0]
-      Length: 0.4105 # m
+    - Mass: 200.0  # kg; sus_param(5)
+      Length: 0.7824  # m; sus_param(1)
       Temp: 123.0
       Dilution: .nan
-      K: .nan
+      K: 2.6e5  # N/m; 6.5e4*4
       WireRadius: .nan
-      Blade: .nan # blade thickness
+      Blade: 12e-3  # blade thickness
       NWires: 4
-    - Mass: 65.9 # kg; susmat['PUMmass'][0,0]
-      Length: 0.4105 # m
+      WireMaterial: 'Silicon_123K'
+      BladeMaterial: 'Silicon_123K'
+    - Mass: 200.0  # kg; sus_param(6)
+      Length: 0.5592  # m; sus_param(2)
       Temp: 123.0
-      Dilution: 106.0
-      K: 17300.0 # N/m; vertical spring constant
-      WireRadius: 565e-6
-      Blade: 4200e-6
+      Dilution: .nan
+      K: 2.63e4  # N/m; vertical spring constant
+      WireRadius: 0.668e-3
+      Blade: 7.21e-3
       NWires: 4
-    - Mass: 87.6 # kg; susmat['UIMmass'][0,0]
-      Length: 0.4105 # m
-      Temp: 300.0
-      Dilution: 80.0
-      K: 13500.0 # N/m; vertical spring constant
-      WireRadius: 652e-6
-      Blade: 4600e-6
+      WireMaterialUpper: 'C70Steel'
+      WireMaterialLower: 'C70Steel_123K'
+      BladeMaterial: 'MaragingSteel'
+    - Mass: 70.0  # kg; sus_param(7)
+      Length: 0.1500  # m; sus_param(3)
+      Temp: 295.0
+      Dilution: .nan
+      K: 1.82e4  # N/m; vertical spring constant
+      WireRadius: 0.724e-3
+      Blade: 7.7e-3
       NWires: 4
-    - Mass: 116.5 # kg; susmat['topmass_mass'][0,0]
-      Length: 0.4105 # m
-      Temp: 300.0
-      Dilution: 87.0
-      K: 12900.0 # N/m; vertical spring constant
-      WireRadius: 1012e-6
-      Blade: 4300e-6
+      WireMaterial: 'C70Steel'
+      BladeMaterial: 'MaragingSteel'
+    - Mass: 50.0  # kg; sus_param(8)
+      Length: 0.1500  # m; sus_param(4)
+      Temp: 295.0
+      Dilution: .nan
+      K: 1.14e5  # N/m; vertical spring constant
+      WireRadius: 1.08e-3
+      Blade: 13.9e-3
       NWires: 2
-  Silicon:
+      WireMaterial: 'C70Steel'
+      BladeMaterial: 'MaragingSteel'
+  Silicon_123K:
     # http://www.ioffe.ru/SVA/NSM/Semicond/Si/index.html
     # all properties should be for T ~ 120 K
     Rho: 2329.0       # Kg/m^3   density
     C: 300.0          # J/kg/K   heat capacity
     K: 700.0          # W/m/K    thermal conductivity
     Alpha: 1e-10      # 1/K      thermal expansion coeff
-
     # from Gysin, et. al. PRB (2004)  E(T) = E0 - B*T*exp(-T0/T)
     # E0 = 167.5e9 Pa   T0 = 317 K   B = 15.8e6 Pa/K
     dlnEdT: -2e-5     # (1/K)    dlnE/dT  T = 120K
-
     Phi: 2e-9         # Nawrodt (2010)      loss angle  1/Q
     Y: 155.8e9        # Pa       Youngs Modulus
-    Dissdepth: 1.5e-3 # 10x smaller surface loss depth (Nawrodt (2010))
+    # Investigation of mechanical losses of thin silicon flexures at low temperatures
+    # R Nawrodt et al 2013 Class. Quantum Grav. 30 115008
+    # ds*phi = 0.5e-12 -> ds=0.5e-12/2e-9
+    Dissdepth: 2.5e-4
   Silica:
     Rho: 2200.0       # Kg/m^3
     C: 772.0          # J/Kg/K
@@ -158,7 +189,15 @@ Suspension:
     Alpha: 12e-6
     dlnEdT: -2.5e-4
     Phi: 2e-4
-    Y: 212e9 # measured by MB for one set of wires
+    Y: 212e9  # measured by MB for one set of wires
+  C70Steel_123K:
+    Rho: 7800.0  # same as at 300K
+    C: 250.0  # guess
+    K: 15.0  # https://nptel.ac.in/courses/112101004/downloads/(6-3-2)%20NPTEL%20-%20Properties%20of%20Materials%20at%20Cryogenic%20Temperature.pdf
+    Alpha: 8e-6  # https://nptel.ac.in/courses/112101004/downloads/(6-3-2)%20NPTEL%20-%20Properties%20of%20Materials%20at%20Cryogenic%20Temperature.pdf
+    dlnEdT: -2.5e-4
+    Phi: 2e-4
+    Y: 212e9
   MaragingSteel:
     Rho: 7800.0
     C: 460.0
@@ -174,13 +213,13 @@ Materials:
   Coating:
     # high index material: a-Si
     # https://wiki.ligo.org/OPT/AmorphousSilicon
-    Yhighn: 80e9
+    Yhighn: 60e9      # http://dx.doi.org/10.1063/1.344462
     Sigmahighn: 0.22
-    CVhighn: 7.776e5  # volume-specific heat capacity (J/K/m^3); 345.6*2250 http://journals.aps.org/prl/pdf/10.1103/PhysRevLett.96.055902
+    CVhighn: 1.05e6   # volume-specific heat capacity (J/K/m^3); 465*2250 http://journals.aps.org/prl/pdf/10.1103/PhysRevLett.96.055902
     Alphahighn: 1e-9  # zero crossing at 123 K
     Betahighn: 1.4e-4 # dn/dT
-    ThermalDiffusivityhighn: 1 # W/m/K (this is a misnomer, meant to be thermal conductivity not diffusivity)
-    Phihighn: 3e-5    # just a guess (depends on prep)
+    ThermalDiffusivityhighn: 1.03 # thermal conductivity W/m/K; http://dx.doi.org/10.1103/PhysRevLett.96.055902
+    Phihighn: 1e-5    # just a guess (depends on prep)
     Indexhighn: 3.5
 
     # low index material: silica
@@ -190,7 +229,7 @@ Materials:
     CVlown: 1.6412e6  # volume-specific heat capacity (J/K/m^3); Crooks et al, Fejer et al
     Alphalown: 5.1e-7 # Fejer et al
     Betalown: 8e-6    # dn/dT,  (ref. 14)
-    ThermalDiffusivitylown: 1.38 # Fejer et al (this is a misnomer, meant to be thermal conductivity not diffusivity)
+    ThermalDiffusivitylown: 1.05 # thermal conductivity W/m/K; http://dx.doi.org/10.1109/ITHERM.2002.1012450
     Philown: 1e-4     # ?
 
     # calculated for 123 K and 2000 nm following 
@@ -228,7 +267,7 @@ Materials:
 
 Laser:
   Wavelength: 2000e-9 # m
-  Power: 144.6848     # W zz['x'][0][0]
+  Power: 151.5919     # W zz['x'][0][0]
 
 Optics:
   Type: 'SignalRecycled'
@@ -245,24 +284,24 @@ Optics:
     SubstrateAbsorption: 1e-3   # 1/m; 10 ppm/cm for MCZ Si
     BeamRadius: 0.0585          # m; 1/e^2 power radius w1
     CoatingAbsorption: 1e-6     # absorption of ITM
-    Transmittance: 1.2436875e-3 # zz['x'][0][3]
+    Transmittance: 2e-3         # zz['x'][0][3]
     #CoatingThicknessLown: 0.308
     #CoatingThicknessCap: 0.5
     #itm = loadmat('CryogenicLIGO/Sensitivity/coating/aSi/Data/ITM_layers_151221_2237.mat')
     CoatLayerOpticalThickness: #itm['TNout']['L'][0][0].T
-      - 0.01054715
-      - 0.28787195
-      - 0.10285996
-      - 0.40016914
-      - 0.09876197
-      - 0.39463506
-      - 0.1054613
-      - 0.37612136
-      - 0.12181482
-      - 0.35883931
-      - 0.13570767
-      - 0.3867382
-      - 0.08814237
+      - 0.010547147008907
+      - 0.287871950886634
+      - 0.102859957426864
+      - 0.400169140711108
+      - 0.098761965585538
+      - 0.394635060435437
+      - 0.105461298430110
+      - 0.376121362983190
+      - 0.121814822178758
+      - 0.358839306265721
+      - 0.135707673300901
+      - 0.386738199718736
+      - 0.088142365969070
   ETM:
     BeamRadius: 0.0835                 # m; 1/e^2 power radius w2
     Transmittance: 5e-6                # Transmittance of ETM
@@ -270,28 +309,28 @@ Optics:
     #CoatingThicknessCap: 0.5
     #etm = loadmat('CryogenicLIGO/Sensitivity/coating/aSi/Data/ETM_layers_151221_2150.mat')
     CoatLayerOpticalThickness: #etm['TNout']['L'][0][0].T
-      - 0.01000241
-      - 0.27121433
-      - 0.16417485
-      - 0.33598991
-      - 0.16123195
-      - 0.33587683
-      - 0.16150012
-      - 0.33620725
-      - 0.16381275
-      - 0.33382231
-      - 0.16041712
-      - 0.33544017
-      - 0.1664314
-      - 0.33324722
-      - 0.16319734
-      - 0.33497111
-      - 0.15838689
+      - 0.010002413172599
+      - 0.271214331066003
+      - 0.164174846618198
+      - 0.335989914883352
+      - 0.161231951101195
+      - 0.335876828755542
+      - 0.161500120481736
+      - 0.336207246174627
+      - 0.163812752345812
+      - 0.333822310779772
+      - 0.160417119090227
+      - 0.335440166104688
+      - 0.166431402148518
+      - 0.333247215316394
+      - 0.163197340499259
+      - 0.334971108967147
+      - 0.158386886176904
   PRM:
-    Transmittance: 0.03
+    Transmittance: 0.049
   SRM:
     CavityLength: 55           # m; ITM to SRM distance
-    Transmittance: 55.6235e-3  # zz['x'][0][4]
+    Transmittance: 45.8e-3     # zz['x'][0][4]
     #ifo.Optics.SRM.Tunephase = 0.23;           % SRM tuning, 795 Hz narrowband
     Tunephase: 0.0             # SRM tuning [radians]
   PhotoDetectorEfficiency: 0.95 # photo-detector quantum efficiency
@@ -305,7 +344,7 @@ Optics:
   SubstrateAbsorption: 0.3e-4  # 1/m; 0.3 ppm/cm for Hereaus
   pcrit: 10                    # W; tolerable heating power (factor 1 ATC)
   Quadrature:
-    dc: 1.556827               # homoDyne phase [radians] zz['x'][0][5]
+    dc: 1.5832                 # homoDyne phase [radians] zz['x'][0][5]
 
 Squeezer:
   # Define the squeezing you want:
@@ -321,9 +360,9 @@ Squeezer:
 
   # Parameters for frequency dependent squeezing
   FilterCavity:
-    fdetune: -36.44897 # detuning [Hz] zz['x'][0][1]
+    fdetune: -25      # detuning [Hz] zz['x'][0][1]
     L: 300            # cavity length [m]
-    Ti: 0.00090274    # input mirror transmission [Power] zz['x'][0][2]
+    Ti: 6.15e-4       # input mirror transmission [Power] zz['x'][0][2]
     Te: 0e-6          # end mirror transmission
     Lrt: 10e-6        # round-trip loss in the cavity
     Rot: 0            # phase rotation after cavity
@@ -342,3 +381,4 @@ Squeezer:
       Te: 0          # end mirror transmission
       Lrt: 100e-6    # round-trip loss in the cavity
       Rot: 0         # phase rotation after cavity
+
