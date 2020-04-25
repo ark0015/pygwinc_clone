@@ -80,8 +80,8 @@ noise_change_approval:
     - echo $CI_MERGE_REQUEST_PROJECT_ID, $CI_MERGE_REQUEST_IID, $CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
     - approved=$(python3 check_approved.py $CI_MERGE_REQUEST_PROJECT_ID $CI_MERGE_REQUEST_IID )
     - if [[ $approved != True ]] ; then
-    -     old_hash=$(git cat-file -p origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME:gwinc/test/ref_hash)
-    -     if ! python3 -m gwinc.test --git-ref $old_hash -r gwinc_test_report.pdf ; then
+    -     target=origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    -     if ! python3 -m gwinc.test --git-rev $target -r gwinc_test_report.pdf ; then
     -         echo "NOISE CHANGES RELATIVE TO $CI_MERGE_REQUEST_TARGET_BRANCH_NAME."
     -         echo "Approval required to merge this branch."
     -         /bin/false
