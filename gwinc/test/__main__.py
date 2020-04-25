@@ -19,6 +19,7 @@ from ..io import load_hdf5
 try:
     import inspiral_range
 except ImportError:
+    logging.warning("inspiral_range package not found, range will not be calculated")
     inspiral_range = None
 
 

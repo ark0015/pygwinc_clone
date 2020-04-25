@@ -62,6 +62,7 @@ noise_change_approval:
     - if: $CI_MERGE_REQUEST_ID
   image: $CI_REGISTRY_IMAGE/gwinc/base:$CI_COMMIT_REF_NAME
   script:
+    - export PYTHONPATH=/inspiral_range
     - |
       cat <<EOF > check_approved.py
       import sys
@@ -76,16 +77,17 @@ noise_change_approval:
       approvals = mr.approvals.get()
       print(approvals.approved)
       EOF
-    - echo $CI_MERGE_REQUEST_PROJECT_ID, $CI_MERGE_REQUEST_IID, $CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
+    - export | grep '^CI_'
     - approved=$(python3 check_approved.py $CI_MERGE_REQUEST_PROJECT_ID $CI_MERGE_REQUEST_IID )
     - if [[ $approved != True ]] ; then
+    -     echo "Approval not yet given, checking for noise changes..."
     -     target=origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     -     if ! python3 -m gwinc.test --git-rev $target -r gwinc_test_report.pdf ; then
     -         echo "NOISE CHANGES RELATIVE TO $CI_MERGE_REQUEST_TARGET_BRANCH_NAME."
     -         echo "Approval required to merge this branch."
     -         /bin/false
     -     else
-    -         echo "No noise changes detected."
+    -         echo "No noise changes detected, merge may proceed."
     -     fi
     - else
     -     echo "Merge request approved, noise change accepted."
@@ -94,7 +96,7 @@ noise_change_approval:
     when: on_failure
     paths:
       - gwinc_test_report.pdf
-    expose_as: 'noise changes relative to target branch'
+    expose_as: 'PDF report of noise changes relative to target branch'
 
 # generate the html doc web pages.  the "pages" job has special
 # meaning, as it's "public" artifact becomes the directory served
