@@ -16,16 +16,15 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 from .. import IFOS, load_budget
 from ..io import load_hdf5
 
+logging.basicConfig(
+    format='%(message)s',
+    level=os.getenv('LOG_LEVEL', logging.INFO))
+
 try:
     import inspiral_range
 except ImportError:
     logging.warning("inspiral_range package not found, range will not be calculated")
     inspiral_range = None
-
-
-logging.basicConfig(
-    format='%(message)s',
-    level=os.getenv('LOG_LEVEL', logging.INFO))
 
 
 TOLERANCE = 1e-6
@@ -293,7 +292,7 @@ gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
         if not remote:
             sys.exit("Could not resolve upstream remote name")
         git_rev = '{}/master'.format(remote)
-        logging.info("presumed upstream git reference: {}".format(git_rev))
+    logging.info("git  rev: {}".format(git_rev))
     git_hash = git_rev_resolve_hash(git_rev)
     if not git_hash:
         sys.exit("Could not resolve reference, could not run test.")
