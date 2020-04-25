@@ -272,6 +272,9 @@ gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
     rgroup.add_argument(
         '--git-rev', '-g', metavar='REV',
         help="specify specific git revision to compare against")
+    rgroup.add_argument(
+        '--head', '-gh', action='store_const', dest='git_rev', const='HEAD',
+        help="shortcut for '--git-rev HEAD'")
     ogroup = parser.add_mutually_exclusive_group()
     ogroup.add_argument(
         '--plot', '-p', action='store_true',
