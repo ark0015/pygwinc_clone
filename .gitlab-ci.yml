@@ -64,28 +64,28 @@ noise_change_approval:
   script:
     - export PYTHONPATH=/inspiral_range
     - |
-      cat <<EOF > check_approved.py
-      import sys
+      cat <<EOF > merge_info_env.py
       import gitlab
-      project_id = sys.argv[1]
-      mr_iid = sys.argv[2]
+      project_id = $CI_MERGE_REQUEST_PROJECT_ID
+      mr_iid = $CI_MERGE_REQUEST_IID
       # this only works for public repos, otherwise need to specify
       # private_token=
       gl = gitlab.Gitlab('https://git.ligo.org')
       project = gl.projects.get(project_id)
       mr = project.mergerequests.get(mr_iid)
       approvals = mr.approvals.get()
-      print(approvals.approved)
+      print('TARGET_URL={}'.format(project.http_url_to_repo))
+      print('MR_APPROVED={}'.format(approvals.approved))
       EOF
-    - echo CI_MERGE_REQUEST_PROJECT_ID=$CI_MERGE_REQUEST_PROJECT_ID
-    - echo CI_MERGE_REQUEST_IID=$CI_MERGE_REQUEST_IID
-    - echo CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-    - approved=$(python3 check_approved.py $CI_MERGE_REQUEST_PROJECT_ID $CI_MERGE_REQUEST_IID )
-    - if [[ $approved != True ]] ; then
+    - python3 merge_info_env.py > ENV
+    - . ENV
+    - if [[ $MR_APPROVED != True ]] ; then
     -     echo "Approval not yet given, checking for noise changes..."
-    -     target=origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-    -     if ! python3 -m gwinc.test --git-rev $target -r gwinc_test_report.pdf ; then
-    -         echo "NOISE CHANGES RELATIVE TO $CI_MERGE_REQUEST_TARGET_BRANCH_NAME."
+    -     git remote add upstream $TARGET_URL
+    -     git remote update
+    -     TARGET_REV=upstream/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    -     if ! python3 -m gwinc.test --git-rev $TARGET_REV -r gwinc_test_report.pdf ; then
+    -         echo "NOISE CHANGES RELATIVE TO $TARGET_REV"
     -         echo "Approval required to merge this branch."
     -         /bin/false
     -     else
