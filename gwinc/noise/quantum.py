@@ -9,6 +9,12 @@ import logging
 from .. import const
 from ..struct import Struct
 
+def sqzOptimalSqueezeAngle(Mifo, eta):
+    vHD = np.array([[sin(eta), cos(eta)]])
+    H = getProdTF(vHD, Mifo)[0]
+    alpha = arctan(abs(H[1]), abs(H[0]))
+    return alpha
+
 
 def shotrad(f, ifo):
     """Quantum noise noise strain spectrum
