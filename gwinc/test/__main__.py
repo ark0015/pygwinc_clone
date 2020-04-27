@@ -318,8 +318,8 @@ gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
     else:
         ifos = IFOS
 
-    style_cache = dict(label='reference', linestyle='-')
-    style_head = dict(label='head', linestyle='--')
+    style_ref = dict(label='reference', linestyle='-')
+    style_cur = dict(label='current', linestyle='--')
 
     fail = False
 
@@ -334,37 +334,37 @@ gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
             fail |= True
             continue
 
-        freq, traces_cache, attrs = load_hdf5(path)
+        freq, traces_ref, attrs = load_hdf5(path)
 
         Budget = load_budget(name)
-        traces_head = Budget(freq).run()
+        traces_cur = Budget(freq).run()
 
         if inspiral_range:
-            total_cache = traces_cache['Total'][0]
-            total_head = traces_head['Total'][0]
+            total_ref = traces_ref['Total'][0]
+            total_cur = traces_cur['Total'][0]
             range_func = inspiral_range.range
             H = inspiral_range.waveform.CBCWaveform(freq)
-            fom_cache = range_func(freq, total_cache, H=H)
-            traces_cache['int73'] = inspiral_range.int73(freq, total_cache)[1], None
-            fom_head = range_func(freq, total_head, H=H)
-            traces_head['int73'] = inspiral_range.int73(freq, total_head)[1], None
+            fom_ref = range_func(freq, total_ref, H=H)
+            traces_ref['int73'] = inspiral_range.int73(freq, total_ref)[1], None
+            fom_cur = range_func(freq, total_cur, H=H)
+            traces_cur['int73'] = inspiral_range.int73(freq, total_cur)[1], None
             fom_summary = """
 inspiral {func} {m1}/{m2} Msol:
-{label_cache}: {fom_cache:.2f} Mpc
-{label_head}: {fom_head:.2f} Mpc
+{label_ref}: {fom_ref:.2f} Mpc
+{label_cur}: {fom_cur:.2f} Mpc
 """.format(
                 func=range_func.__name__,
                 m1=H.params['m1'],
                 m2=H.params['m2'],
-                label_cache=style_cache['label'],
-                fom_cache=fom_cache,
-                label_head=style_head['label'],
-                fom_head=fom_head,
+                label_ref=style_ref['label'],
+                fom_ref=fom_ref,
+                label_cur=style_cur['label'],
+                fom_cur=fom_cur,
             )
         else:
             fom_summary = ''
 
-        diffs = compare_traces(traces_cache, traces_head, args.tolerance, args.skip)
+        diffs = compare_traces(traces_ref, traces_cur, args.tolerance, args.skip)
 
         if not diffs:
             logging.info("{} tests pass.".format(name))
@@ -373,11 +373,11 @@ inspiral {func} {m1}/{m2} Msol:
         logging.warning("{} tests FAIL".format(name))
         fail |= True
         if args.plot or args.report:
-            plot_diffs(freq, diffs, style_cache, style_head)
+            plot_diffs(freq, diffs, style_ref, style_cur)
             plt.suptitle('''{} {}/{} noise comparison
 (noises that differ by more than {} ppm)
 reference git hash: {}
-{}'''.format(name, style_cache['label'], style_head['label'],
+{}'''.format(name, style_ref['label'], style_cur['label'],
              args.tolerance*1e6, cache['git_hash'], fom_summary))
             if args.report:
                 pwidth = 10
