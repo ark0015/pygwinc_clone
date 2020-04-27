@@ -1,6 +1,5 @@
 import os
 import sys
-import glob
 import shutil
 import signal
 import logging
@@ -395,7 +394,10 @@ reference git hash: {}
     if args.report:
         logging.info("generating report {}...".format(args.report))
         pdf_writer = PdfFileWriter()
-        for path in glob.glob(os.path.join(outdir.name, '*.pdf')):
+        for name in ifos:
+            path = os.path.join(outdir.name, '{}.pdf'.format(name))
+            if not os.path.exists(path):
+                continue
             pdf_reader = PdfFileReader(path)
             for page in range(pdf_reader.getNumPages()):
                 pdf_writer.addPage(pdf_reader.getPage(page))
