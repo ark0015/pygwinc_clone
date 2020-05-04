@@ -270,7 +270,7 @@ class Budget(Noise):
         cal = None
         if isinstance(nc, (list, tuple)):
             noise = nc[0]
-            cals = nc[1]
+            cals = nc[1:]
         else:
             noise = nc
             cals = []
