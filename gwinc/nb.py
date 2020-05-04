@@ -252,7 +252,8 @@ class Budget(Noise):
         # initialize all noise objects
         for nc in self.noises:
             name = self.__init_noise(nc, noises)
-            self._budget_noises.add(name)
+            if name:
+                self._budget_noises.add(name)
         # initialize common calibrations and add to all budget noises
         for cal in self.calibrations:
             self.__add_calibration(cal, self._budget_noises)
@@ -274,21 +275,17 @@ class Budget(Noise):
         else:
             noise = nc
             cals = []
-        if noise_filt and noise not in noise_filt:
-            return
-        name = self.__add_noise(noise)
-        for cal in cals:
-            self.__add_calibration(cal, [noise])
-        return name
-
-    def __add_noise(self, noise):
         noise_obj = noise(
             *self.args,
             **self.kwargs
         )
         name = noise_obj.name
+        if noise_filt and name not in noise_filt:
+            return
         logging.debug("init {}".format(noise_obj))
         self._noise_objs[name] = noise_obj
+        for cal in cals:
+            self.__add_calibration(cal, [name])
         return name
 
     def __add_calibration(self, cal, noises):
