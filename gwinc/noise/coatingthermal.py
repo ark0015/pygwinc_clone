@@ -91,7 +91,7 @@ def coating_brownian(f, materials, wavelength, wBeam, dOpt):
 
     # layer contributions, b_j (eq 1) from doi:10.1103/PhysRevD.91.042002, errors corrected
     brLayer = ( 1/(1-pratN) *
-                ( (1-nN*dcdp_z/2)**2 * (1-2*pratN)*(1+pratN)*Ysub / ((1-2*pratsub)*(1+pratsub)*yN) +
+                ( (1-nN*dcdp_z)**2 * (1-2*pratN)*(1+pratN)*Ysub / ((1-2*pratsub)*(1+pratsub)*yN) +
                   (1-2*pratsub)*(1+pratsub)*yN / ((1+pratN)*Ysub) ) )
 
     # sum them up for total
