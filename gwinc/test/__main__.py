@@ -90,7 +90,7 @@ def gen_cache(git_hash, path):
     """
     logging.info("creating new cache for hash {}...".format(git_hash))
     subprocess.run(
-        [test_path('gen_cache.sh'), git_hash, path],
+        [test_path('gen_cache.sh'), git_hash, path, sys.executable],
         check=True,
     )
 
