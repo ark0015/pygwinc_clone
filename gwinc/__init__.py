@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import sys
 import logging
 import importlib
 import numpy as np
@@ -22,6 +23,7 @@ def _load_module(name_or_path):
             path = os.path.join(path, '__init__.py')
         spec = importlib.util.spec_from_file_location(modname, path)
         mod = importlib.util.module_from_spec(spec)
+        sys.modules[mod.__name__] = mod
         spec.loader.exec_module(mod)
     else:
         mod = importlib.import_module(name_or_path)
