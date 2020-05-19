@@ -85,7 +85,7 @@ def load_budget(name_or_path):
 
     Budget = getattr(mod, bname)
     ifopath = os.path.join(modpath, 'ifo.yaml')
-    if not ifo and ifopath:
+    if not ifo and os.path.exists(ifopath):
         ifo = Struct.from_file(ifopath)
     Budget.ifo = ifo
 
