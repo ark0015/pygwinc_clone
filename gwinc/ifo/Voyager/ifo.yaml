@@ -252,15 +252,6 @@ Materials:
     RefractiveIndex: 3.5 # 3.38 * (1 + 4e-5 * T)   (ioffe)
     dndT: 1e-4           # ~123K & 1900 nm : http://arxiv.org/abs/physics/0606168
     Temp: 123            # mirror temperature [K]
-    ## parameters for semiconductor optics
-    isSemiConductor: True     # we are doing semiconductor optics
-    CarrierDensity: 1e19      # 1/m^3; carrier density for phosphorous-doped silicon
-    ElectronDiffusion: 9.7e-3 # m^2/s; electron diffusion coefficient for silicon at 120 K
-    HoleDiffusion: 3.5e-3     # m^2/s; hole diffusion coefficient for silicon at 120 K
-    ElectronEffMass: 9.747e-31 # kg; effective mass of each electron 1.07*m_e
-    HoleEffMass: 8.016e-31    # kg; effective mass of each hole 0.88*m_e
-    ElectronIndexGamma: -8.8e-28 # m**3; dependence of index of refraction on electron carrier density
-    HoleIndexGamma: -1.02e-27 # m**3; dependence of index of refraction on hole carrier density
 
   MassRadius: 0.225 # m; 45 cm mCZ silicon
   MassThickness: 0.55
