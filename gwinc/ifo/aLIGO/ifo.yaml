@@ -268,6 +268,6 @@ Optics:
     CavityLength: 55              # m, ITM to SRM distance
     Tunephase: 0.0                # SEC tuning
 
-  Curvature:                      # ROC
-    ITM: 1970
-    ETM: 2192
+  Curvature:                      # RoCs per E080511, E080512
+    ITM: 1934
+    ETM: 2245
