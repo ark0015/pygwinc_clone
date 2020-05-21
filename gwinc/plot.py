@@ -34,7 +34,7 @@ def plot_noise(
             style = {}
         # assuming all data is PSD
         data = sqrt(data)
-        if name == 'Total':
+        if name == 'Total' and not style:
             style = dict(
                 color='#000000',
                 alpha=0.6,
