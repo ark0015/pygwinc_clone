@@ -218,7 +218,7 @@ class Budget(Noise):
     references = []
     """List of reference noise classes, or (ref, cal) tuples"""
 
-    def __init__(self, *args, noises=None, **kwargs):
+    def __init__(self, freq=None, noises=None, **kwargs):
         """Initialize Budget object.
 
         See BudgetItem for base initialization arguments.
@@ -228,15 +228,20 @@ class Budget(Noise):
         be used to filter the noises initialized in this budget.
 
         """
-        super().__init__(*args, **kwargs)
-        # store args and kwargs for later use
-        self.args = args
+        super().__init__(freq, **kwargs)
+        # store kwargs for later use
         self.kwargs = kwargs
-        # FIXME: special casing the IFO here, in case it's defined as
-        # a class attribute rather than passed at initialization.  we
-        # do this because we're not defining a standard way to extract
-        # IFO variables that get passed around in a reasonable way.
-        # how can we clarify this?
+        # record the frequency array as a kwarg if it's definied as a
+        # class attribute
+        if freq is not None:
+            self.kwargs['freq'] = freq
+        else:
+            self.kwargs['freq'] = getattr(self, 'freq', None)
+        # FIXME: special casing the ifo kwarg here, in case it's
+        # defined as a class attribute rather than passed at
+        # initialization.  we do this because we're not defining a
+        # standard way to extract IFO variables that get passed around
+        # in a reasonable way.  how can we clarify this?
         if 'ifo' not in kwargs and getattr(self, 'ifo', None):
             self.kwargs['ifo'] = getattr(self, 'ifo', None)
         # all noise objects keyed by name
@@ -274,7 +279,6 @@ class Budget(Noise):
             noise = nc
             cals = []
         noise_obj = noise(
-            *self.args,
             **self.kwargs
         )
         name = noise_obj.name
@@ -288,7 +292,6 @@ class Budget(Noise):
 
     def __add_calibration(self, cal, noises):
         cal_obj = cal(
-            *self.args,
             **self.kwargs
         )
         name = cal_obj.name
