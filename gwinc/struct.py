@@ -206,11 +206,11 @@ class Struct(object):
         else:
             return y
 
-    # def __repr__(self):
-    #     return self.to_yaml().strip('\n')
-
     def __str__(self):
         return '<GWINC Struct: {}>'.format(list(self.__dict__.keys()))
+
+    def __repr__(self):
+        return self.__str__()
 
     def __iter__(self):
         return iter(self.__dict__)
