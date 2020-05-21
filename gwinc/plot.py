@@ -27,9 +27,11 @@ def plot_noise(
     for name, trace in traces.items():
         if isinstance(trace, Mapping):
             trace = trace['Total']
+
         try:
-            data, style = trace
-        except:
+            data = trace[0]
+            style = dict(**trace[1])
+        except TypeError:
             data = trace
             style = {}
         # assuming all data is PSD
@@ -48,6 +50,7 @@ def plot_noise(
             style['lw'] = style['linewidth']
         elif 'lw' not in style:
             style['lw'] = 3
+
         ax.loglog(freq, data, **style)
 
     ax.grid(
