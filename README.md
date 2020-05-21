@@ -83,6 +83,23 @@ the path to the budget module/package:
 $ python3 -m gwinc path/to/mybudget
 ```
 
+The command line interface also includes an "interactive" mode which
+provides an [IPython](https://ipython.org/) shell for interacting with a processed budget:
+```shell
+$ python3 -m gwinc -i Aplus
+GWINC interactive shell
+
+The 'ifo' Struct and 'traces' data are available for inspection.
+Use the 'whos' command to view the workspace.
+
+You may interact with the plot using the 'plt' functions, e.g.:
+
+In [.]: plt.title("foo")
+In [.]: plt.savefig("foo.pdf")
+
+In [1]: 
+```
+
 See command help for more info:
 ```shell
 $ python3 -m gwinc -h

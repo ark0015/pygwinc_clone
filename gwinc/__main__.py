@@ -74,7 +74,7 @@ parser.add_argument(
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
     '--interactive', '-i', action='store_true',
-    help="interactive plot with interactive shell")
+    help="launch interactive shell with plotting capability after budget processing")
 group.add_argument(
     '--save', '-s', action='append',
     help="save plot (.png/.pdf/.svg) or budget traces (.hdf5/.h5) to file (may be specified multiple times)")
@@ -87,7 +87,7 @@ group.add_argument(
 group.add_argument(
     '--diff', '-d', metavar='IFO',
     help="show differences table between another IFO description and exit (budget not calculated)")
-group.add_argument(
+parser.add_argument(
     '--no-plot', '-np', action='store_false', dest='plot',
     help="supress plotting")
 parser.add_argument(
@@ -247,16 +247,26 @@ def main():
 
     # interactive shell plotting
     if args.interactive:
+        banner = """GWINC interactive shell
+
+The 'ifo' Struct and 'traces' data are available for inspection.
+Use the 'whos' command to view the workspace.
+"""
+        if not args.plot:
+            banner += """
+You may plot the budget using the 'plot_noise()' function:
+
+In [.]: plot_noise(freq, traces, **plot_style)
+"""
+        banner += """
+You may interact with the plot using the 'plt' functions, e.g.:
+
+In [.]: plt.title("foo")
+In [.]: plt.savefig("foo.pdf")
+"""
         from IPython.terminal.embed import InteractiveShellEmbed
         ipshell = InteractiveShellEmbed(
-            banner1='''
-GWINC interactive plotter
-
-You may interact with plot using "plt." methods, e.g.:
-
->>> plt.title("foo")
->>> plt.savefig("foo.pdf")
-''',
+            banner1=banner,
             user_ns={
                 'freq': freq,
                 'traces': traces,
@@ -266,8 +276,9 @@ You may interact with plot using "plt." methods, e.g.:
             },
         )
         ipshell.enable_pylab()
-        ipshell.ex("fig = plot_noise(freq, traces, **plot_style)")
-        ipshell.ex("plt.title('{}')".format(plot_style['title']))
+        if args.plot:
+            ipshell.ex("fig = plot_noise(freq, traces, **plot_style)")
+            ipshell.ex("plt.title('{}')".format(plot_style['title']))
         ipshell()
 
     ##########
