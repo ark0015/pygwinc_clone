@@ -10,6 +10,9 @@ from .struct import Struct
 from .plot import plot_noise
 
 
+logger = logging.getLogger('gwinc')
+
+
 def _load_module(name_or_path):
     """Load module from name or path.
 
@@ -61,15 +64,15 @@ def load_budget(name_or_path):
         bname, ext = os.path.splitext(os.path.basename(path))
 
         if ext in Struct.STRUCT_EXT:
-            logging.info("loading struct {}...".format(path))
+            logger.info("loading struct {}...".format(path))
             ifo = Struct.from_file(path)
             bname = 'aLIGO'
             modname = 'gwinc.ifo.aLIGO'
-            logging.info("loading budget {}...".format(modname))
+            logger.info("loading budget {}...".format(modname))
 
         else:
             modname = path
-            logging.info("loading module path {}...".format(modname))
+            logger.info("loading module path {}...".format(modname))
 
     else:
         if name_or_path not in IFOS:
@@ -79,7 +82,7 @@ def load_budget(name_or_path):
             ))
         bname = name_or_path
         modname = 'gwinc.ifo.'+name_or_path
-        logging.info("loading module {}...".format(modname))
+        logger.info("loading module {}...".format(modname))
 
     mod, modpath = _load_module(modname)
 
@@ -126,13 +129,13 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     finesse = ifo.gwinc.finesse
     prfactor = ifo.gwinc.prfactor
     if ifo.Laser.Power * prfactor != pbs:
-        logging.warning("Thermal lensing limits input power to {} W".format(pbs/prfactor))
+        logger.warning("Thermal lensing limits input power to {} W".format(pbs/prfactor))
 
     # report astrophysical scores if so desired
     score = None
     if source:
-        logging.warning("Source score calculation currently not supported.  See `inspiral-range` package for similar functionality:")
-        logging.warning("https://git.ligo.org/gwinc/inspiral-range")
+        logger.warning("Source score calculation currently not supported.  See `inspiral-range` package for similar functionality:")
+        logger.warning("https://git.ligo.org/gwinc/inspiral-range")
         # score = int731(freq, noises['Total'], ifo, source)
         # score.Omega = intStoch(freq, noises['Total'], 0, ifo, source)
 
@@ -140,31 +143,31 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     # output graphics
 
     if plot:
-        logging.info('Laser Power:            %7.2f Watt' % ifo.Laser.Power)
-        logging.info('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/np.pi))
-        logging.info('SRM transmission:       %9.4f' % ifo.Optics.SRM.Transmittance)
-        logging.info('ITM transmission:       %9.4f' % ifo.Optics.ITM.Transmittance)
-        logging.info('PRM transmission:       %9.4f' % ifo.Optics.PRM.Transmittance)
-        logging.info('Finesse:                %7.2f' % finesse)
-        logging.info('Power Recycling Gain:   %7.2f' % prfactor)
-        logging.info('Arm Power:              %7.2f kW' % (parm/1000))
-        logging.info('Power on BS:            %7.2f W' % pbs)
+        logger.info('Laser Power:            %7.2f Watt' % ifo.Laser.Power)
+        logger.info('SRM Detuning:           %7.2f degree' % (ifo.Optics.SRM.Tunephase*180/np.pi))
+        logger.info('SRM transmission:       %9.4f' % ifo.Optics.SRM.Transmittance)
+        logger.info('ITM transmission:       %9.4f' % ifo.Optics.ITM.Transmittance)
+        logger.info('PRM transmission:       %9.4f' % ifo.Optics.PRM.Transmittance)
+        logger.info('Finesse:                %7.2f' % finesse)
+        logger.info('Power Recycling Gain:   %7.2f' % prfactor)
+        logger.info('Arm Power:              %7.2f kW' % (parm/1000))
+        logger.info('Power on BS:            %7.2f W' % pbs)
 
         # coating and substrate thermal load on the ITM
         PowAbsITM = (pbs/2) * \
                     np.hstack([(finesse*2/np.pi) * ifo.Optics.ITM.CoatingAbsorption,
                                (2 * ifo.Materials.MassThickness) * ifo.Optics.ITM.SubstrateAbsorption])
 
-        logging.info('Thermal load on ITM:    %8.3f W' % sum(PowAbsITM))
-        logging.info('Thermal load on BS:     %8.3f W' %
+        logger.info('Thermal load on ITM:    %8.3f W' % sum(PowAbsITM))
+        logger.info('Thermal load on BS:     %8.3f W' %
                      (ifo.Materials.MassThickness*ifo.Optics.SubstrateAbsorption*pbs))
         if (ifo.Laser.Power*prfactor != pbs):
-            logging.info('Lensing limited input power: %7.2f W' % (pbs/prfactor))
+            logger.info('Lensing limited input power: %7.2f W' % (pbs/prfactor))
 
         if score:
-            logging.info('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
-            logging.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
-            logging.info('Stochastic Omega: %4.1g Universes' % score.Omega)
+            logger.info('BNS Inspiral Range:     ' + str(score.effr0ns) + ' Mpc/ z = ' + str(score.zHorizonNS))
+            logger.info('BBH Inspiral Range:     ' + str(score.effr0bh) + ' Mpc/ z = ' + str(score.zHorizonBH))
+            logger.info('Stochastic Omega: %4.1g Universes' % score.Omega)
 
         plot_noise(ifo, traces, **plot_style)
 

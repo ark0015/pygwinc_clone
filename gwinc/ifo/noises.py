@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import pi, sin, exp, sqrt
 
+from .. import logger
 from .. import const
 from ..struct import Struct
 from .. import nb
@@ -30,7 +31,7 @@ def arm_cavity(ifo):
     if (g1 * g2 * (1 - g1 * g2)) <= 0:
         raise Exception('Unstable arm cavity g-factors.  Change ifo.Optics.Curvature')
     elif gcav < 1e-3:
-        logging.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
+        logger.warning('Nearly unstable arm cavity g-factors.  Reconsider ifo.Optics.Curvature')
 
     ws = sqrt(L * ifo.Laser.Wavelength / pi)
     w1 = ws * sqrt(abs(g2) / gcav)
@@ -86,7 +87,7 @@ def ifo_power(ifo, PRfixed=True):
     pbsl = 2 *pcrit / (asub+acoat*neff)  # bs power limited by thermal lensing
 
     if pbs > pbsl:
-        logging.warning('P_BS exceeds BS Thermal limit!')
+        logger.warning('P_BS exceeds BS Thermal limit!')
 
     return pbs, parm, finesse, prfactor, Tpr
 

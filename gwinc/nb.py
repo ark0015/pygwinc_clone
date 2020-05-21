@@ -1,5 +1,4 @@
 import os
-import logging
 import operator
 import itertools
 import importlib
@@ -8,6 +7,8 @@ import collections
 import numpy as np
 import scipy.interpolate
 from functools import reduce
+
+from . import logger
 
 
 def quadsum(data):
@@ -282,7 +283,7 @@ class Budget(Noise):
         name = noise_obj.name
         if noise_filt and name not in noise_filt:
             return
-        logging.debug("init {}".format(noise_obj))
+        logger.debug("init {}".format(noise_obj))
         self._noise_objs[name] = noise_obj
         for cal in cals:
             self.__add_calibration(cal, [name])
@@ -295,7 +296,7 @@ class Budget(Noise):
         )
         name = cal_obj.name
         if name not in self._cal_objs:
-            logging.debug("init {}".format(cal_obj))
+            logger.debug("init {}".format(cal_obj))
             self._cal_objs[name] = cal_obj
         # register noises for this calibration
         for noise in noises:
@@ -357,7 +358,7 @@ class Budget(Noise):
         for name, item in itertools.chain(
                 self._cal_objs.items(),
                 self._noise_objs.items()):
-            logging.debug("load {}".format(item))
+            logger.debug("load {}".format(item))
             item.load()
 
     def update(self, **kwargs):
@@ -365,7 +366,7 @@ class Budget(Noise):
         for name, item in itertools.chain(
                 self._cal_objs.items(),
                 self._noise_objs.items()):
-            logging.debug("update {}".format(item))
+            logger.debug("update {}".format(item))
             item.update(**kwargs)
 
     def calc_noise(self, name):

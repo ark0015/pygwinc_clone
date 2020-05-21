@@ -1,8 +1,8 @@
 from __future__ import division
 from numpy import pi, sqrt, sin, cos, tan, real, imag
 import numpy as np
-import logging
 
+from . import logger
 from .const import g
 
 
@@ -122,7 +122,7 @@ def getJointParams(sus, n):
 
     WireMaterialUpper = sus[wireMatUpper]
     WireMaterialLower = sus[wireMatLower]
-    logging.debug('stage {} wires: {}, {}'.format(n, wireMatUpper, wireMatLower))
+    logger.debug('stage {} wires: {}, {}'.format(n, wireMatUpper, wireMatLower))
 
     # support blade (upper joint only)
     if 'BladeMaterial' in stage:
@@ -132,7 +132,7 @@ def getJointParams(sus, n):
 
     BladeMaterial = sus[bladeMat]
 
-    logging.debug('stage {} blades: {}'.format(n, bladeMat))
+    logger.debug('stage {} blades: {}'.format(n, bladeMat))
 
     ULparams = ((0, TempUpper, WireMaterialUpper, BladeMaterial),
                 (1, TempLower, WireMaterialLower, None))

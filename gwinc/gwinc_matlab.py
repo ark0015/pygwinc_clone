@@ -1,10 +1,10 @@
 import os
 import copy
 import tempfile
-import logging
 
 import scipy.io
 
+from . import logger
 from . import const
 from . import suspension
 from .struct import Struct
@@ -33,10 +33,10 @@ class Matlab:
         if not os.path.exists(os.path.join(gwincpath, 'gwinc.m')):
             raise IOError("Invalid MATLAB GWINC path: '{}'".format(gwincpath))
 
-        logging.info("starting MATLAB engine...")
+        logger.info("starting MATLAB engine...")
         MATLAB_ENGINE = matlab.engine.start_matlab()
 
-        logging.info("gwinc path: {}".format(gwincpath))
+        logger.info("gwinc path: {}".format(gwincpath))
         MATLAB_ENGINE.addpath(gwincpath)
 
 

@@ -1,16 +1,17 @@
 from __future__ import print_function
 import os
 import signal
+import logging
 import argparse
 import numpy as np
 
-import logging
-logging.basicConfig(
-    format='%(message)s',
-    level=os.getenv('LOG_LEVEL', logging.WARNING),
-)
+from . import IFOS, load_budget, plot_noise, logger
 
-from . import IFOS, load_budget, plot_noise
+logger.setLevel(os.getenv('LOG_LEVEL', logging.WARNING))
+formatter = logging.Formatter('%(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 ##################################################
 
@@ -120,7 +121,7 @@ def main():
         ifo = getattr(attrs, 'IFO', None)
         plot_style = attrs
         if args.freq:
-            logging.warning("ignoring frequency specification for frequencies defined in HDF5...")
+            logger.warning("ignoring frequency specification for frequencies defined in HDF5...")
 
     else:
         Budget = load_budget(args.IFO)
@@ -194,7 +195,7 @@ def main():
         try:
             from matplotlib import pyplot as plt
         except RuntimeError:
-            logging.warning("no display, plotting disabled.")
+            logger.warning("no display, plotting disabled.")
             args.plot = False
 
     if args.fom:
@@ -219,20 +220,20 @@ def main():
     # main calculations
 
     if not traces:
-        logging.info("calculating budget...")
+        logger.info("calculating budget...")
         traces = Budget(freq=freq, ifo=ifo).run()
 
-    # logging.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
-    # logging.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
-    # logging.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
-    # logging.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
+    # logger.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
+    # logger.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
+    # logger.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
+    # logger.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
 
     if args.fom:
-        logging.info("calculating inspiral {}...".format(range_func))
+        logger.info("calculating inspiral {}...".format(range_func))
         H = inspiral_range.CBCWaveform(freq, **range_params)
-        logging.debug("params: {}".format(H.params))
+        logger.debug("params: {}".format(H.params))
         fom = eval('inspiral_range.{}'.format(range_func))(freq, traces['Total'][0], H=H)
-        logging.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
+        logger.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
         fom_title = '{func} {m1}/{m2} Msol: {fom:.2f} Mpc'.format(
             func=range_func,
             m1=H.params['m1'],
@@ -278,7 +279,7 @@ You may interact with plot using "plt." methods, e.g.:
         attrs = dict(plot_style)
         attrs['IFO'] = ifo.to_yaml()
         for path in out_data_files:
-            logging.info("saving budget traces {}...".format(path))
+            logger.info("saving budget traces {}...".format(path))
             save_hdf5(
                 path=path,
                 freq=freq,
@@ -288,7 +289,7 @@ You may interact with plot using "plt." methods, e.g.:
 
     # standard plotting
     if args.plot or out_plot_files:
-        logging.info("plotting noises...")
+        logger.info("plotting noises...")
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
