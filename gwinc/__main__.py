@@ -138,14 +138,6 @@ def main():
         plot_style = getattr(Budget, 'plot_style', {})
         traces = None
 
-    out_data_files = set()
-    out_plot_files = set()
-    if args.save:
-        for path in args.save:
-            if os.path.splitext(path)[1] in DATA_SAVE_FORMATS:
-                out_data_files.add(path)
-        out_plot_files = set(args.save) - out_data_files
-
     if args.ifo:
         for paramval in args.ifo:
             param, val = paramval.split('=', 1)
@@ -176,9 +168,17 @@ def main():
                 print(fmt.format(k, v, ov))
         return
 
+    out_data_files = set()
+    out_plot_files = set()
+    if args.save:
+        args.plot = False
+        for path in args.save:
+            if os.path.splitext(path)[1] in DATA_SAVE_FORMATS:
+                out_data_files.add(path)
+        out_plot_files = set(args.save) - out_data_files
 
-    if args.plot:
-        if args.save:
+    if args.plot or out_plot_files:
+        if out_plot_files:
             # FIXME: this silliness seems to be the only way to have
             # matplotlib usable on systems without a display.  There must
             # be a better way.  'AGG' is a backend that works without
