@@ -15,28 +15,30 @@ logger.addHandler(handler)
 
 ##################################################
 
-description = """Plot GWINC noise budget for specified IFO.
+description = """GWINC noise budget tool
 
-Available included IFOs: {}
+IFOs can be specified by name of included canonical budget (see
+below), or by path to a budget module (.py), description file
+(.yaml/.mat/.m), or HDF5 data file (.hdf5/.h5).  Available included
+IFOs are:
 
-""".format(', '.join(["'{}'".format(ifo) for ifo in IFOS]))
+  {}
+
+""".format(', '.join(["{}".format(ifo) for ifo in IFOS]))
 # for ifo in available_ifos():
 #     description += "  '{}'\n".format(ifo)
 description += """
 
-By default a GWINC noise budget of the specified IFO will calculated,
-and plotted with an interactive plotter.  If the --save option is
-specified the plot will be saved directly to a file (without display)
-(various formats are supported, indicated by file extension).  If the
-requested extension is 'hdf5' or 'h5' then the noise traces and IFO
-parameters will be saved to an HDF5 file (without plotting).  The
-input file (IFO) can be an HDF5 file saved from a previous call, in
-which case all noise traces and IFO parameters will be loaded from
-that file.
-
-Individual IFO parameters can be overriden with the --ifo option:
+By default the noise budget of the specified IFO will be loaded and
+plotted with an interactive plotter.  Individual IFO parameters can be
+overriden with the --ifo option:
 
   gwinc --ifo Optics.SRM.Tunephase=3.14 ...
+
+If the --save option is specified the plot will be saved directly to a
+file (without display) (various file formats are supported, indicated
+by file extension).  If the requested extension is 'hdf5' or 'h5' then
+the noise traces and IFO parameters will be saved to an HDF5 file.
 
 If the inspiral_range package is installed, various figures of merit
 can be calculated for the resultant spectrum with the --fom option,
@@ -45,8 +47,7 @@ e.g.:
   gwinc --fom horizon ...
   gwinc --fom range:m1=20,m2=20 ...
 
-See documentation for inspiral_range package for details.
-
+See the inspiral_range package documentation for details.
 """
 
 IFO = 'aLIGO'
@@ -58,10 +59,10 @@ parser = argparse.ArgumentParser(
     description=description,
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument(
-    '--freq', '-f', metavar='FSPEC',
-    help="frequency array specification in Hz, either as 'flo:fhi' or 'flo:npoints:fhi' [{}]".format(FREQ))
+    '--freq', '-f', metavar='FLO:[NPOINTS:]FHI',
+    help="frequency array specification in Hz [{}]".format(FREQ))
 parser.add_argument(
-    '--ifo', '-o',
+    '--ifo', '-o', metavar='PARAM=VAL',
     #nargs='+', action='extend',
     action='append',
     help="override budget IFO parameter (may be specified multiple times)")
@@ -69,14 +70,14 @@ parser.add_argument(
     '--title', '-t',
     help="plot title")
 parser.add_argument(
-    '--fom',
-    help="calculate inspiral range for resultant spectrum ('func[:param=val,param=val]')")
+    '--fom', metavar='FUNC[:PARAM=VAL,...]',
+    help="use inspiral_range.FUNC to calculate range figure-of-merit on resultant spectrum")
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
     '--interactive', '-i', action='store_true',
-    help="launch interactive shell with plotting capability after budget processing")
+    help="launch interactive shell after budget processing")
 group.add_argument(
-    '--save', '-s', action='append',
+    '--save', '-s', metavar='PATH', action='append',
     help="save plot (.png/.pdf/.svg) or budget traces (.hdf5/.h5) to file (may be specified multiple times)")
 group.add_argument(
     '--yaml', '-y', action='store_true',
@@ -86,13 +87,13 @@ group.add_argument(
     help="print IFO as text table to stdout and exit (budget not calculated)")
 group.add_argument(
     '--diff', '-d', metavar='IFO',
-    help="show differences table between another IFO description and exit (budget not calculated)")
+    help="show difference table between IFO and another IFO description (name or path) and exit (budget not calculated)")
 parser.add_argument(
     '--no-plot', '-np', action='store_false', dest='plot',
-    help="supress plotting")
+    help="suppress plotting")
 parser.add_argument(
     'IFO',
-    help="IFO name, or path to budget module (.py), description file (.yaml/.mat/.m), or HDF5 data file (.hdf5/.h5)")
+    help="IFO name or path")
 
 
 def freq_from_spec(spec):
