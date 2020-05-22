@@ -2,7 +2,9 @@
 
 
 This file describes a schemata for HDF5 storage of noise trace data
-and plot styling GWINC noise budgets.
+and plot styling GWINC noise budgets.  Python functions for writing
+budget data to and reading budget data from this format are included
+in the `gwinc.io` module.
 
 HDF5 is a heirarchical, structured data storage format [0].  Content
 is organized into a heirarchical folder-like structure, with two
@@ -72,8 +74,9 @@ and an int schema version number:
 /.attrs['SCHEMA_VERSION'] = 1
 ```
 
-Top-level attributes are generally used for specifying overall plot styling, but the
-following root attributes are typically defined:
+Top-level attributes can be used for storing any relevant metadata,
+such as "IFO" parameters in YAML format or overall plot styling.
+Typically at least the following root attributes are defined:
 ```
 /.attrs['title'] = <experiment description string (e.g. 'H1 Strain Budget')>
 /.attrs['date'] = <ISO-formatted string (e.g. '2015-10-24T20:30:00.000000Z')>
