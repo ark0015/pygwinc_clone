@@ -75,7 +75,7 @@ and an int schema version number:
 ```
 
 Top-level attributes can be used for storing any relevant metadata,
-such as "IFO" parameters in YAML format or overall plot styling.
+such as "ifo" parameters in YAML format or overall plot styling.
 Typically at least the following root attributes are defined:
 ```
 /.attrs['title'] = <experiment description string (e.g. 'H1 Strain Budget')>

@@ -118,7 +118,9 @@ def main():
         from .io import load_hdf5
         Budget = None
         freq, traces, attrs = load_hdf5(args.IFO)
-        ifo = getattr(attrs, 'IFO', None)
+        ifo = attrs.get('ifo')
+        # FIXME: deprecate 'IFO'
+        ifo = attrs.get('IFO', ifo)
         plot_style = attrs
         if args.freq:
             logger.warning("ignoring frequency specification for frequencies defined in HDF5...")
@@ -151,17 +153,17 @@ def main():
 
     if args.yaml:
         if not ifo:
-            parser.exit(2, "no IFO structure available.")
+            parser.exit(2, "No 'ifo' structure available.\n")
         print(ifo.to_yaml(), end='')
         return
     if args.text:
         if not ifo:
-            parser.exit(2, "no IFO structure available.")
+            parser.exit(2, "No 'ifo' structure available.\n")
         print(ifo.to_txt(), end='')
         return
     if args.diff:
         if not ifo:
-            parser.exit(2, "no IFO structure available.")
+            parser.exit(2, "No 'ifo' structure available.\n")
         fmt = '{:30} {:>20} {:>20}'
         Budget = load_budget(args.diff)
         diffs = ifo.diff(Budget.ifo)
@@ -288,19 +290,19 @@ In [.]: plt.savefig("foo.pdf")
     if out_data_files:
         from .io import save_hdf5
         attrs = dict(plot_style)
-        attrs['IFO'] = ifo.to_yaml()
         for path in out_data_files:
-            logger.info("saving budget traces {}...".format(path))
+            logger.info("saving budget traces: {}".format(path))
             save_hdf5(
                 path=path,
                 freq=freq,
                 traces=traces,
+                ifo=ifo,
                 **attrs,
             )
 
     # standard plotting
     if args.plot or out_plot_files:
-        logger.info("plotting noises...")
+        logger.debug("plotting noises...")
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         plot_noise(
@@ -312,6 +314,7 @@ In [.]: plt.savefig("foo.pdf")
         fig.tight_layout()
         if out_plot_files:
             for path in out_plot_files:
+                logger.info("saving budget plot: {}".format(path))
                 fig.savefig(path)
         else:
             plt.show()
