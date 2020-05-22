@@ -156,11 +156,13 @@ def main():
     if args.diff:
         if not ifo:
             parser.exit(2, "No 'ifo' structure available.\n")
-        fmt = '{:30} {:>20} {:>20}'
         Budget = load_budget(args.diff)
         diffs = ifo.diff(Budget.ifo)
         if diffs:
+            w = max([len(d[0]) for d in diffs])
+            fmt = '{{:{}}} {{:>20}} {{:>20}}'.format(w)
             print(fmt.format('', args.IFO, args.diff))
+            print(fmt.format('', '-----', '-----'))
             for p in diffs:
                 k = str(p[0])
                 v = repr(p[1])
