@@ -115,6 +115,10 @@ def main():
     # initial arg processing
 
     if os.path.splitext(os.path.basename(args.IFO))[1] in DATA_SAVE_FORMATS:
+        if args.freq:
+            parser.exit(2, "Can not specify frequency array when loading traces from file.\n")
+        if args.ifo:
+            parser.exit(2, "Can not override ifo parameters when loading traces from file.\n")
         from .io import load_hdf5
         Budget = None
         freq, traces, attrs = load_hdf5(args.IFO)
@@ -122,8 +126,6 @@ def main():
         # FIXME: deprecate 'IFO'
         ifo = attrs.get('IFO', ifo)
         plot_style = attrs
-        if args.freq:
-            logger.warning("ignoring frequency specification for frequencies defined in HDF5...")
 
     else:
         Budget = load_budget(args.IFO)
