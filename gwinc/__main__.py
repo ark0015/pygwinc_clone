@@ -176,12 +176,6 @@ def main():
                 print(fmt.format(k, v, ov))
         return
 
-    if args.title:
-        plot_style['title'] = args.title
-    elif Budget:
-        plot_style['title'] = "GWINC Noise Budget: {}".format(Budget.name)
-    else:
-        plot_style['title'] = "GWINC Noise Budget: {}".format(args.IFO)
 
     if args.plot:
         if args.save:
@@ -229,6 +223,15 @@ def main():
     # logger.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
     # logger.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
     # logger.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
+
+    if args.title:
+        plot_style['title'] = args.title
+    elif 'title' in plot_style:
+        pass
+    elif Budget:
+        plot_style['title'] = "GWINC Noise Budget: {}".format(Budget.name)
+    else:
+        plot_style['title'] = "GWINC Noise Budget: {}".format(args.IFO)
 
     if args.fom:
         logger.info("calculating inspiral {}...".format(range_func))
