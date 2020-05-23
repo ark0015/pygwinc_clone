@@ -188,7 +188,9 @@ class Struct(object):
                     except AttributeError:
                         if array:
                             v = np.array(v)
-                elif isinstance(v, int):
+                # FIXME: there must be a better way to just match all
+                # numeric scalar types
+                elif isinstance(v, (int, float, np.int, np.float)):
                     v = float(v)
                 d[k] = v
         return d
