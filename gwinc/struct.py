@@ -174,7 +174,7 @@ class Struct(object):
         """
         d = {}
         for k,v in self.__dict__.items():
-            if isinstance(v, type(self)):
+            if isinstance(v, Struct):
                 d[k] = v.to_dict(array=array)
             else:
                 if isinstance(v, list):
