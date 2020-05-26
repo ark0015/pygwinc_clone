@@ -1,6 +1,8 @@
 import h5py
+import yaml
 import datetime
 
+from . import logger
 from . import Struct
 
 
@@ -72,5 +74,8 @@ def load_hdf5(path):
         traces = _read_trace_recursive(f['/traces'])
         attrs = dict(f.attrs)
         if 'ifo' in attrs:
-            attrs['ifo'] = Struct.from_yaml(attrs['ifo'])
+            try:
+                attrs['ifo'] = Struct.from_yaml(attrs['ifo'])
+            except yaml.constructor.ConstructorError:
+                logger.warning("HDF5 load warning: Could not de-serialize 'ifo' YAML attribute.")
         return freq, traces, attrs
