@@ -194,25 +194,25 @@ Materials:
   ## Dielectric coating material parameters----------------------------------
   Coating:
     ## high index material: tantala
-    Yhighn: 124e9                 # LMA (Granata at LVC) 2017 (was 140)
-    Sigmahighn: 0.28              # LMA (Granata at LVC) 2017 (was 0.23)
+    Yhighn: 120e9                 # Ta2O5-TiO2 from 2020 LMA https://iopscience.iop.org/article/10.1088/1361-6382/ab77e9
+    Sigmahighn: 0.29              # 2020 LMA
     CVhighn: 2.1e6                # Crooks et al, Fejer et al
     Alphahighn: 3.6e-6            # 3.6e-6 Fejer et al, 5e-6 from Braginsky
     Betahighn: 1.4e-5             # dn/dT, value Gretarrson (G070161)
     ThermalDiffusivityhighn: 33   # Fejer et al
-    Indexhighn: 2.06539
-    Phihighn: 3.6e-4              # loss angle at 100Hz (Gras 2018)
+    Indexhighn: 2.09              # 2020 LMA
+    Phihighn: 3.89e-4             # loss angle at 100Hz (Gras 2020)
     Phihighn_slope: 0.1
 
     ## low index material: silica
-    Ylown: 72e9
-    Sigmalown: 0.17
+    Ylown: 70e9                   # 2020 LMA
+    Sigmalown: 0.19               # 2020 LMA
     CVlown: 1.6412e6              # Crooks et al, Fejer et al
     Alphalown: 5.1e-7             # Fejer et al
     Betalown: 8e-6                # dn/dT,  (ref. 14)
     ThermalDiffusivitylown: 1.38  # Fejer et al
     Indexlown: 1.45
-    Philown: 4e-5                 # loss angle at 100Hz
+    Philown: 2.3e-5               # loss angle at 100Hz 2020 LMA
     Philown_slope: 0              # G1600641 and arXiv:1712.05701 suggest
                                   # slopes between 0 and 0.3, depending on
                                   # deposition method. Slawek's analysis in
