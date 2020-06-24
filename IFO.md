@@ -2,7 +2,11 @@
 
 CI-generated plots and data for all IFOs included in pygwinc.
 
+Ranges in "Mpc" are for binary neutron stars (BNS) using the
+[inspiral_range](gwinc/inspiral-range>) package.
+
 ![IFO compare](https://gwinc.docs.ligo.org/pygwinc/ifo/all_compare.png)
+
 
 ## aLIGO
 

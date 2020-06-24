@@ -65,8 +65,7 @@ def main():
 
     ax.set_xlabel('Frequency [Hz]')
     ax.set_ylabel(PLOT_STYLE['ylabel'])
-    ax.set_title("""PyGWINC reference IFO strain comparison
-(with BNS range)""")
+    ax.set_title("PyGWINC reference IFO strain comparison")
 
     if args.save:
         fig.savefig(args.save)
