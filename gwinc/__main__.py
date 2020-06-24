@@ -7,8 +7,8 @@ import numpy as np
 
 from . import IFOS, load_budget, plot_noise, logger
 
-logger.setLevel(os.getenv('LOG_LEVEL', logging.WARNING))
-formatter = logging.Formatter('%(message)s')
+logger.setLevel(os.getenv('LOG_LEVEL', 'WARNING').upper())
+formatter = logging.Formatter('%(name)s: %(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -40,7 +40,7 @@ file (without display) (various file formats are supported, indicated
 by file extension).  If the requested extension is 'hdf5' or 'h5' then
 the noise traces and IFO parameters will be saved to an HDF5 file.
 
-If the inspiral_range package is installed, various figures of merit
+If the inspiral_range package is available, various figures of merit
 can be calculated for the resultant spectrum with the --fom option,
 e.g.:
 
@@ -52,6 +52,7 @@ See the inspiral_range package documentation for details.
 
 IFO = 'aLIGO'
 FREQ = '5:3000:6000'
+FOM = 'range:m1=1.4,m2=1.4'
 DATA_SAVE_FORMATS = ['.hdf5', '.h5']
 
 parser = argparse.ArgumentParser(
@@ -199,8 +200,19 @@ def main():
             logger.warning("no display, plotting disabled.")
             args.plot = False
 
-    if args.fom:
+    try:
         import inspiral_range
+        logger_ir = logging.getLogger('inspiral_range')
+        logger_ir.setLevel(logger.getEffectiveLevel())
+        logger_ir.removeHandler(logger_ir.handlers[0])
+        logger_ir.addHandler(logger.handlers[0])
+        if not args.fom:
+            args.fom = FOM
+    except ModuleNotFoundError:
+        if args.fom:
+            raise
+        logger.warning("inspiral_range package not available, figure of merit will not be calculated...")
+    if args.fom:
         try:
             range_func, fargs = args.fom.split(':')
         except ValueError:
@@ -210,11 +222,13 @@ def main():
         for param in fargs.split(','):
             if not param:
                 continue
-            p,v = param.split('=')
+            p, v = param.split('=')
             if not v:
                 raise ValueError('missing parameter value "{}"'.format(p))
-            if p != 'approximant':
+            try:
                 v = float(v)
+            except ValueError:
+                pass
             range_params[p] = v
 
     ##########
@@ -244,7 +258,7 @@ def main():
         logger.debug("params: {}".format(H.params))
         fom = eval('inspiral_range.{}'.format(range_func))(freq, traces['Total'][0], H=H)
         logger.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
-        fom_title = '{func} {m1}/{m2} Msol: {fom:.2f} Mpc'.format(
+        fom_title = '{func} {m1}/{m2} $\mathrm{{M}}_\odot$: {fom:.2f} Mpc'.format(
             func=range_func,
             m1=H.params['m1'],
             m2=H.params['m2'],
