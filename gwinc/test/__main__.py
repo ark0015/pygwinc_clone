@@ -44,7 +44,7 @@ def git_find_upstream_name():
         ).stdout
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr.split('\n')[0])
-    for remote in remotes.split('\n'):
+    for remote in remotes.strip().split('\n'):
         name, url, fp = remote.split()
         if 'gwinc/pygwinc.git' in url:
             return name
