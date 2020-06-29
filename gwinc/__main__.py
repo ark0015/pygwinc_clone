@@ -258,7 +258,7 @@ def main():
         logger.debug("params: {}".format(H.params))
         fom = eval('inspiral_range.{}'.format(range_func))(freq, traces['Total'][0], H=H)
         logger.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
-        fom_title = '{func} {m1}/{m2} $\mathrm{{M}}_\odot$: {fom:.2f} Mpc'.format(
+        fom_title = 'inspiral {func} {m1}/{m2} $\mathrm{{M}}_\odot$: {fom:.0f} Mpc'.format(
             func=range_func,
             m1=H.params['m1'],
             m2=H.params['m2'],
