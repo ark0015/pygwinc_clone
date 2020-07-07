@@ -434,12 +434,14 @@ class Budget(Noise):
         # calc all calibrations
         c = {}
         for name, cal in self._cal_objs.items():
+            logger.debug("calc {}".format(name))
             c[name] = cal.calc()
         # calc all noises
         for name, noise in self._noise_objs.items():
             cals = [c[cal] for cal in self._noise_cals[name]]
             if calibrations:
                 cals += calibrations
+            logger.debug("calc {}".format(name))
             d[name] = noise.calc_trace(
                 calibrations=cals,
             )
