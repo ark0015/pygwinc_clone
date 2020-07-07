@@ -2,8 +2,6 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-import inspiral_range
-
 from . import IFOS, PLOT_STYLE
 from .. import load_budget
 
@@ -38,11 +36,18 @@ def main():
 
     for name, budget in budgets.items():
         data = budget.calc()
-        BNS_range = inspiral_range.range(freq, data)
-        label = '{name:<{pad}} {bns:>6.0f} Mpc'.format(
+        try:
+            import inspiral_range
+            label_range = ' {:>6.0f} Mpc'.format(
+                inspiral_range.range(freq, data),
+            )
+        except ModuleNotFoundError:
+            label_range = ''
+
+        label = '{name:<{pad}}{range}'.format(
             name=name,
             pad=range_pad,
-            bns=BNS_range,
+            range=label_range,
         )
         ax.loglog(freq, np.sqrt(data), label=label)
 
