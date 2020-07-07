@@ -17,7 +17,7 @@ from ..io import load_hdf5
 
 logging.basicConfig(
     format='%(message)s',
-    level=os.getenv('LOG_LEVEL', logging.INFO))
+    level=os.getenv('LOG_LEVEL', 'INFO').upper())
 
 try:
     import inspiral_range
