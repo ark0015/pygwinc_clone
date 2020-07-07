@@ -51,7 +51,6 @@ def ifo_power(ifo, PRfixed=True):
     """Compute power on beamsplitter, finesse, and power recycling factor.
 
     """
-    c = const.c
     pin = ifo.Laser.Power
     t1 = sqrt(ifo.Optics.ITM.Transmittance)
     r1 = sqrt(1 - ifo.Optics.ITM.Transmittance)
@@ -65,7 +64,7 @@ def ifo_power(ifo, PRfixed=True):
 
     # Finesse, effective number of bounces in cavity, power recycling factor
     finesse = 2*pi / (t1**2 + 2*loss)  # arm cavity finesse
-    neff    = 2 * finesse / pi
+    neff = 2 * finesse / pi
 
     # Arm cavity reflectivity with finite loss
     garm = t1 / (1 - r1*r2*sqrt(1-2*loss))  # amplitude gain wrt input field
@@ -79,12 +78,12 @@ def ifo_power(ifo, PRfixed=True):
         r5 = sqrt(1 - Tpr)
     prfactor = t5**2 / (1 + r5 * rarm * sqrt(1-bsloss))**2
 
-    pbs  = pin * prfactor  # BS power from input power
+    pbs = pin * prfactor  # BS power from input power
     parm = pbs * garm**2 / 2  # arm power from BS power
 
     thickness = ifo.Optics.ITM.get('Thickness', ifo.Materials.MassThickness)
     asub = 1.3 * 2 * thickness * ifo.Optics.SubstrateAbsorption
-    pbsl = 2 *pcrit / (asub+acoat*neff)  # bs power limited by thermal lensing
+    pbsl = 2 * pcrit / (asub+acoat*neff)  # bs power limited by thermal lensing
 
     if pbs > pbsl:
         logger.warning('P_BS exceeds BS Thermal limit!')
