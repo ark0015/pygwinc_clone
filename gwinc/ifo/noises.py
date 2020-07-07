@@ -141,7 +141,6 @@ def precomp_suspension(f, ifo):
     if 'VHCoupling' not in ifo.Suspension:
         ifo.Suspension.VHCoupling = Struct()
         ifo.Suspension.VHCoupling.theta = ifo.Infrastructure.Length / const.R_earth
-
     hForce, vForce, hTable, vTable = suspension.suspQuad(f, ifo.Suspension)
     ifo.Suspension.hForce = hForce
     ifo.Suspension.vForce = vForce
@@ -179,7 +178,7 @@ class StandardQuantumLimit(nb.Noise):
     style = dict(
         label="Standard Quantum Limit",
         color="#000000",
-        linestyle=":", # Dotted.
+        linestyle=":",
     )
 
     def calc(self):
@@ -340,7 +339,7 @@ class ITMThermoRefractive(nb.Noise):
 
     def calc(self):
         finesse = ifo_power(self.ifo)[2]
-        gPhase =  finesse * 2/np.pi
+        gPhase = finesse * 2/np.pi
         w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
         n = noise.substratethermal.substrate_thermorefractive(
             self.freq, self.ifo.Materials, wBeam_ITM)
