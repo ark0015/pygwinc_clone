@@ -49,7 +49,7 @@ def main():
             pad=range_pad,
             range=label_range,
         )
-        ax.loglog(freq, np.sqrt(data), label=label)
+        ax.loglog(freq, np.sqrt(data), label=label, lw=2)
 
     ax.grid(
         True,
