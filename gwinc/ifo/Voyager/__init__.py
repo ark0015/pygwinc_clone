@@ -14,7 +14,6 @@ class Voyager(nb.Budget):
         CoatingBrownian,
         CoatingThermoOptic,
         ITMThermoRefractive,
-        ITMCarrierDensity,
         SubstrateBrownian,
         SubstrateThermoElastic,
         ExcessGas,

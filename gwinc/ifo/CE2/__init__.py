@@ -54,7 +54,6 @@ class Substrate(nb.Budget):
 
     noises = [
         ITMThermoRefractive,
-        ITMCarrierDensity,
         SubstrateBrownian,
         SubstrateThermoElastic,
     ]

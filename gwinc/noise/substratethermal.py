@@ -12,52 +12,6 @@ from ..const import BESSEL_ZEROS as zeta
 from ..const import J0M as j0m
 
 
-def substrate_carrierdensity(f, materials, wBeam, exact=False):
-    """Substrate thermal displacement noise spectrum from charge carrier density fluctuations
-
-    For semiconductor substrates.
-
-    :f: frequency array in Hz
-    :materials: gwinc optic materials structure
-    :wBeam: beam radius (at 1 / e^2 power)
-    :exact: whether to use adiabatic approximation or exact calculation (False)
-
-    :returns: displacement noise power spectrum at :f:, in meters
-
-    """
-    H = materials.MassThickness
-    diffElec = materials.Substrate.ElectronDiffusion
-    diffHole = materials.Substrate.HoleDiffusion
-    mElec = materials.Substrate.ElectronEffMass
-    mHole = materials.Substrate.HoleEffMass
-    cdDens = materials.Substrate.CarrierDensity
-    gammaElec = materials.Substrate.ElectronIndexGamma
-    gammaHole = materials.Substrate.HoleIndexGamma
-    r0 = wBeam/np.sqrt(2)
-    omega = 2*pi*f
-
-    if exact:
-        def integrand(k, om, D):
-            return D * k**3 * exp(-k**2 * wBeam**2/4) / (D**2 * k**4 + om**2)
-    
-        integralElec = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffElec), 0, inf)[0] for om in omega])
-        integralHole = np.array([scipy.integrate.quad(lambda k: integrand(k, om, diffHole), 0, inf)[0] for om in omega])
-
-        # From P1400084 Heinert et al. Eq. 15
-        #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
-        # FIXME: why the unused argument here?
-        def psdCD(gamma, m, int_):
-            return 2/pi * H * gamma**2 * cdDens * int_
-
-        psdElec = psdCD(gammaElec, mElec, integralElec)
-        psdHole = psdCD(gammaHole, mHole, integralHole)
-    else:
-        psdElec = 4*H*gammaElec**2*cdDens*diffElec/(pi*r0**4*omega**2)
-        psdHole = 4*H*gammaHole**2*cdDens*diffHole/(pi*r0**4*omega**2)
-
-    return psdElec + psdHole
-
-
 def substrate_thermorefractive(f, materials, wBeam, exact=False):
     """Substrate thermal displacement noise spectrum from thermorefractive fluctuations
 
@@ -87,7 +41,7 @@ def substrate_thermorefractive(f, materials, wBeam, exact=False):
 
         # From P1400084 Heinert et al. Eq. 15
         #psdCD = @(gamma,m,int) 2*(3/pi^7)^(1/3)*kBT*H*gamma^2*m/hbar^2*cdDens^(1/3)*int; %units are meters
-        psdTR = lambda int_: 2/pi * H * beta**2 * kBT * Temp / (rho*C) * int_;
+        psdTR = lambda int_: 2/pi * H * beta**2 * kBT * Temp / (rho*C) * int_
 
         psd = psdTR(inte)
         psd = 2/pi * H * beta**2 * kBT * Temp / (rho*C) * inte

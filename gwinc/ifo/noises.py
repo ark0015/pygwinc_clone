@@ -345,25 +345,6 @@ class ITMThermoRefractive(nb.Noise):
         return n * 2 / gPhase**2
 
 
-class ITMCarrierDensity(nb.Noise):
-    """ITM Carrier Density
-
-    """
-    style = dict(
-        label='ITM Carrier Density',
-        color='#929591',
-        linestyle='--',
-    )
-
-    def calc(self):
-        finesse = ifo_power(self.ifo)[2]
-        gPhase = finesse * 2/np.pi
-        w0, wBeam_ITM, wBeam_ETM = arm_cavity(self.ifo)
-        n = noise.substratethermal.substrate_carrierdensity(
-            self.freq, self.ifo.Materials, wBeam_ITM)
-        return n * 2 / gPhase**2
-
-
 class SubstrateBrownian(nb.Noise):
     """Substrate Brownian
 
