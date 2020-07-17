@@ -420,10 +420,8 @@ def suspQuad(f, sus):
     # Complex spring constants
     khr = np.zeros([len(stages), len(w)])
     khi = np.zeros([len(stages), 2, len(w)])
-    kh  = np.zeros([len(stages), len(w)], dtype=np.complex_)
     kvr = np.zeros([len(stages), len(w)])
     kvi = np.zeros([len(stages), 2, len(w)])
-    kv  = np.zeros([len(stages), len(w)], dtype=np.complex_)
 
     for n, stage in enumerate(stages):
 
@@ -570,25 +568,20 @@ def suspQuad(f, sus):
 
     for m in range(2*len(stages)):
         # turn on only the loss of the current joint
-        lossy_region_lower = np.zeros((len(stages), 1))
-        lossy_region_upper = np.zeros((len(stages), 1))
         n = int(m/2)  # stage number
-        if m % 2:
-            lossy_region_upper[n] = 1
-        else:
-            lossy_region_lower[n] = 1
+        isLower = m % 2
+        stage_selection = np.zeros((len(stages), 1))
+        stage_selection[n] = 1
 
         # horizontal
-        # only the imaginary part due to the specified region is used.
-        k = khr + 1j*(khi[:,0,:]*lossy_region_upper +
-                      khi[:,1,:]*lossy_region_lower)
+        # only the imaginary part due to the specified joint is used.
+        k = khr + 1j*khi[:,isLower,:]*stage_selection
         # calculate TFs
         hForce[m,:] = tst_force_to_tst_displ(k, masses, f)
 
         # vertical
-        # only the imaginary part due to the specified stage is used
-        k = kvr + 1j*(kvi[:,0,:]*lossy_region_upper +
-                      kvi[:,1,:]*lossy_region_lower)
+        # only the imaginary part due to the specified joint is used
+        k = kvr + 1j*kvi[:,isLower,:]*stage_selection
         # calculate TFs
         vForce[m,:] = tst_force_to_tst_displ(k, masses, f)
 
