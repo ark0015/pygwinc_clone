@@ -204,7 +204,6 @@ def main():
         import inspiral_range
         logger_ir = logging.getLogger('inspiral_range')
         logger_ir.setLevel(logger.getEffectiveLevel())
-        logger_ir.removeHandler(logger_ir.handlers[0])
         logger_ir.addHandler(logger.handlers[0])
         if not args.fom:
             args.fom = FOM
