@@ -238,11 +238,6 @@ def main():
         logger.info("calculating budget...")
         traces = Budget(freq=freq, ifo=ifo).run()
 
-    # logger.info('recycling factor: {: >0.3f}'.format(ifo.gwinc.prfactor))
-    # logger.info('BS power:         {: >0.3f} W'.format(ifo.gwinc.pbs))
-    # logger.info('arm finesse:      {: >0.3f}'.format(ifo.gwinc.finesse))
-    # logger.info('arm power:        {: >0.3f} kW'.format(ifo.gwinc.parm/1000))
-
     if args.title:
         plot_style['title'] = args.title
     elif 'title' in plot_style:
