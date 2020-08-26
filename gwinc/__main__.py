@@ -61,7 +61,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument(
     '--freq', '-f', metavar='FLO:[NPOINTS:]FHI',
-    help="frequency array specification in Hz [{}]".format(FREQ))
+    help="logarithmic frequency array specification in Hz [{}]".format(FREQ))
 parser.add_argument(
     '--ifo', '-o', metavar='PARAM=VAL',
     #nargs='+', action='extend',
@@ -118,9 +118,9 @@ def main():
 
     if os.path.splitext(os.path.basename(args.IFO))[1] in DATA_SAVE_FORMATS:
         if args.freq:
-            parser.exit(2, "Can not specify frequency array when loading traces from file.\n")
+            parser.exit(2, "Frequency specification not allowed when loading traces from file.\n")
         if args.ifo:
-            parser.exit(2, "Can not override ifo parameters when loading traces from file.\n")
+            parser.exit(2, "IFO parameter specification not allowed when loading traces from file.\n")
         from .io import load_hdf5
         Budget = None
         freq, traces, attrs = load_hdf5(args.IFO)
@@ -136,7 +136,7 @@ def main():
             try:
                 freq = freq_from_spec(args.freq)
             except IndexError:
-                parser.error("improper frequency specification '{}'".format(args.freq))
+                parser.exit(2, "Improper frequency specification: {}\n".format(args.freq))
         else:
             freq = getattr(Budget, 'freq', freq_from_spec(FREQ))
         plot_style = getattr(Budget, 'plot_style', {})
@@ -149,17 +149,18 @@ def main():
 
     if args.yaml:
         if not ifo:
-            parser.exit(2, "No 'ifo' structure available.\n")
+            parser.exit(2, "IFO structure not provided.\n")
         print(ifo.to_yaml(), end='')
         return
     if args.text:
         if not ifo:
-            parser.exit(2, "No 'ifo' structure available.\n")
+            parser.exit(2, "IFO structure not provided.\n")
         print(ifo.to_txt(), end='')
         return
     if args.diff:
         if not ifo:
-            parser.exit(2, "No 'ifo' structure available.\n")
+            parser.exit(2, "IFO structure not provided.\n")
+        _, difo = load_budget(args.diff)
         Budget = load_budget(args.diff)
         diffs = ifo.diff(Budget.ifo)
         if diffs:
@@ -272,8 +273,8 @@ def main():
     if args.interactive:
         banner = """GWINC interactive shell
 
-The 'ifo' Struct and 'traces' data are available for inspection.
-Use the 'whos' command to view the workspace.
+The 'ifo' Struct and 'traces' data objects are available for
+inspection.  Use the 'whos' command to view the workspace.
 """
         if not args.plot:
             banner += """
