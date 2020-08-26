@@ -71,7 +71,7 @@ parser.add_argument(
     '--title', '-t',
     help="plot title")
 parser.add_argument(
-    '--fom', metavar='FUNC[:PARAM=VAL,...]',
+    '--fom', metavar='FUNC[:PARAM=VAL,...]', default=FOM,
     help="use inspiral_range.FUNC to calculate range figure-of-merit on resultant spectrum")
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
@@ -205,21 +205,21 @@ def main():
         import inspiral_range
         logger_ir = logging.getLogger('inspiral_range')
         logger_ir.setLevel(logger.getEffectiveLevel())
-        logger_ir.addHandler(logger.handlers[0])
-        if not args.fom:
-            args.fom = FOM
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(name)s: %(message)s'))
+        logger_ir.addHandler(handler)
+
     except ModuleNotFoundError:
-        if args.fom:
-            raise
-        logger.warning("inspiral_range package not available, figure of merit will not be calculated...")
+        logger.warning("WARNING: inspiral_range package not available, figure of merit will not be calculated.")
+        args.fom = None
     if args.fom:
         try:
-            range_func, fargs = args.fom.split(':')
+            range_func, range_func_args = args.fom.split(':')
         except ValueError:
             range_func = args.fom
-            fargs = ''
+            range_func_args = ''
         range_params = {}
-        for param in fargs.split(','):
+        for param in range_func_args.split(','):
             if not param:
                 continue
             p, v = param.split('=')
@@ -250,9 +250,9 @@ def main():
     if args.fom:
         logger.info("calculating inspiral {}...".format(range_func))
         H = inspiral_range.CBCWaveform(freq, **range_params)
-        logger.debug("params: {}".format(H.params))
+        logger.debug("waveform params: {}".format(H.params))
         fom = eval('inspiral_range.{}'.format(range_func))(freq, traces['Total'][0], H=H)
-        logger.info("{}({}) = {:.2f} Mpc".format(range_func, fargs, fom))
+        logger.info("{}({}) = {:.2f} Mpc".format(range_func, range_func_args, fom))
         fom_title = 'inspiral {func} {m1}/{m2} $\mathrm{{M}}_\odot$: {fom:.0f} Mpc'.format(
             func=range_func,
             m1=H.params['m1'],
