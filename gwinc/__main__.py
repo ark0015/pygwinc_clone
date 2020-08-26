@@ -8,7 +8,7 @@ import numpy as np
 from . import IFOS, load_budget, plot_noise, logger
 
 logger.setLevel(os.getenv('LOG_LEVEL', 'WARNING').upper())
-formatter = logging.Formatter('%(name)s: %(message)s')
+formatter = logging.Formatter('%(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 logger.addHandler(handler)
