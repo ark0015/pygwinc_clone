@@ -37,24 +37,24 @@ def _load_module(name_or_path):
     return mod, path
 
 
-def load_budget(name_or_path):
-    """Load GWINC IFO Budget by name or from path.
+def load_budget(name_or_path, freq=None):
+    """Load GWINC Budget
 
-    Named IFOs should correspond to one of the IFOs available in the
-    gwinc package (see gwinc.IFOS).  If a path is provided it should
-    either be a budget package (directory) or module (ending in .py),
-    or an IFO struct definition (see gwinc.Struct).
+    Accepts either the name of a built-in canonical budget (see
+    gwinc.IFOS), the path to a budget package (directory) or module
+    (ending in .py), or the path to an IFO struct definition file (see
+    gwinc.Struct).
 
-    If a budget package path is provided, and the package includes an
-    'ifo.yaml' file, that file will be loaded into a Struct and
-    assigned as an attribute to the returned Budget class.
+    If the budget is a package directory which includes an 'ifo.yaml'
+    file the ifo Struct will be loaded from that file and assigned to
+    the budget.ifo attribute.  If a struct definition file is provided
+    the base aLIGO budget definition and ifo will be assumed.
 
-    If a bare struct is provided the base aLIGO budget definition will
-    be assumed.
-
-    Returns a Budget class with 'ifo', 'freq', and 'plot_style', ifo
-    structure, frequency array, and plot style dictionary, with the
-    last three being None if they are not defined in the budget.
+    Returns a Budget object instantiated with the provided frequency
+    array (if specified), and with any included ifo assigned as an
+    object attribute.  If a frequency array is not provided and the
+    budget class does not define it's own, the frequency array must be
+    provided at budget update() or run() time.
 
     """
     ifo = None
@@ -83,14 +83,11 @@ def load_budget(name_or_path):
 
     logger.info("loading module {}...".format(modname))
     mod, modpath = _load_module(modname)
-
     Budget = getattr(mod, bname)
     ifopath = os.path.join(modpath, 'ifo.yaml')
     if not ifo and os.path.exists(ifopath):
         ifo = Struct.from_file(ifopath)
-    Budget.ifo = ifo
-
-    return Budget
+    return Budget(freq=freq, ifo=ifo)
 
 
 def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
@@ -112,9 +109,9 @@ def gwinc(freq, ifo, source=None, plot=False, PRfixed=True):
     # assume generic aLIGO configuration
     # FIXME: how do we allow adding arbitrary addtional noise sources
     # from just ifo description, without having to specify full budget
-    Budget = load_budget('aLIGO')
-    traces = Budget(freq, ifo=ifo).run()
-    plot_style = getattr(Budget, 'plot_style', {})
+    budget = load_budget('aLIGO', freq)
+    traces = budget.run()
+    plot_style = getattr(budget, 'plot_style', {})
 
     # construct matgwinc-compatible noises structure
     noises = {}

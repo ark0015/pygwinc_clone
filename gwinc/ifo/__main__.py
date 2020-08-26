@@ -29,7 +29,7 @@ def main():
     budgets = {}
     range_pad = 0
     for ifo in IFOS:
-        budget = load_budget(ifo)(freq)
+        budget = load_budget(ifo, freq)
         name = budget.name
         budgets[name] = budget
         range_pad = max(len(name), range_pad)

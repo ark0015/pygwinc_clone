@@ -122,7 +122,7 @@ def main():
         if args.ifo:
             parser.exit(2, "IFO parameter specification not allowed when loading traces from file.\n")
         from .io import load_hdf5
-        Budget = None
+        budget = None
         freq, traces, attrs = load_hdf5(args.IFO)
         ifo = attrs.get('ifo')
         # FIXME: deprecate 'IFO'
@@ -130,16 +130,16 @@ def main():
         plot_style = attrs
 
     else:
-        Budget = load_budget(args.IFO)
-        ifo = Budget.ifo
+        budget = load_budget(args.IFO)
+        ifo = budget.ifo
         if args.freq:
             try:
                 freq = freq_from_spec(args.freq)
             except IndexError:
                 parser.exit(2, "Improper frequency specification: {}\n".format(args.freq))
         else:
-            freq = getattr(Budget, 'freq', freq_from_spec(FREQ))
-        plot_style = getattr(Budget, 'plot_style', {})
+            freq = getattr(budget, 'freq', freq_from_spec(FREQ))
+        plot_style = getattr(budget, 'plot_style', {})
         traces = None
 
     if args.ifo:
@@ -160,9 +160,8 @@ def main():
     if args.diff:
         if not ifo:
             parser.exit(2, "IFO structure not provided.\n")
-        _, difo = load_budget(args.diff)
-        Budget = load_budget(args.diff)
-        diffs = ifo.diff(Budget.ifo)
+        dbudget = load_budget(args.diff)
+        diffs = ifo.diff(dbudget.ifo)
         if diffs:
             w = max([len(d[0]) for d in diffs])
             fmt = '{{:{}}} {{:>20}} {{:>20}}'.format(w)
@@ -236,14 +235,14 @@ def main():
 
     if not traces:
         logger.info("calculating budget...")
-        traces = Budget(freq=freq, ifo=ifo).run()
+        traces = budget.run(freq=freq)
 
     if args.title:
         plot_style['title'] = args.title
     elif 'title' in plot_style:
         pass
-    elif Budget:
-        plot_style['title'] = "GWINC Noise Budget: {}".format(Budget.name)
+    elif budget:
+        plot_style['title'] = "GWINC Noise Budget: {}".format(budget.name)
     else:
         plot_style['title'] = "GWINC Noise Budget: {}".format(args.IFO)
 
