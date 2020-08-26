@@ -68,11 +68,9 @@ def load_budget(name_or_path):
             ifo = Struct.from_file(path)
             bname = 'aLIGO'
             modname = 'gwinc.ifo.aLIGO'
-            logger.info("loading budget {}...".format(modname))
 
         else:
             modname = path
-            logger.info("loading module path {}...".format(modname))
 
     else:
         if name_or_path not in IFOS:
@@ -82,8 +80,8 @@ def load_budget(name_or_path):
             ))
         bname = name_or_path
         modname = 'gwinc.ifo.'+name_or_path
-        logger.info("loading module {}...".format(modname))
 
+    logger.info("loading module {}...".format(modname))
     mod, modpath = _load_module(modname)
 
     Budget = getattr(mod, bname)
