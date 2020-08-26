@@ -297,7 +297,7 @@ In [.]: plt.savefig("foo.pdf")
         ipshell.enable_pylab()
         if args.plot:
             ipshell.ex("fig = plot_noise(freq, traces, **plot_style)")
-            ipshell.ex("plt.title('{}')".format(plot_style['title']))
+            ipshell.ex("plt.title(plot_style['title'])")
         ipshell()
 
     ##########
