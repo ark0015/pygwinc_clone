@@ -336,8 +336,8 @@ gwinc/test/cache/<SHA1>.  Old caches are automatically pruned.""",
 
         freq, traces_ref, attrs = load_hdf5(path)
 
-        Budget = load_budget(name)
-        traces_cur = Budget(freq).run()
+        budget = load_budget(name, freq)
+        traces_cur = budget.run()
 
         if inspiral_range:
             total_ref = traces_ref['Total'][0]

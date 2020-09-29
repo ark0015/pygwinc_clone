@@ -106,7 +106,7 @@ $ python3 -m gwinc -h
 ```
 
 
-### python library
+### library interface
 
 For custom plotting, parameter optimization, etc. all functionality can be
 accessed directly through the `gwinc` library interface:
@@ -114,17 +114,18 @@ accessed directly through the `gwinc` library interface:
 >>> import gwinc
 >>> import numpy as np
 >>> freq = np.logspace(1, 3, 1000)
->>> Budget = gwinc.load_budget('aLIGO')
->>> traces = Budget(freq).run()
->>> fig = gwinc.plot_noise(freq, traces)
+>>> budget = gwinc.load_budget('aLIGO', freq)
+>>> trace = budget.run()
+>>> fig = gwinc.plot_noise(freq, trace)
 >>> fig.show()
 ```
 
 The `load_budget()` function takes most of the same inputs as the
 command line interface (e.g. IFO names, budget module paths, YAML
-parameter files), and returns the un-instantiated `Budget` class
-defined in the specified budget module (see [budget
-interface](#budget-interface) below).
+parameter files), and returns the `Budget` object defined in the
+specified budget module (see [budget interface](#budget-interface)
+below).  The budget `ifo` `gwinc.Struct` is assigned to the
+`budget.ifo` attribute.
 
 The budget `run()` method is a convenience method that calculates all
 budget noises and the noise total and returns a (possibly) nested
@@ -315,8 +316,7 @@ style for the noise.
 This budget can be loaded with the `gwinc.load_budget()` function, and
 processed with the `Budget.run()` method:
 ```python
-Budget = load_budget('/path/to/MyBudget')
-budget = Budget(freq)
+budget = load_budget('/path/to/MyBudget', freq)
 traces = budget.run()
 ```
 
@@ -333,18 +333,14 @@ suspension Struct is extracted from the `self.ifo` Struct at
 
 If a budget module defined as a package includes an `ifo.yaml`
 [parameter file](#parameter-files) in the package directory, the
-`load_budget()` function will automatically load the YAML data into a
-`gwinc.Struct` and include it as an `Budget.ifo` attribute in the
-returned `Budget` class.  This would provide the `self.ifo` needed in
-the `SuspensionThermal` Noise class above and is therefore a
-convenient way to provide parameter structures in budget packages.
-Otherwise it would need to be created/loaded in some other way and
-passed to the budget at instantiation, e.g.:
+`load_budget()` function will automatically load the YAML data into an
+`ifo` `gwinc.Struct` and assign it to the `budget.ifo` attribute.
+Alternate ifos can be specified at run time:
 ```python
-Budget = load_budget('/path/to/MyBudget')
+budget = load_budget('/path/to/MyBudget', freq)
 ifo = Struct.from_file('/path/to/MyBudget.ifo')
-budget = Budget(freq, ifo=ifo)
-traces = budget.run()
+traces = budget.run(ifo=ifo)
+...
 ```
 
 The IFOs included in `gwinc.ifo` provide examples of the use of the

@@ -66,8 +66,6 @@ class BudgetItem:
         if freq is not None:
             assert isinstance(freq, np.ndarray)
             self.freq = freq
-        elif not hasattr(self, 'freq'):
-            raise AttributeError("Frequency array not provided or defined.")
         for key, val in kwargs.items():
             setattr(self, key, val)
 
